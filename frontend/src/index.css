@@ -1,0 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+  
+  body {
+    background-color: #07080A;
+    color: #F5F7FA;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
+  }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0B0D10;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #252A32;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #343A45;
+}
+
+/* Technical Monospace Elements */
+.font-mono-tech {
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: -0.02em;
+}
+
+/* Glassmorphic Technical Surfaces */
+.glass-panel {
+  background: rgba(17, 20, 25, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(37, 42, 50, 0.8);
+}
+
+.glass-panel-elevated {
+  background: rgba(23, 27, 33, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(52, 58, 69, 0.8);
+}
+
+.glow-ai {
+  box-shadow: 0 0 24px rgba(108, 99, 255, 0.15);
+}
+
+.glow-semantic-critical {
+  box-shadow: 0 0 20px rgba(239, 98, 98, 0.2);
+}
+
+.glow-semantic-success {
+  box-shadow: 0 0 20px rgba(53, 201, 138, 0.2);
+}

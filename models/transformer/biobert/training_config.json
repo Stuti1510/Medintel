@@ -1,0 +1,10 @@
+{
+  "epochs": 6,
+  "batch_size": 32,
+  "learning_rate": 0.0005,
+  "optimizer": "AdamW",
+  "weight_decay": 0.01,
+  "loss_function": "CrossEntropyLoss",
+  "training_time_s": 506.95,
+  "best_val_accuracy": 1.0
+}

@@ -1,0 +1,28 @@
+{
+  "vectorizer": "TF-IDF (1-2 ngrams, 2500 max features)",
+  "vocabulary_size": 2500,
+  "num_classes": 20,
+  "classes": [
+    "Acute Appendicitis",
+    "Acute Bronchitis",
+    "Atopic Dermatitis",
+    "Bronchial Asthma",
+    "Chronic Kidney Disease",
+    "GERD",
+    "Gastroenteritis",
+    "Hypertension",
+    "Hyperthyroidism",
+    "Infectious Mononucleosis",
+    "Iron Deficiency Anemia",
+    "Ischemic Stroke",
+    "Major Depressive Disorder",
+    "Migraine with Aura",
+    "Myocardial Infarction",
+    "Pneumonia",
+    "Pulmonary Embolism",
+    "Rheumatoid Arthritis",
+    "Type 2 Diabetes Mellitus",
+    "Urinary Tract Infection"
+  ],
+  "trained_date": "2026-09-02 07:53:58 UTC"
+}

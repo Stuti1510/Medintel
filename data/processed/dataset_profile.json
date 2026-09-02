@@ -1,0 +1,156 @@
+{
+  "dataset_name": "MEDINTEL Clinical Disease Benchmark Dataset",
+  "raw_file": "data/raw/clinical_cases_raw.csv",
+  "generated_at": "2026-09-02T07:51:09.739024Z",
+  "total_samples": 2500,
+  "total_features": 15,
+  "num_classes": 20,
+  "target_column": "condition",
+  "missing_values": 596,
+  "missing_per_col": {
+    "case_id": 0,
+    "age": 0,
+    "sex": 0,
+    "symptoms": 0,
+    "duration": 0,
+    "severity": 0,
+    "heart_rate": 0,
+    "systolic_bp": 0,
+    "diastolic_bp": 0,
+    "temperature": 0,
+    "spo2": 0,
+    "medical_history": 42,
+    "current_medications": 554,
+    "clinical_narrative": 0,
+    "condition": 0
+  },
+  "duplicates": 0,
+  "classes": [
+    "Hyperthyroidism",
+    "Major Depressive Disorder",
+    "Infectious Mononucleosis",
+    "Pulmonary Embolism",
+    "Hypertension",
+    "Iron Deficiency Anemia",
+    "Bronchial Asthma",
+    "Pneumonia",
+    "Gastroenteritis",
+    "Chronic Kidney Disease",
+    "GERD",
+    "Rheumatoid Arthritis",
+    "Acute Appendicitis",
+    "Urinary Tract Infection",
+    "Ischemic Stroke",
+    "Migraine with Aura",
+    "Myocardial Infarction",
+    "Type 2 Diabetes Mellitus",
+    "Atopic Dermatitis",
+    "Acute Bronchitis"
+  ],
+  "class_distribution": {
+    "Hyperthyroidism": 125,
+    "Major Depressive Disorder": 125,
+    "Infectious Mononucleosis": 125,
+    "Pulmonary Embolism": 125,
+    "Hypertension": 125,
+    "Iron Deficiency Anemia": 125,
+    "Bronchial Asthma": 125,
+    "Pneumonia": 125,
+    "Gastroenteritis": 125,
+    "Chronic Kidney Disease": 125,
+    "GERD": 125,
+    "Rheumatoid Arthritis": 125,
+    "Acute Appendicitis": 125,
+    "Urinary Tract Infection": 125,
+    "Ischemic Stroke": 125,
+    "Migraine with Aura": 125,
+    "Myocardial Infarction": 125,
+    "Type 2 Diabetes Mellitus": 125,
+    "Atopic Dermatitis": 125,
+    "Acute Bronchitis": 125
+  },
+  "demographics": {
+    "age": {
+      "mean": 45.85,
+      "std": 18.22,
+      "min": 5,
+      "max": 88,
+      "median": 46.0
+    },
+    "sex": {
+      "Female": 1403,
+      "Male": 1097
+    },
+    "severity": {
+      "Moderate": 960,
+      "Severe": 700,
+      "Mild": 587,
+      "Critical": 253
+    }
+  },
+  "vitals_summary": {
+    "heart_rate": {
+      "mean": 91.8,
+      "min": 64,
+      "max": 140
+    },
+    "systolic_bp": {
+      "mean": 132.9,
+      "min": 90,
+      "max": 220
+    },
+    "diastolic_bp": {
+      "mean": 81.8,
+      "min": 60,
+      "max": 125
+    },
+    "temperature": {
+      "mean": 37.31,
+      "min": 36.4,
+      "max": 39.8
+    },
+    "spo2": {
+      "mean": 97.1,
+      "min": 86,
+      "max": 100
+    }
+  },
+  "text_summary": {
+    "mean_words": 70.4,
+    "min_words": 52,
+    "max_words": 94
+  },
+  "validation_status": {
+    "is_valid": true,
+    "missing_required_columns": [],
+    "has_missing_values": true,
+    "has_duplicates": false,
+    "checks": [
+      {
+        "check": "File Existence & Readability",
+        "passed": true,
+        "details": "Successfully loaded data/raw/clinical_cases_raw.csv"
+      },
+      {
+        "check": "Required Columns Schema",
+        "passed": true,
+        "details": "15 features present"
+      },
+      {
+        "check": "Missing Value Integrity",
+        "passed": false,
+        "details": "596 missing cells detected"
+      },
+      {
+        "check": "Duplicate Narrative Check",
+        "passed": true,
+        "details": "0 duplicate cases found"
+      },
+      {
+        "check": "Target Label Integrity",
+        "passed": true,
+        "details": "20 distinct disease classes verified"
+      }
+    ]
+  }
+}

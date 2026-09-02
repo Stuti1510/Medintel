@@ -1,0 +1,14 @@
+{
+  "random_seed": 42,
+  "split_ratio": {
+    "train": 0.7,
+    "val": 0.15,
+    "test": 0.15
+  },
+  "total_samples": 2500,
+  "train_samples": 1750,
+  "val_samples": 375,
+  "test_samples": 375,
+  "classes_count": 20,
+  "leakage_prevention": "TF-IDF and encoders fit on training set only. Test set is strictly isolated for untouched final evaluation."
+}
