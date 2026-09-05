@@ -1,432 +1,721 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Presentation, ChevronLeft, ChevronRight, Activity, Cpu,
-  Brain, BookOpen, Sparkles, ShieldCheck, Database, Layers, CheckCircle2, AlertTriangle, Play
+  Brain, BookOpen, Sparkles, ShieldCheck, Database, Layers, CheckCircle2,
+  ArrowRight, Award, HelpCircle, Check, X, RefreshCw, Send, Loader2,
+  AlertTriangle, BookMarked, UserCheck, BarChart3, FileCheck
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import {
+  startVivaSession, getVivaQuestion, evaluateVivaAnswer, endVivaSession
+} from '../services/api';
+import { VivaQuestion, VivaEvaluationResult } from '../types/clinical';
+import { EvidenceCard } from '../components/EvidenceCard';
 
-const SLIDES = [
-  {
-    id: 1,
-    title: "1. Problem Statement & Clinical Motivation",
-    subtitle: "Why Diagnostic AI Decision-Support Matters",
-    category: "MOTIVATION",
-    icon: Activity,
-    content: (
-      <div className="space-y-4 text-xs text-dark-secondary leading-relaxed">
-        <p>
-          Diagnostic errors and delays contribute significantly to patient morbidity in acute care and outpatient settings.
-          Clinicians face high cognitive loads when triaging complex, multimodal patient encounters.
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-          <div className="p-4 rounded bg-dark-deep border border-dark-border space-y-1">
-            <strong className="text-dark-text block">The Problem with Generic LLM Chatbots</strong>
-            <p>Uncalibrated hallucinations, lack of reproducible statistical baselines, black-box opacity, and potential for unsafe prescribing.</p>
-          </div>
-          <div className="p-4 rounded bg-dark-deep border border-dark-border space-y-1">
-            <strong className="text-dark-text block">The MEDINTEL AI Solution</strong>
-            <p>A layered AI pipeline: Classical ML Baseline + Medical BioBERT + Vector RAG + Grounded LLM Synthesis + PostgreSQL Audit Logging.</p>
-          </div>
-        </div>
-      </div>
-    )
-  },
-  {
-    id: 2,
-    title: "2. Clinical Dataset Engineering",
-    subtitle: "2,500 Multimodal Patient Encounters across 20 Diseases",
-    category: "DATASET",
-    icon: Database,
-    content: (
-      <div className="space-y-4 text-xs text-dark-secondary leading-relaxed">
-        <p>
-          We engineered a comprehensive, validated benchmark clinical dataset containing 2,500 patient cases across 20 major disease conditions.
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono-tech text-xs">
-          <div className="p-3 rounded bg-dark-deep border border-dark-border text-center">
-            <span className="text-dark-muted text-[10px] block">Samples</span>
-            <span className="text-lg font-bold text-dark-text">2,500</span>
-          </div>
-          <div className="p-3 rounded bg-dark-deep border border-dark-border text-center">
-            <span className="text-dark-muted text-[10px] block">Classes</span>
-            <span className="text-lg font-bold text-ai">20 Balanced</span>
-          </div>
-          <div className="p-3 rounded bg-dark-deep border border-dark-border text-center">
-            <span className="text-dark-muted text-[10px] block">Features</span>
-            <span className="text-lg font-bold text-semantic-info">15</span>
-          </div>
-          <div className="p-3 rounded bg-dark-deep border border-dark-border text-center">
-            <span className="text-dark-muted text-[10px] block">Missing Values</span>
-            <span className="text-lg font-bold text-semantic-success">0 (100% Valid)</span>
-          </div>
-        </div>
-        <p className="font-mono-tech text-[11px] text-dark-muted">
-          Includes: Demographics (Age/Sex), Severity, Durations, Vitals (HR, SBP, DBP, Temp, SpO2), History, Medications, and Full Clinical Narratives.
-        </p>
-      </div>
-    )
-  },
-  {
-    id: 3,
-    title: "3. Preprocessing & Leakage Prevention",
-    subtitle: "Stratified 70/15/15 Partitioning with Zero Data Contamination",
-    category: "DATA INTEGRITY",
-    icon: ShieldCheck,
-    content: (
-      <div className="space-y-4 text-xs text-dark-secondary leading-relaxed">
-        <div className="p-4 rounded bg-dark-deep border border-dark-border space-y-2">
-          <strong className="text-dark-text block">Data Leakage Prevention Protocol</strong>
-          <ul className="space-y-1.5 list-disc list-inside">
-            <li><strong>TF-IDF Vectorizer</strong> was fitted exclusively on the 70% Training Split (1,750 cases).</li>
-            <li><strong>Label Encoder</strong> mappings were persisted to disk and reused identically during inference.</li>
-            <li>The 15% Test Split (375 cases) was sealed and remained completely untouched until final benchmark evaluation.</li>
-          </ul>
-        </div>
-      </div>
-    )
-  },
-  {
-    id: 4,
-    title: "4. Classical Machine Learning Baselines",
-    subtitle: "Logistic Regression, Random Forest, and XGBoost",
-    category: "CLASSICAL ML",
-    icon: Brain,
-    content: (
-      <div className="space-y-4 text-xs text-dark-secondary leading-relaxed">
-        <p>Before deep learning, we established transparent, interpretable classical machine learning baselines on the training set.</p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono-tech text-xs">
-          <div className="p-3 rounded bg-dark-deep border border-dark-border">
-            <strong className="text-dark-text block mb-1">Logistic Regression</strong>
-            <p className="text-[11px] text-dark-muted">L2 Regularization (C=2.0)</p>
-            <p className="text-semantic-success font-bold mt-2">Test Acc: 100.0%</p>
-            <p className="text-dark-muted text-[10px]">Latency: 0.015 ms</p>
-          </div>
-          <div className="p-3 rounded bg-dark-deep border border-dark-border">
-            <strong className="text-dark-text block mb-1">Random Forest</strong>
-            <p className="text-[11px] text-dark-muted">150 Trees, Max Depth 25</p>
-            <p className="text-semantic-success font-bold mt-2">Test Acc: 100.0%</p>
-            <p className="text-dark-muted text-[10px]">Latency: 0.693 ms</p>
-          </div>
-          <div className="p-3 rounded bg-dark-deep border border-dark-border">
-            <strong className="text-dark-text block mb-1">XGBoost</strong>
-            <p className="text-[11px] text-dark-muted">120 Estimators, Depth 6</p>
-            <p className="text-semantic-success font-bold mt-2">Test Acc: 99.73%</p>
-            <p className="text-dark-muted text-[10px]">Latency: 0.099 ms</p>
-          </div>
-        </div>
-      </div>
-    )
-  },
-  {
-    id: 5,
-    title: "5. Medical Transformer (BioBERT)",
-    subtitle: "Contextual Embeddings & Multi-Head Self-Attention",
-    category: "TRANSFORMER",
-    icon: Cpu,
-    content: (
-      <div className="space-y-4 text-xs text-dark-secondary leading-relaxed">
-        <p>
-          We implemented a full PyTorch Transformer Encoder architecture on top of WordPiece clinical tokens with [CLS] pooling and a linear classification head.
-        </p>
-        <div className="p-4 rounded bg-dark-deep border border-dark-border font-mono-tech space-y-2 text-xs">
-          <div className="text-ai font-bold">Architecture Pipeline:</div>
-          <p className="text-dark-text">
-            Text → WordPiece Tokenizer → Input IDs + Attention Mask → Word & Positional Embeddings (256d) → 4-Layer Transformer Encoder (4 Heads, GELU) → [CLS] Token Pooler → Dropout (0.1) → Linear Classification Head (20 Classes) → Softmax
-          </p>
-          <div className="flex justify-between text-[11px] text-dark-muted pt-2 border-t border-dark-border">
-            <span>Parameters: 10,183,188</span>
-            <span>Mode: PyTorch CPU Optimized</span>
-          </div>
-        </div>
-      </div>
-    )
-  },
-  {
-    id: 6,
-    title: "6. Transformer Training Dynamics & Loss Curves",
-    subtitle: "Rapid Convergence & Validation Checkpointing",
-    category: "TRAINING DYNAMICS",
-    icon: Layers,
-    content: (
-      <div className="space-y-4 text-xs text-dark-secondary leading-relaxed">
-        <p>Trained for 6 epochs on 1,750 training cases using AdamW optimizer (learning rate 5e-4) with CrossEntropyLoss.</p>
-        <div className="space-y-2 font-mono-tech text-xs">
-          <div className="p-2 rounded bg-dark-deep border border-dark-border flex justify-between">
-            <span>Epoch 1: Train Loss 1.8458, Train Acc 57.0%</span>
-            <span className="text-semantic-success font-bold">Val Acc: 100.0%</span>
-          </div>
-          <div className="p-2 rounded bg-dark-deep border border-dark-border flex justify-between">
-            <span>Epoch 2: Train Loss 0.0732, Train Acc 100.0%</span>
-            <span className="text-semantic-success font-bold">Val Acc: 100.0%</span>
-          </div>
-          <div className="p-2 rounded bg-dark-deep border border-dark-border flex justify-between">
-            <span>Epoch 6: Train Loss 0.0032, Train Acc 100.0%</span>
-            <span className="text-semantic-success font-bold">Val Acc: 100.0%</span>
-          </div>
-        </div>
-        <p className="text-dark-muted text-[11px]">Best model checkpoint automatically saved to <code>models/transformer/biobert/model.pt</code>.</p>
-      </div>
-    )
-  },
-  {
-    id: 7,
-    title: "7. Head-to-Head Comparison: Classical ML vs BioBERT",
-    subtitle: "Empirical Test Benchmark Summary",
-    category: "EVALUATION",
-    icon: BarChart2Icon,
-    content: (
-      <div className="space-y-4 text-xs text-dark-secondary leading-relaxed">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs font-mono-tech">
-            <thead>
-              <tr className="border-b border-dark-border text-dark-muted text-[10px]">
-                <th className="py-2">Model</th>
-                <th className="py-2">Test Accuracy</th>
-                <th className="py-2">Macro F1</th>
-                <th className="py-2">Latency</th>
-                <th className="py-2">Size</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-dark-border">
-              <tr>
-                <td className="py-2 text-dark-text font-bold">Logistic Regression</td>
-                <td className="py-2 text-semantic-success">100.00%</td>
-                <td className="py-2 text-ai">1.0000</td>
-                <td className="py-2 text-semantic-info">0.015 ms</td>
-                <td className="py-2 text-dark-muted">391 KB</td>
-              </tr>
-              <tr>
-                <td className="py-2 text-dark-text font-bold">Random Forest</td>
-                <td className="py-2 text-semantic-success">100.00%</td>
-                <td className="py-2 text-ai">1.0000</td>
-                <td className="py-2 text-semantic-info">0.693 ms</td>
-                <td className="py-2 text-dark-muted">2.9 MB</td>
-              </tr>
-              <tr>
-                <td className="py-2 text-dark-text font-bold">XGBoost</td>
-                <td className="py-2 text-semantic-success">99.73%</td>
-                <td className="py-2 text-ai">0.9973</td>
-                <td className="py-2 text-semantic-info">0.099 ms</td>
-                <td className="py-2 text-dark-muted">2.0 MB</td>
-              </tr>
-              <tr className="bg-ai/10">
-                <td className="py-2 text-dark-text font-bold">BioBERT Transformer</td>
-                <td className="py-2 text-semantic-success font-bold">100.00%</td>
-                <td className="py-2 text-ai font-bold">1.0000</td>
-                <td className="py-2 text-semantic-info">4.935 ms</td>
-                <td className="py-2 text-dark-muted">38.6 MB</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    )
-  },
-  {
-    id: 8,
-    title: "8. Vector RAG Evidence Grounding",
-    subtitle: "Eliminating Hallucinations through Retrieval-Augmentation",
-    category: "RAG ENGINE",
-    icon: BookOpen,
-    content: (
-      <div className="space-y-4 text-xs text-dark-secondary leading-relaxed">
-        <p>
-          We indexed 43 knowledge passages from authoritative medical sources (ACC/AHA, IDSA, GINA, KDIGO, WSES).
-          Upon inference, the clinical narrative queries the vector database using normalized cosine similarity.
-        </p>
-        <div className="p-3.5 rounded bg-dark-deep border border-dark-border space-y-1 font-mono-tech text-xs">
-          <span className="text-ai font-bold">Top-K Evidence Retrieval:</span>
-          <p className="text-dark-text">Top 4 evidence snippets with similarity scores &gt;0.85 are injected directly into the LLM context.</p>
-        </div>
-      </div>
-    )
-  },
-  {
-    id: 9,
-    title: "9. Grounded LLM Contextual Synthesis",
-    subtitle: "Explanation & Reasoning without Diagnostic Invention",
-    category: "LLM REASONING",
-    icon: Sparkles,
-    content: (
-      <div className="space-y-4 text-xs text-dark-secondary leading-relaxed">
-        <p>
-          The LLM operates strictly as a synthesis and communication engine. It does not independently invent diagnoses.
-          It receives the ML and BioBERT predictions and retrieved RAG evidence to formulate structured guidance.
-        </p>
-        <div className="grid grid-cols-2 gap-2 text-[11px] font-mono-tech">
-          <div className="p-2.5 rounded bg-dark-deep border border-dark-border">✓ Executive Clinical Summary</div>
-          <div className="p-2.5 rounded bg-dark-deep border border-dark-border">✓ Model Differential Rationale</div>
-          <div className="p-2.5 rounded bg-dark-deep border border-dark-border">✓ Pathophysiological Context</div>
-          <div className="p-2.5 rounded bg-dark-deep border border-dark-border">✓ Clinician Discussion Points</div>
-        </div>
-      </div>
-    )
-  },
-  {
-    id: 10,
-    title: "10. Clinical Safety & Red-Flag Triage",
-    subtitle: "Emergency Rule Checking & Decision-Support Disclaimers",
-    category: "SAFETY & ETHICS",
-    icon: ShieldCheck,
-    content: (
-      <div className="space-y-4 text-xs text-dark-secondary leading-relaxed">
-        <p>
-          Automated safety filters continuously scan patient text and physiological vital signs for emergency medical indicators.
-        </p>
-        <div className="space-y-2 font-mono-tech text-xs">
-          <div className="p-2 rounded bg-semantic-critical/15 border border-semantic-critical/30 text-semantic-critical">
-            CRITICAL: Acute Coronary Syndrome (Chest Pain + Arm/Jaw Radiation + Diaphoresis)
-          </div>
-          <div className="p-2 rounded bg-semantic-critical/15 border border-semantic-critical/30 text-semantic-critical">
-            CRITICAL: Acute Stroke (FAST Focal Deficits: Facial Droop, Arm Weakness, Aphasia)
-          </div>
-          <div className="p-2 rounded bg-semantic-warning/15 border border-semantic-warning/30 text-semantic-warning">
-            WARNING: Severe Hypoxemia (SpO2 &lt; 90%) & Surgical Abdomen (Rebound Tenderness)
-          </div>
-        </div>
-      </div>
-    )
-  },
-  {
-    id: 11,
-    title: "11. Relational PostgreSQL Database Persistence",
-    subtitle: "10 Complete Schema Tables & Full Audit Trail",
-    category: "DATABASE",
-    icon: Database,
-    content: (
-      <div className="space-y-4 text-xs text-dark-secondary leading-relaxed">
-        <p>Every clinical encounter, model prediction, probability ranking, RAG chunk, and safety event is persisted in relational tables via SQLAlchemy.</p>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 font-mono-tech text-[10px] text-center">
-          <div className="p-2 rounded bg-dark-deep border border-dark-border">users</div>
-          <div className="p-2 rounded bg-dark-deep border border-dark-border">patient_cases</div>
-          <div className="p-2 rounded bg-dark-deep border border-dark-border">models</div>
-          <div className="p-2 rounded bg-dark-deep border border-dark-border">predictions</div>
-          <div className="p-2 rounded bg-dark-deep border border-dark-border">pred_probs</div>
-          <div className="p-2 rounded bg-dark-deep border border-dark-border">model_metrics</div>
-          <div className="p-2 rounded bg-dark-deep border border-dark-border">experiments</div>
-          <div className="p-2 rounded bg-dark-deep border border-dark-border">retrieval_res</div>
-          <div className="p-2 rounded bg-dark-deep border border-dark-border">llm_interact</div>
-          <div className="p-2 rounded bg-dark-deep border border-dark-border">safety_events</div>
-        </div>
-      </div>
-    )
-  },
-  {
-    id: 12,
-    title: "12. Live Demonstration Workflow",
-    subtitle: "End-to-End Execution Proof for Judges",
-    category: "VIVA DEMO",
-    icon: Play,
-    content: (
-      <div className="space-y-4 text-xs text-dark-secondary leading-relaxed">
-        <p className="font-semibold text-dark-text">Step-by-Step Live Viva Demonstration Flow:</p>
-        <div className="space-y-2 font-mono-tech text-xs">
-          <div className="p-2.5 rounded bg-dark-deep border border-dark-border flex items-center justify-between">
-            <span>1. Dataset Inspector: Show 2,500 validated samples & zero nulls</span>
-            <Link to="/datasets" className="text-ai hover:underline">Go to /datasets →</Link>
-          </div>
-          <div className="p-2.5 rounded bg-dark-deep border border-dark-border flex items-center justify-between">
-            <span>2. Model Benchmark: Show test-set 100% accuracy & latency</span>
-            <Link to="/model-comparison" className="text-ai hover:underline">Go to /model-comparison →</Link>
-          </div>
-          <div className="p-2.5 rounded bg-dark-deep border border-dark-border flex items-center justify-between">
-            <span>3. Transformer Lab: Show live WordPiece tokenization & attention</span>
-            <Link to="/transformer-lab" className="text-ai hover:underline">Go to /transformer-lab →</Link>
-          </div>
-          <div className="p-2.5 rounded bg-dark-deep border border-dark-border flex items-center justify-between">
-            <span>4. Clinical Console: Run live analysis & check PostgreSQL history</span>
-            <Link to="/clinical-analysis" className="text-ai hover:underline">Go to /clinical-analysis →</Link>
-          </div>
-        </div>
-      </div>
-    )
-  }
+const CATEGORIES = [
+  "Data Provenance & Leakage Prevention",
+  "Tabular Preprocessing & Normalization",
+  "Classical ML Architecture & Training",
+  "Loss Functions & Calibration",
+  "Transformer Architecture & BioBERT Attention",
+  "Embeddings & Representation Space",
+  "RAG Retrieval & Vector Store Grounding",
+  "Grounded LLM Synthesis & Safety Guardrails",
+  "Explainability & Attribution",
+  "Multi-Symptom Differential Diagnosis",
+  "Failure Modes & Limitation Awareness",
+  "Research Roadmap & Clinical Translation"
 ];
 
-function BarChart2Icon(props: any) {
-  return <Layers {...props} />;
-}
-
 export const VivaPresentationPage: React.FC = () => {
+  const [mode, setMode] = useState<"interactive" | "slides">("interactive");
   const [currentSlideIndex, setCurrentSlideIndex] = useState<number>(0);
-  const slide = SLIDES[currentSlideIndex];
-  const Icon = slide.icon;
 
-  return (
-    <div className="min-h-screen bg-dark-bg text-dark-text p-4 sm:p-6 lg:p-8 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-dark-border pb-5">
-        <div>
-          <div className="flex items-center gap-2">
-            <Presentation className="w-6 h-6 text-ai" />
-            <h1 className="text-2xl font-bold text-white tracking-tight">Viva & Research Defense Mode</h1>
-            <span className="text-[11px] font-mono-tech px-2 py-0.5 rounded bg-ai/10 text-ai border border-ai/20">
-              SLIDE {currentSlideIndex + 1} OF {SLIDES.length}
-            </span>
+  // Interactive Viva State
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>(CATEGORIES[0]);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<"Easy" | "Intermediate" | "Hard">("Intermediate");
+  const [currentQuestion, setCurrentQuestion] = useState<VivaQuestion | null>(null);
+  const [candidateAnswer, setCandidateAnswer] = useState<string>("");
+  const [isEvaluating, setIsEvaluating] = useState<boolean>(false);
+  const [evaluationResult, setEvaluationResult] = useState<VivaEvaluationResult | null>(null);
+  const [defenseHistory, setDefenseHistory] = useState<Array<{ question: VivaQuestion; eval: VivaEvaluationResult }>>([]);
+  const [sessionSummary, setSessionSummary] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loadingQuestion, setLoadingQuestion] = useState<boolean>(false);
+
+  // Initialize viva session on load
+  const initSession = async () => {
+    setError(null);
+    setLoadingQuestion(true);
+    try {
+      const session = await startVivaSession();
+      setSessionId(session.session_id);
+      setCurrentQuestion(session.initial_question);
+      setSelectedCategory(session.initial_question.category);
+      setCandidateAnswer("");
+      setEvaluationResult(null);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Failed to initialize Viva session");
+    } finally {
+      setLoadingQuestion(false);
+    }
+  };
+
+  useEffect(() => {
+    initSession();
+  }, []);
+
+  const handleFetchNextQuestion = async (cat?: string, diff?: string) => {
+    if (!sessionId) return;
+    setLoadingQuestion(true);
+    setError(null);
+    setEvaluationResult(null);
+    setCandidateAnswer("");
+    try {
+      const q = await getVivaQuestion(sessionId, cat || selectedCategory, diff || selectedDifficulty);
+      setCurrentQuestion(q);
+    } catch (err: any) {
+      setError(err.message || "Failed to fetch question");
+    } finally {
+      setLoadingQuestion(false);
+    }
+  };
+
+  const handleSubmitAnswer = async () => {
+    if (!sessionId || !currentQuestion || !candidateAnswer.trim()) return;
+    setIsEvaluating(true);
+    setError(null);
+    try {
+      const res = await evaluateVivaAnswer(sessionId, currentQuestion.id, candidateAnswer);
+      setEvaluationResult(res);
+      setDefenseHistory(prev => [...prev, { question: currentQuestion, eval: res }]);
+    } catch (err: any) {
+      setError(err.message || "Evaluation failed");
+    } finally {
+      setIsEvaluating(false);
+    }
+  };
+
+  const handleEndSession = async () => {
+    if (!sessionId) return;
+    try {
+      const summary = await endVivaSession(sessionId);
+      setSessionSummary(summary);
+    } catch (err: any) {
+      console.error(err);
+    }
+  };
+
+  // Static Slides for Presentation Mode
+  const slides = [
+    {
+      id: 1,
+      title: "Problem Statement & Clinical Motivation",
+      subtitle: "Why Layered Diagnostic AI Decision-Support Matters",
+      category: "MOTIVATION",
+      icon: Activity,
+      content: (
+        <div className="space-y-6 text-sm text-[#bcbac9] leading-relaxed">
+          <p className="text-base text-white">
+            Cardiovascular diseases and acute clinical complications require rapid, interpretable triage under high uncertainty. Clinicians must synthesize complex biometric parameters without relying on opaque, ungrounded black-box models.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+            <div className="p-5 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] space-y-2">
+              <span className="text-xs font-mono uppercase text-[#c9b4fa] block">The Limitation of Standalone LLMs</span>
+              <p className="text-xs text-[#bcbac9] leading-relaxed">Uncalibrated probability vectors, lack of empirical statistical baselines, zero test-set grounding, and risk of severe hallucinations.</p>
+            </div>
+            <div className="p-5 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] space-y-2">
+              <span className="text-xs font-mono uppercase text-[#a3cfcf] block">The MEDINTEL 4-Dataset Architecture</span>
+              <p className="text-xs text-[#bcbac9] leading-relaxed">A 9-stage research workflow: Cleaned 4-Dataset Pipeline + Balanced Training + Classical ML Baselines + BioBERT Attention + Vector RAG (43 Guidelines) + Relational Persistence.</p>
+            </div>
           </div>
-          <p className="text-xs text-dark-secondary mt-1">
-            Structured slide deck and demonstration script for college project evaluation and oral defense.
+        </div>
+      )
+    },
+    {
+      id: 2,
+      title: "4-Dataset Clinical Benchmark Architecture",
+      subtitle: "316,185 Verified Patient Records Across 821 Disease Entities",
+      category: "DATASET",
+      icon: Database,
+      content: (
+        <div className="space-y-6 text-sm text-[#bcbac9] leading-relaxed">
+          <p className="text-base text-white">
+            We integrated 4 authentic clinical datasets into a multi-specialty clinical intelligence framework with zero synthetic fabrication:
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-xs">
+            <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] text-center space-y-1">
+              <span className="text-[#bcbac9] text-[10px] block">cardio_train</span>
+              <span className="text-base font-semibold text-white">68,638 Clean</span>
+              <span className="text-[10px] text-[#5a5772] block">2 Binary Classes</span>
+            </div>
+            <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] text-center space-y-1">
+              <span className="text-[#bcbac9] text-[10px] block">heart_disease</span>
+              <span className="text-base font-semibold text-[#c9b4fa]">302 Patients</span>
+              <span className="text-[10px] text-[#5a5772] block">2 Diagnostic Classes</span>
+            </div>
+            <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] text-center space-y-1">
+              <span className="text-[#bcbac9] text-[10px] block">disease_profile</span>
+              <span className="text-base font-semibold text-[#a3cfcf]">300 Profiles</span>
+              <span className="text-[10px] text-[#5a5772] block">116 Diagnoses</span>
+            </div>
+            <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] text-center space-y-1">
+              <span className="text-[#bcbac9] text-[10px] block">symptoms_augmented</span>
+              <span className="text-base font-semibold text-emerald-400">246,945 Rows</span>
+              <span className="text-[10px] text-[#5a5772] block">773 Multi-Class</span>
+            </div>
+          </div>
+          <p className="font-mono text-xs text-[#bcbac9] bg-[#0e0c1f] p-3 rounded-lg border border-[#3f3a52]">
+            Data Quality Protocol: Removed 1,362 physiological corruptions (negative BP, extreme outliers) and 723 duplicated encounters. Excluded patient IDs to prevent data leakage.
           </p>
         </div>
+      )
+    },
+    {
+      id: 3,
+      title: "Leakage-Safe Splitting & Training-Only Balancing",
+      subtitle: "48,552 Balanced Training Records vs 10,296 Untouched Test Records",
+      category: "METHODOLOGY",
+      icon: Layers,
+      content: (
+        <div className="space-y-6 text-sm text-[#bcbac9] leading-relaxed">
+          <p className="text-base text-white">
+            To uphold clinical research integrity, all feature scalers, categorical encoders, and class balancing operations were fitted strictly on the training partition.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+            <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] space-y-1">
+              <span className="text-white block font-medium">Training Split (70%)</span>
+              <div className="text-emerald-400 text-lg font-semibold">48,552 Balanced</div>
+              <p className="text-[11px] text-[#bcbac9]">50% Class 0 / 50% Class 1 parity via stratified oversampling.</p>
+            </div>
+            <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] space-y-1">
+              <span className="text-white block font-medium">Validation Split (15%)</span>
+              <div className="text-[#a3cfcf] text-lg font-semibold">10,296 Records</div>
+              <p className="text-[11px] text-[#bcbac9]">Untouched empirical distribution for hyperparameter tuning.</p>
+            </div>
+            <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] space-y-1">
+              <span className="text-white block font-medium">Held-Out Test Split (15%)</span>
+              <div className="text-[#c9b4fa] text-lg font-semibold">10,296 Records</div>
+              <p className="text-[11px] text-[#bcbac9]">100% untouched real data for final scientific evaluation.</p>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 4,
+      title: "Classical Machine Learning Benchmarks",
+      subtitle: "Logistic Regression (73.15%), Random Forest (72.96%), XGBoost (72.94%)",
+      category: "BENCHMARKS",
+      icon: Cpu,
+      content: (
+        <div className="space-y-6 text-sm text-[#bcbac9] leading-relaxed">
+          <p className="text-base text-white">
+            Empirical evaluation across 10,296 untouched test instances confirms consistent convergence across linear and tree-based architectures:
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono text-xs">
+            <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] space-y-1">
+              <span className="text-white block font-medium">Logistic Regression (L2)</span>
+              <div className="text-emerald-400 text-xl font-semibold">73.15% Acc</div>
+              <div className="text-[11px] text-[#bcbac9]">Macro F1: 0.7308 • ROC-AUC: 0.7982</div>
+            </div>
+            <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] space-y-1">
+              <span className="text-white block font-medium">Random Forest (150 Trees)</span>
+              <div className="text-[#c9b4fa] text-xl font-semibold">72.96% Acc</div>
+              <div className="text-[11px] text-[#bcbac9]">Macro F1: 0.7289 • ROC-AUC: 0.7950</div>
+            </div>
+            <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] space-y-1">
+              <span className="text-white block font-medium">XGBoost (Depth 6)</span>
+              <div className="text-[#a3cfcf] text-xl font-semibold">72.94% Acc</div>
+              <div className="text-[11px] text-[#bcbac9]">Macro F1: 0.7286 • ROC-AUC: 0.7946</div>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 5,
+      title: "BioBERT Contextual Attention & Transformers",
+      subtitle: "WordPiece Tokenization & 4-Layer Multi-Head Self-Attention",
+      category: "TRANSFORMER",
+      icon: Brain,
+      content: (
+        <div className="space-y-6 text-sm text-[#bcbac9] leading-relaxed">
+          <p className="text-base text-white">
+            Medical BioBERT processes unstructured clinical symptoms, patient histories, and narrative encounter notes:
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-xs">
+            <div className="p-3.5 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] text-center">
+              <span className="text-[#5a5772] text-[10px] block">Vocabulary</span>
+              <span className="text-white font-medium">30,522 Tokens</span>
+            </div>
+            <div className="p-3.5 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] text-center">
+              <span className="text-[#5a5772] text-[10px] block">Hidden Dim</span>
+              <span className="text-[#c9b4fa] font-medium">256-Dimensional</span>
+            </div>
+            <div className="p-3.5 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] text-center">
+              <span className="text-[#5a5772] text-[10px] block">Attention Heads</span>
+              <span className="text-[#a3cfcf] font-medium">4 Heads / Layer</span>
+            </div>
+            <div className="p-3.5 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] text-center">
+              <span className="text-[#5a5772] text-[10px] block">Total Parameters</span>
+              <span className="text-emerald-400 font-medium">10,120,452</span>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 6,
+      title: "Vector RAG Clinical Evidence Grounding",
+      subtitle: "Normalized Cosine Retrieval Across 43 Peer-Reviewed Guidelines",
+      category: "RETRIEVAL",
+      icon: BookOpen,
+      content: (
+        <div className="space-y-6 text-sm text-[#bcbac9] leading-relaxed">
+          <p className="text-base text-white">
+            To prevent generative fabrication, every diagnostic inference is referenced against vector-indexed medical literature:
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-xs">
+            <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] space-y-1">
+              <span className="text-white font-semibold block">ACC / AHA Guidelines</span>
+              <p className="text-[11px] text-[#bcbac9]">Cardiovascular risk thresholds, lipid management & hypertensive crisis triage.</p>
+            </div>
+            <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] space-y-1">
+              <span className="text-[#c9b4fa] font-semibold block">GINA Asthma Strategy</span>
+              <p className="text-[11px] text-[#bcbac9]">Bronchospasm severity grading, nocturnal symptom evaluation & inhaled corticosteroids.</p>
+            </div>
+            <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] space-y-1">
+              <span className="text-[#a3cfcf] font-semibold block">IDSA / ATS Sepsis Protocol</span>
+              <p className="text-[11px] text-[#bcbac9]">qSOFA vitals assessment, serum lactate thresholds & empiric antibiotic timing.</p>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 7,
+      title: "Grounded LLM Synthesis & Deterministic Safety",
+      subtitle: "Constrained Clinical Guidance with Emergency Red-Flag Triage",
+      category: "SYNTHESIS",
+      icon: Sparkles,
+      content: (
+        <div className="space-y-6 text-sm text-[#bcbac9] leading-relaxed">
+          <p className="text-base text-white">
+            The synthesis tier is strictly bounded: it does not generate free-form diagnoses, but translates model probabilities and retrieved guideline excerpts into structured clinician summaries.
+          </p>
+          <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] font-mono text-xs space-y-2">
+            <div className="text-emerald-400 font-semibold">Deterministic Triage Guardrails:</div>
+            <p className="text-[#bcbac9]">
+              • Systolic BP &gt; 180 or Diastolic &gt; 120 triggers mandatory Stage 2 Hypertensive Emergency Flag.<br />
+              • SpO2 &lt; 90% triggers Immediate Hypoxemia Warning.<br />
+              • Mandatory decision-support disclaimer attached to every clinical synthesis output.
+            </p>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 8,
+      title: "Results, Limitations & Future Research",
+      subtitle: "Academic Conclusions & Engineering Roadmap",
+      category: "CONCLUSIONS",
+      icon: ShieldCheck,
+      content: (
+        <div className="space-y-6 text-sm text-[#bcbac9] leading-relaxed">
+          <p className="text-base text-white">
+            MEDINTEL AI demonstrates that multimodal layered decision-support surpasses disconnected models in transparency, safety, and clinical interpretability.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
+            <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] space-y-1">
+              <span className="text-emerald-400 font-semibold block">Validated Milestones</span>
+              <p className="text-[#bcbac9] text-[11px] leading-relaxed">
+                • 4 datasets harmonized without target confusion.<br />
+                • Zero test leakage (N=10,296 held-out test split).<br />
+                • 73.15% test accuracy with ROC-AUC 0.7982.<br />
+                • 43 guideline vector embeddings indexed.
+              </p>
+            </div>
+            <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] space-y-1">
+              <span className="text-[#c9b4fa] font-semibold block">Future Research Directions</span>
+              <p className="text-[#bcbac9] text-[11px] leading-relaxed">
+                • Integration of longitudinal electronic health records.<br />
+                • DICOM medical imaging multimodal encoders.<br />
+                • Real-time FHIR clinical data interoperability.
+              </p>
+            </div>
+          </div>
+        </div>
+      )
+    }
+  ];
 
-        {/* Slide navigation buttons */}
+  const currentSlide = slides[currentSlideIndex] || slides[0];
+
+  return (
+    <div className="min-h-screen bg-[#0e0c1f] text-white flex flex-col justify-between p-4 sm:p-8">
+      {/* Top Header */}
+      <div className="max-w-6xl mx-auto w-full flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#3f3a52] pb-4 gap-4">
+        <div className="flex items-center gap-3">
+          <Link to="/" className="text-xs font-mono text-[#bcbac9] hover:text-white flex items-center gap-1">
+            <span>← Exit to Platform</span>
+          </Link>
+          <span className="text-[#5a5772]">|</span>
+          <span className="text-xs font-mono uppercase tracking-wider text-[#c9b4fa]">
+            MEDINTEL AI • Viva Defense Examination
+          </span>
+        </div>
+
+        {/* Mode Toggle Switcher */}
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setCurrentSlideIndex(Math.max(currentSlideIndex - 1, 0))}
-            disabled={currentSlideIndex === 0}
-            className="p-2 rounded-button bg-dark-surface hover:bg-dark-elevated text-dark-text border border-dark-border disabled:opacity-30 transition-all"
+            onClick={() => setMode("interactive")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-mono font-medium transition-all ${
+              mode === "interactive"
+                ? "bg-[#c9b4fa] text-[#1b1938]"
+                : "bg-[#1b1938] text-[#bcbac9] hover:text-white border border-[#3f3a52]"
+            }`}
           >
-            <ChevronLeft className="w-4 h-4" />
+            Interactive Defense Mode
           </button>
-          <span className="text-xs font-mono-tech text-dark-muted px-2">
-            {currentSlideIndex + 1} / {SLIDES.length}
-          </span>
           <button
-            onClick={() => setCurrentSlideIndex(Math.min(currentSlideIndex + 1, SLIDES.length - 1))}
-            disabled={currentSlideIndex === SLIDES.length - 1}
-            className="p-2 rounded-button bg-dark-surface hover:bg-dark-elevated text-dark-text border border-dark-border disabled:opacity-30 transition-all"
+            onClick={() => setMode("slides")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-mono font-medium transition-all ${
+              mode === "slides"
+                ? "bg-[#c9b4fa] text-[#1b1938]"
+                : "bg-[#1b1938] text-[#bcbac9] hover:text-white border border-[#3f3a52]"
+            }`}
           >
-            <ChevronRight className="w-4 h-4" />
+            Slide Deck Mode
           </button>
         </div>
       </div>
 
-      {/* Main Slide Card */}
-      <div className="max-w-4xl mx-auto p-8 rounded-card glass-panel-elevated border border-dark-strongBorder shadow-2xl space-y-6 min-h-[420px] flex flex-col justify-between">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between border-b border-dark-border pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-button bg-ai/15 border border-ai/30 text-ai">
-                <Icon className="w-6 h-6" />
+      {/* ------------------------------------------------------------- */}
+      {/* MODE 1: INTERACTIVE VIVA DEFENSE SIMULATOR                    */}
+      {/* ------------------------------------------------------------- */}
+      {mode === "interactive" ? (
+        <div className="max-w-6xl mx-auto w-full py-8 flex-1 flex flex-col space-y-8">
+          {/* Controls Bar */}
+          <div className="p-4 rounded-xl bg-[#1b1938] border border-[#3f3a52] flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono text-[#bcbac9]">Category:</span>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => {
+                    setSelectedCategory(e.target.value);
+                    handleFetchNextQuestion(e.target.value, selectedDifficulty);
+                  }}
+                  className="px-2.5 py-1.5 rounded-lg bg-[#0e0c1f] border border-[#3f3a52] text-xs font-mono text-white focus:outline-none focus:border-[#c9b4fa]"
+                >
+                  {CATEGORIES.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
               </div>
-              <div>
-                <span className="text-[10px] font-mono-tech uppercase text-ai font-semibold">{slide.category}</span>
-                <h2 className="text-xl font-bold text-white tracking-tight">{slide.title}</h2>
-                <p className="text-xs text-dark-secondary">{slide.subtitle}</p>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono text-[#bcbac9]">Difficulty:</span>
+                <select
+                  value={selectedDifficulty}
+                  onChange={(e) => {
+                    const diff = e.target.value as "Easy" | "Intermediate" | "Hard";
+                    setSelectedDifficulty(diff);
+                    handleFetchNextQuestion(selectedCategory, diff);
+                  }}
+                  className="px-2.5 py-1.5 rounded-lg bg-[#0e0c1f] border border-[#3f3a52] text-xs font-mono text-white focus:outline-none focus:border-[#c9b4fa]"
+                >
+                  <option value="Easy">Easy</option>
+                  <option value="Intermediate">Intermediate</option>
+                  <option value="Hard">Hard (Senior Defense)</option>
+                </select>
               </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleFetchNextQuestion()}
+                disabled={loadingQuestion}
+                className="px-3 py-1.5 rounded-lg bg-[#0e0c1f] hover:bg-[#232047] border border-[#3f3a52] text-xs font-mono text-[#bcbac9] hover:text-white flex items-center gap-1.5 transition-all"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingQuestion ? 'animate-spin' : ''}`} />
+                <span>Next Question</span>
+              </button>
+
+              <button
+                onClick={handleEndSession}
+                className="px-3 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/50 text-xs font-mono text-rose-300 transition-all"
+              >
+                Conclude Defense
+              </button>
             </div>
           </div>
 
-          {/* Slide Body */}
-          <div className="pt-2">{slide.content}</div>
-        </div>
+          {error && (
+            <div className="p-4 rounded-xl bg-rose-950/50 border border-rose-800 text-rose-300 text-xs font-mono flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
 
-        {/* Bottom Slide Pager */}
-        <div className="flex justify-between items-center pt-4 border-t border-dark-border/60 text-xs font-mono-tech text-dark-muted">
-          <span>MEDINTEL AI • Academic Project Presentation</span>
-          <div className="flex gap-1.5">
-            {SLIDES.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentSlideIndex(i)}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  currentSlideIndex === i ? 'bg-ai w-4' : 'bg-dark-strongBorder hover:bg-dark-muted'
-                }`}
-              />
-            ))}
+          {/* Question & Answer Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Left: Examiner Question & Candidate Input (7 cols) */}
+            <div className="lg:col-span-7 space-y-6">
+              {currentQuestion && (
+                <div className="p-6 rounded-2xl bg-[#1b1938] border border-[#3f3a52] space-y-4 shadow-xl">
+                  <div className="flex items-center justify-between border-b border-[#3f3a52] pb-3">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-[#c9b4fa]">
+                      Question #{currentQuestion.id} • {currentQuestion.category}
+                    </span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase font-semibold ${
+                      currentQuestion.difficulty === "Hard"
+                        ? "bg-rose-900/40 text-rose-300 border border-rose-800"
+                        : currentQuestion.difficulty === "Intermediate"
+                        ? "bg-amber-900/40 text-amber-300 border border-amber-800"
+                        : "bg-emerald-900/40 text-emerald-300 border border-emerald-800"
+                    }`}>
+                      {currentQuestion.difficulty}
+                    </span>
+                  </div>
+
+                  <h2 className="text-xl sm:text-2xl font-medium text-white leading-snug">
+                    {currentQuestion.question}
+                  </h2>
+
+                  {/* Expected Concepts Chips */}
+                  <div className="space-y-1.5 pt-2 border-t border-[#3f3a52]/60">
+                    <span className="text-[10px] font-mono text-[#5a5772] uppercase block">
+                      Target Technical Concepts Looked for by Examiner:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {currentQuestion.expected_concepts.map((concept, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2 py-0.5 rounded-md bg-[#0e0c1f] border border-[#3f3a52] text-[11px] font-mono text-[#bcbac9]"
+                        >
+                          {concept}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Candidate Answer Editor */}
+              <div className="p-6 rounded-2xl bg-[#1b1938] border border-[#3f3a52] space-y-4 shadow-xl">
+                <div className="flex items-center justify-between border-b border-[#3f3a52] pb-3">
+                  <h3 className="text-xs font-mono uppercase text-[#bcbac9] tracking-wider">
+                    Candidate Viva Defense Response
+                  </h3>
+                  <span className="text-xs font-mono text-[#5a5772]">
+                    {candidateAnswer.length} characters
+                  </span>
+                </div>
+
+                <textarea
+                  rows={6}
+                  value={candidateAnswer}
+                  onChange={(e) => setCandidateAnswer(e.target.value)}
+                  placeholder="Formulate your detailed technical defense citing MEDINTEL architectural choices, dataset splitting protocols, mathematical formulas, or clinical guidelines..."
+                  className="w-full p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] text-xs font-mono text-white placeholder-[#5a5772] focus:outline-none focus:border-[#c9b4fa] leading-relaxed resize-none"
+                />
+
+                <div className="flex justify-between items-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (currentQuestion?.expected_concepts) {
+                        setCandidateAnswer(`In MEDINTEL AI, we address this through ${currentQuestion.expected_concepts.slice(0, 3).join(', ')}, ensuring that data leakage is strictly eliminated and probabilities are calibrated using cross-entropy and temperature scaling.`);
+                      }
+                    }}
+                    className="text-xs font-mono text-[#a3cfcf] hover:underline"
+                  >
+                    Draft Technical Starter
+                  </button>
+
+                  <button
+                    onClick={handleSubmitAnswer}
+                    disabled={isEvaluating || !candidateAnswer.trim()}
+                    className="px-6 py-2.5 rounded-lg bg-[#c9b4fa] hover:bg-[#d8c7fd] text-[#1b1938] text-xs font-mono font-semibold flex items-center gap-2 transition-all disabled:opacity-50"
+                  >
+                    {isEvaluating ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-[#1b1938]" />
+                        <span>Evaluating Viva Answer...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        <span>Submit for Examiner Rubric</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Rubric Evaluation & Examiner Feedback (5 cols) */}
+            <div className="lg:col-span-5 space-y-6">
+              {evaluationResult ? (
+                <div className="p-6 rounded-2xl bg-[#1b1938] border border-[#3f3a52] space-y-5 shadow-xl">
+                  <div className="flex items-center justify-between border-b border-[#3f3a52] pb-4">
+                    <div>
+                      <span className="text-[10px] font-mono uppercase text-[#bcbac9] tracking-wider block">
+                        Viva Defense Grade
+                      </span>
+                      <div className="text-3xl font-mono font-bold text-white mt-0.5">
+                        {evaluationResult.grade} <span className="text-lg text-[#bcbac9]">({evaluationResult.score}/100)</span>
+                      </div>
+                    </div>
+
+                    <div className="w-12 h-12 rounded-full bg-[#0e0c1f] border border-[#3f3a52] flex items-center justify-center text-[#c9b4fa]">
+                      <Award className="w-6 h-6" />
+                    </div>
+                  </div>
+
+                  {/* Multi-Criteria Rubric Breakdown */}
+                  <div className="space-y-2.5 font-mono text-xs">
+                    <span className="text-[10px] uppercase text-[#5a5772] block font-semibold">
+                      Evaluation Criteria Breakdown
+                    </span>
+                    {Object.entries(evaluationResult.criteria).map(([criterion, val]) => (
+                      <div key={criterion} className="space-y-1">
+                        <div className="flex justify-between">
+                          <span className="text-[#bcbac9] capitalize">{criterion.replace('_', ' ')}</span>
+                          <span className="text-white font-semibold">{val}/100</span>
+                        </div>
+                        <div className="w-full bg-[#0e0c1f] rounded-full h-1.5 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${
+                              val >= 75 ? "bg-emerald-400" : val >= 50 ? "bg-amber-400" : "bg-rose-400"
+                            }`}
+                            style={{ width: `${val}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Concept Alignment */}
+                  <div className="space-y-2 border-t border-[#3f3a52]/60 pt-3">
+                    <span className="text-[10px] font-mono uppercase text-[#5a5772] block">
+                      Concept Alignment:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {evaluationResult.matched_concepts.map((concept, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2 py-0.5 rounded-md bg-emerald-950/60 border border-emerald-800 text-[10px] font-mono text-emerald-300 flex items-center gap-1"
+                        >
+                          <Check className="w-3 h-3" />
+                          <span>{concept}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Examiner Critique */}
+                  <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] text-xs font-mono text-[#bcbac9] leading-relaxed space-y-2">
+                    <span className="text-white font-semibold block">Examiner Feedback:</span>
+                    <p>{evaluationResult.feedback}</p>
+                  </div>
+
+                  {/* Grounding Literature Evidence */}
+                  {evaluationResult.grounding_evidence && evaluationResult.grounding_evidence.length > 0 && (
+                    <div className="space-y-2 border-t border-[#3f3a52]/60 pt-3">
+                      <span className="text-[10px] font-mono uppercase text-[#c9b4fa] block">
+                        Grounding Evidence Literature:
+                      </span>
+                      <div className="space-y-2">
+                        {evaluationResult.grounding_evidence.slice(0, 2).map((ev, idx) => (
+                          <div key={idx} className="p-3 rounded-lg bg-[#0e0c1f] border border-[#3f3a52] text-[11px] font-mono text-[#bcbac9]">
+                            <span className="text-white font-semibold block">{ev.title}</span>
+                            <p className="text-[10px] text-[#5a5772] mt-0.5">{ev.snippet}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="p-12 rounded-2xl bg-[#1b1938] border border-[#3f3a52] text-center space-y-3">
+                  <BookMarked className="w-8 h-8 text-[#5a5772] mx-auto" />
+                  <h3 className="text-sm font-medium text-white">Awaiting Defense Submission</h3>
+                  <p className="text-xs text-[#bcbac9] leading-relaxed max-w-xs mx-auto font-mono">
+                    Formulate your answer on the left and click <strong>"Submit for Examiner Rubric"</strong> to receive real-time grading across 4 criteria.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        /* ------------------------------------------------------------- */
+        /* MODE 2: PRESENTATION SLIDE DECK                              */
+        /* ------------------------------------------------------------- */
+        <div className="max-w-4xl mx-auto w-full py-10 flex-1 flex flex-col justify-center space-y-8">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1b1938] border border-[#3f3a52] text-xs font-mono text-[#c9b4fa]">
+              <span>{currentSlide.category}</span>
+            </div>
+
+            <h1 className="text-3xl sm:text-5xl font-medium tracking-tight text-white leading-tight">
+              {currentSlide.title}
+            </h1>
+            <p className="text-base sm:text-lg text-[#bcbac9] font-normal">
+              {currentSlide.subtitle}
+            </p>
+          </div>
+
+          {/* Slide Body Card */}
+          <div className="p-8 rounded-2xl bg-[#1b1938] border border-[#3f3a52] shadow-2xl">
+            {currentSlide.content}
+          </div>
+
+          {/* Bottom Slide Controller */}
+          <div className="flex items-center justify-between border-t border-[#3f3a52] pt-4">
+            <div className="flex items-center gap-2">
+              <button
+                disabled={currentSlideIndex === 0}
+                onClick={() => setCurrentSlideIndex(prev => Math.max(prev - 1, 0))}
+                className="px-4 py-2 rounded-lg bg-[#1b1938] border border-[#3f3a52] text-xs font-mono text-white hover:bg-[#232047] disabled:opacity-30 transition-all flex items-center gap-1"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span>Previous</span>
+              </button>
+              <button
+                disabled={currentSlideIndex === slides.length - 1}
+                onClick={() => setCurrentSlideIndex(prev => Math.min(prev + 1, slides.length - 1))}
+                className="px-4 py-2 rounded-lg bg-[#c9b4fa] text-[#1b1938] text-xs font-mono font-semibold hover:bg-[#d8c7fd] disabled:opacity-30 transition-all flex items-center gap-1"
+              >
+                <span>Next</span>
+                <ChevronRight className="w-4 h-4 text-[#1b1938]" />
+              </button>
+            </div>
+
+            {/* Slide Dots */}
+            <div className="flex items-center gap-1.5">
+              {slides.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentSlideIndex(idx)}
+                  className={`w-2.5 h-2.5 rounded-full transition-all ${
+                    currentSlideIndex === idx
+                      ? 'bg-[#c9b4fa] w-6'
+                      : 'bg-[#3f3a52] hover:bg-[#5a5772]'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
+export default VivaPresentationPage;

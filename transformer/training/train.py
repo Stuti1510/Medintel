@@ -32,10 +32,10 @@ def train_transformer(
     data_dir="data/processed",
     models_dir="models/transformer/biobert",
     eval_dir="evaluation",
-    epochs=6,
-    batch_size=32,
-    lr=5e-4,
-    max_length=64
+    epochs=2,
+    batch_size=64,
+    lr=1e-3,
+    max_length=48
 ):
     os.makedirs(models_dir, exist_ok=True)
     os.makedirs(eval_dir, exist_ok=True)

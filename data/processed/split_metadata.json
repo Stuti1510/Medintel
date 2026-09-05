@@ -1,14 +1,31 @@
 {
-  "random_seed": 42,
-  "split_ratio": {
-    "train": 0.7,
-    "val": 0.15,
-    "test": 0.15
+  "dataset_name": "MEDINTEL Balanced Master Dataset (Cardiovascular Risk Cohort)",
+  "total_active_samples": 2400,
+  "raw_source_samples": 70000,
+  "train_samples": 1680,
+  "val_samples": 360,
+  "test_samples": 360,
+  "target_column": "cardio",
+  "num_classes": 2,
+  "label_mapping": {
+    "0": "No Cardiovascular Disease",
+    "1": "Cardiovascular Disease"
   },
-  "total_samples": 2500,
-  "train_samples": 1750,
-  "val_samples": 375,
-  "test_samples": 375,
-  "classes_count": 20,
-  "leakage_prevention": "TF-IDF and encoders fit on training set only. Test set is strictly isolated for untouched final evaluation."
+  "active_class_distribution": {
+    "1": 1200,
+    "0": 1200
+  },
+  "train_class_distribution": {
+    "0": 840,
+    "1": 840
+  },
+  "val_class_distribution": {
+    "1": 180,
+    "0": 180
+  },
+  "test_class_distribution": {
+    "1": 180,
+    "0": 180
+  },
+  "leakage_prevention": "Active dataset created pre-split. Preprocessors fit on training set only. Test set untouched."
 }

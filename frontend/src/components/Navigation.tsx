@@ -1,89 +1,148 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Activity, Cpu, Database, BookOpen, Layers, History, ShieldAlert, Sparkles, Presentation } from 'lucide-react';
+import { Menu, X, ArrowRight, ShieldCheck } from 'lucide-react';
 import { getSystemStatus } from '../services/api';
 import { SystemStatusResponse } from '../types/clinical';
 
 export const Navigation: React.FC = () => {
   const location = useLocation();
   const [status, setStatus] = useState<SystemStatusResponse | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
   useEffect(() => {
     getSystemStatus().then(setStatus).catch(() => {});
   }, []);
 
-  const navItems = [
-    { label: "Clinical Analysis", path: "/clinical-analysis", icon: Activity },
-    { label: "Transformer Lab", path: "/transformer-lab", icon: Cpu },
-    { label: "Model Comparison", path: "/model-comparison", icon: Layers },
-    { label: "Explainability", path: "/explainability", icon: Sparkles },
-    { label: "Evidence (RAG)", path: "/knowledge", icon: BookOpen },
-    { label: "LLM Lab", path: "/llm-lab", icon: Sparkles },
-    { label: "Datasets", path: "/datasets", icon: Database },
-    { label: "History", path: "/history", icon: History },
-    { label: "Architecture", path: "/architecture", icon: Layers },
-    { label: "Viva Deck", path: "/presentation", icon: Presentation, highlight: true }
+  const isDarkPage = location.pathname === '/' || location.pathname === '/presentation';
+
+  const navLinks = [
+    { label: "Clinical Analysis", path: "/clinical-analysis" },
+    { label: "Research Lab", path: "/transformer-lab" },
+    { label: "Model Benchmark", path: "/model-comparison" },
+    { label: "Explainability", path: "/explainability" },
+    { label: "Evidence", path: "/knowledge" },
+    { label: "LLM Lab", path: "/llm-lab" },
+    { label: "Datasets", path: "/datasets" },
+    { label: "Presentation", path: "/presentation" },
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-dark-border bg-dark-bg/85 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        {/* Brand Logo */}
-        <Link to="/" className="flex items-center gap-3 group">
-          <div className="w-9 h-9 rounded-button bg-gradient-to-br from-ai to-ai-soft flex items-center justify-center text-white shadow-lg shadow-ai/20 group-hover:scale-105 transition-transform">
-            <Activity className="w-5 h-5 text-white animate-pulse-subtle" />
-          </div>
-          <div>
-            <span className="font-bold text-lg tracking-tight text-dark-text flex items-center gap-2">
-              MEDINTEL <span className="text-xs px-2 py-0.5 rounded-full bg-ai/20 text-ai font-mono-tech border border-ai/30">AI</span>
+    <header className={`sticky top-0 z-50 w-full transition-colors duration-200 border-b ${
+      isDarkPage 
+        ? 'bg-[#1b1938] border-[#3f3a52] text-white' 
+        : 'bg-white/95 backdrop-blur-md border-[#e8e4dd] text-[#292827]'
+    }`}>
+      <div className="max-w-content mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        {/* Left: Typographic Wordmark & Subtitle */}
+        <Link to="/" className="flex flex-col group py-1">
+          <div className="flex items-center gap-2">
+            <span className={`text-base font-semibold tracking-tight transition-colors ${
+              isDarkPage ? 'text-white' : 'text-[#292827]'
+            }`}>
+              MEDINTEL AI
             </span>
-            <p className="text-[10px] text-dark-muted hidden sm:block tracking-wider uppercase font-mono-tech">
-              Clinical Intelligence, Made Interpretable
-            </p>
           </div>
+          <span className={`text-[9px] font-mono tracking-wider uppercase ${
+            isDarkPage ? 'text-[#bcbac9]' : 'text-[#73706d]'
+          }`}>
+            Clinical Intelligence Platform
+          </span>
         </Link>
 
-        {/* Navigation Links */}
-        <nav className="hidden lg:flex items-center gap-1">
-          {navItems.slice(0, 7).map((item) => {
-            const Icon = item.icon;
+        {/* Center: Clean Text Navigation */}
+        <nav className="hidden lg:flex items-center space-x-1 xl:space-x-2">
+          {navLinks.map((item) => {
             const isActive = location.pathname === item.path;
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`px-3 py-1.5 rounded-button text-xs font-medium transition-all flex items-center gap-1.5 ${
+                className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
                   isActive
-                    ? 'bg-dark-elevated text-dark-text border border-dark-strongBorder shadow-sm'
-                    : 'text-dark-secondary hover:text-dark-text hover:bg-dark-surface'
+                    ? isDarkPage
+                      ? 'text-white bg-[#232047] font-semibold'
+                      : 'text-[#292827] bg-[#f5f4f0] font-semibold'
+                    : isDarkPage
+                      ? 'text-[#bcbac9] hover:text-white hover:bg-[#232047]/60'
+                      : 'text-[#73706d] hover:text-[#292827] hover:bg-[#fafaf8]'
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-ai' : 'text-dark-muted'}`} />
                 {item.label}
               </Link>
             );
           })}
         </nav>
 
-        {/* Telemetry & Action */}
-        <div className="flex items-center gap-3">
-          {/* Status Pill */}
-          <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-full bg-dark-surface border border-dark-border text-[11px] font-mono-tech text-dark-secondary">
-            <span className="w-2 h-2 rounded-full bg-semantic-success animate-ping" />
-            <span>ML: ONLINE</span>
-            <span className="text-dark-muted">•</span>
-            <span>BIOBERT: READY</span>
+        {/* Right: Restrained Status Dot + Viva Mode CTA */}
+        <div className="flex items-center gap-4">
+          {/* Subtle Status Indicator */}
+          <div className="hidden sm:flex items-center gap-1.5 text-xs font-mono">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className={isDarkPage ? 'text-[#bcbac9]' : 'text-[#73706d]'}>
+              System Ready
+            </span>
           </div>
 
+          {/* Understated Viva Mode Link */}
           <Link
             to="/presentation"
-            className="px-3 py-1.5 rounded-button text-xs font-semibold bg-gradient-to-r from-ai to-ai-hover text-white shadow-md shadow-ai/25 hover:shadow-ai/40 hover:scale-[1.02] transition-all flex items-center gap-1.5"
+            className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border transition-all ${
+              isDarkPage
+                ? 'border-[#3f3a52] text-[#c9b4fa] hover:bg-[#232047]'
+                : 'border-[#e8e4dd] text-[#1b1938] hover:bg-[#fafaf8]'
+            }`}
           >
-            <Presentation className="w-3.5 h-3.5" />
             <span>Viva Mode</span>
+            <ArrowRight className="w-3 h-3" />
           </Link>
+
+          {/* Mobile Menu Toggle */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className={`p-1.5 rounded-md lg:hidden ${
+              isDarkPage 
+                ? 'text-white hover:bg-[#232047]' 
+                : 'text-[#292827] hover:bg-[#fafaf8]'
+            }`}
+            aria-label="Toggle Menu"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile Drawer */}
+      {mobileMenuOpen && (
+        <div className={`lg:hidden border-t px-4 py-4 space-y-1 ${
+          isDarkPage 
+            ? 'bg-[#1b1938] border-[#3f3a52]' 
+            : 'bg-white border-[#e8e4dd]'
+        }`}>
+          {navLinks.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-3 py-2 rounded-md text-sm font-medium ${
+                  isActive
+                    ? isDarkPage 
+                      ? 'bg-[#232047] text-white font-semibold' 
+                      : 'bg-[#fafaf8] text-[#292827] font-semibold'
+                    : isDarkPage 
+                      ? 'text-[#bcbac9] hover:text-white' 
+                      : 'text-[#73706d] hover:text-[#292827]'
+                }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </header>
   );
 };
+
+export default Navigation;

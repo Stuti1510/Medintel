@@ -1,37 +1,38 @@
 import React from 'react';
 import { DifferentialItem } from '../types/clinical';
-import { ShieldCheck, AlertCircle } from 'lucide-react';
+import { Info } from 'lucide-react';
 
 interface Props {
   differentials: DifferentialItem[];
   primaryPrediction: string;
   confidence: number;
+  modelName?: string;
 }
 
-export const DifferentialCard: React.FC<Props> = ({ differentials, primaryPrediction, confidence }) => {
+export const DifferentialCard: React.FC<Props> = ({ differentials, primaryPrediction, confidence, modelName = "Model Prediction" }) => {
   return (
-    <div className="p-5 rounded-card bg-dark-surface border border-dark-border">
-      <div className="flex items-center justify-between mb-4">
+    <div className="p-5 rounded-xl bg-white border border-[#e8e4dd] space-y-4">
+      <div className="flex items-start justify-between border-b border-[#e8e4dd] pb-3">
         <div>
-          <span className="text-[11px] font-mono-tech uppercase text-dark-muted tracking-wider">
-            Primary Differential Analysis
+          <span className="text-[10px] font-mono uppercase text-[#73706d] tracking-wider block">
+            {modelName}
           </span>
-          <h3 className="text-xl font-bold text-dark-text mt-0.5 flex items-center gap-2">
+          <h3 className="text-lg font-medium text-[#292827] mt-0.5">
             {primaryPrediction}
           </h3>
         </div>
         <div className="text-right">
-          <span className="text-[11px] font-mono-tech uppercase text-dark-muted">Model Confidence</span>
-          <p className="text-xl font-bold font-mono-tech text-ai">
+          <span className="text-[10px] font-mono uppercase text-[#73706d]">Probability</span>
+          <p className="text-lg font-mono font-semibold text-[#1b1938]">
             {(confidence * 100).toFixed(1)}%
           </p>
         </div>
       </div>
 
       {/* Probability Bars for Top Differentials */}
-      <div className="space-y-3 mt-4">
-        <span className="text-xs font-semibold text-dark-secondary uppercase tracking-wider font-mono-tech">
-          Differential Distribution (Top {differentials.length})
+      <div className="space-y-2.5">
+        <span className="text-xs font-mono uppercase tracking-wider text-[#73706d] block">
+          Candidate Class Distribution
         </span>
         {differentials.map((item) => {
           const isTop = item.rank === 1;
@@ -39,18 +40,18 @@ export const DifferentialCard: React.FC<Props> = ({ differentials, primaryPredic
           return (
             <div key={item.condition} className="space-y-1">
               <div className="flex justify-between items-center text-xs">
-                <span className={`font-medium flex items-center gap-1.5 ${isTop ? 'text-dark-text font-semibold' : 'text-dark-secondary'}`}>
-                  <span className={`w-4 h-4 rounded text-[10px] font-mono-tech flex items-center justify-center ${isTop ? 'bg-ai text-white' : 'bg-dark-elevated text-dark-muted'}`}>
+                <span className={`flex items-center gap-1.5 ${isTop ? 'text-[#292827] font-semibold' : 'text-[#73706d]'}`}>
+                  <span className={`w-4 h-4 rounded text-[10px] font-mono flex items-center justify-center ${isTop ? 'bg-[#1b1938] text-white' : 'bg-[#fafaf8] border border-[#e8e4dd] text-[#73706d]'}`}>
                     {item.rank}
                   </span>
                   {item.condition}
                 </span>
-                <span className="font-mono-tech text-dark-text font-medium">{pct.toFixed(1)}%</span>
+                <span className="font-mono text-[#292827] font-medium">{pct.toFixed(1)}%</span>
               </div>
-              <div className="w-full h-2 rounded-full bg-dark-deep overflow-hidden">
+              <div className="w-full h-1.5 rounded-full bg-[#f1f0ec] overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all duration-700 ${
-                    isTop ? 'bg-gradient-to-r from-ai to-ai-soft' : 'bg-dark-strongBorder'
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    isTop ? 'bg-[#1b1938]' : 'bg-[#9a9794]'
                   }`}
                   style={{ width: `${Math.max(pct, 2)}%` }}
                 />
@@ -60,10 +61,12 @@ export const DifferentialCard: React.FC<Props> = ({ differentials, primaryPredic
         })}
       </div>
 
-      <div className="mt-4 pt-3 border-t border-dark-border text-[11px] text-dark-muted leading-relaxed flex items-center gap-2">
-        <AlertCircle className="w-3.5 h-3.5 text-ai shrink-0" />
-        <span>Model confidence reflects statistical conditional likelihood under the trained distribution and is not a clinical certainty.</span>
+      <div className="pt-2 border-t border-[#e8e4dd] text-[11px] text-[#73706d] leading-relaxed flex items-center gap-1.5">
+        <Info className="w-3.5 h-3.5 text-[#9a9794] shrink-0" />
+        <span>Statistical conditional probability under trained test distribution (N=10,296).</span>
       </div>
     </div>
   );
 };
+
+export default DifferentialCard;

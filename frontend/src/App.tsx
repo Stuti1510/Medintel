@@ -16,7 +16,7 @@ import { VivaPresentationPage } from './pages/VivaPresentationPage';
 export function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-dark-bg text-dark-text flex flex-col font-sans selection:bg-ai selection:text-white">
+      <div className="min-h-screen bg-[#fafaf8] text-[#292827] flex flex-col font-sans selection:bg-[#c9b4fa] selection:text-[#1b1938]">
         <Navigation />
         <main className="flex-1">
           <Routes>

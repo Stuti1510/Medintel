@@ -1,12 +1,12 @@
 """
 MEDINTEL AI - RAG Evidence Retriever Service
-Executes semantic query expansion, vector lookup, and returns ranked medical evidence cards with attribution.
+Executes semantic query expansion, metadata-aware vector lookup, and returns ranked medical evidence cards with attribution.
 """
 
 import os
 import sys
 import time
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 DEFAULT_INDEX_PATH = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "../vectorstore/medical_index.json")
@@ -21,18 +21,36 @@ class RAGRetrieverService:
         self.embedder = ClinicalEmbedder()
         self.vector_store = MedicalVectorStore(index_path=index_path)
 
-    def search_evidence(self, query: str, top_k: int = 4) -> Dict[str, Any]:
+    def search_evidence(
+        self,
+        query: str,
+        top_k: int = 4,
+        selected_disease: Optional[str] = None,
+        category: Optional[str] = None
+    ) -> Dict[str, Any]:
         start_time = time.time()
         
-        # In case store is empty or needs reload
+        # Reload index if empty
         if len(self.vector_store.documents) == 0:
             self.vector_store.load_index()
 
+        # Augment query if a specific disease is selected
+        expanded_query = query
+        filters = {}
+        if selected_disease and selected_disease.lower() not in ["all", "none", "differential"]:
+            expanded_query = f"{selected_disease} management clinical guidelines {query}"
+            filters["disease"] = selected_disease
+
+        if category:
+            filters["category"] = category
+
+        print(f"[RAG RETRIEVAL] Query: '{expanded_query}' | Filters: {filters}")
+
         # Embed user query
-        query_embedding = self.embedder.embed([query])[0]
+        query_embedding = self.embedder.embed([expanded_query])[0]
         
-        # Search vector database
-        results = self.vector_store.search(query_embedding, top_k=top_k)
+        # Search vector database with filters
+        results = self.vector_store.search(query_embedding, top_k=top_k, filters=filters)
         retrieval_time_ms = round((time.time() - start_time) * 1000, 2)
 
         # Format evidence items for frontend UI
@@ -53,6 +71,8 @@ class RAGRetrieverService:
 
         return {
             "query": query,
+            "expanded_query": expanded_query,
+            "selected_disease": selected_disease,
             "total_retrieved": len(evidence_cards),
             "retrieval_time_ms": retrieval_time_ms,
             "evidence": evidence_cards,

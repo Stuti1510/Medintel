@@ -1,104 +1,132 @@
 import React from 'react';
-import { Layers, Activity, Cpu, Brain, BookOpen, Sparkles, ShieldCheck, Database, ArrowDown, ArrowRight } from 'lucide-react';
+import { Layers, Activity, Cpu, Brain, BookOpen, Sparkles, ShieldCheck, Database, ArrowDown } from 'lucide-react';
+import { TealClosingCTA } from '../components/TealClosingCTA';
 
 export const ArchitecturePage: React.FC = () => {
   const pipelineSteps = [
     {
-      stage: "1. Client & Presentation Layer",
+      stage: "1. Client & Research Console Layer",
       icon: Activity,
-      color: "text-white",
-      border: "border-dark-strongBorder",
-      bg: "bg-dark-surface",
-      desc: "React 18 + TypeScript + Vite + Tailwind CSS + Framer Motion. Provides the Clinical Research Console, live pipeline tracking, attention heatmaps, and dataset inspectors."
+      desc: "React 18 + TypeScript + Vite with Inter variable typography, publication-grade visualization matrices, and accessible responsive interfaces."
     },
     {
-      stage: "2. FastAPI Clinical Orchestrator",
+      stage: "2. FastAPI Orchestration & Validation Gateway",
       icon: Layers,
-      color: "text-ai",
-      border: "border-ai/40",
-      bg: "bg-ai/5",
-      desc: "High-performance asynchronous API gateway (/api/analyze) with strict Pydantic input validation, CORS middleware, and service lifecycles."
+      desc: "High-performance asynchronous API gateway (/api/analyze) with strict Pydantic input validation, CORS middleware, and automated error boundaries."
     },
     {
-      stage: "3. Dual-Intelligence Classifier Layer",
+      stage: "3. Dual-Intelligence Classification Layer",
       icon: Brain,
-      color: "text-semantic-success",
-      border: "border-semantic-success/40",
-      bg: "bg-semantic-success/5",
-      desc: "Classical ML (TF-IDF n-grams + Logistic Regression, Random Forest, XGBoost) running in parallel with BioBERT Transformer ([CLS] representation + classification head)."
+      desc: "Balanced Classical ML baselines (Logistic Regression, Random Forest, XGBoost) running in parallel with PyTorch Medical BioBERT contextual representation."
     },
     {
-      stage: "4. Vector RAG Knowledge Retrieval Layer",
+      stage: "4. Dense Vector RAG Knowledge Retrieval Layer",
       icon: BookOpen,
-      color: "text-semantic-info",
-      border: "border-semantic-info/40",
-      bg: "bg-semantic-info/5",
-      desc: "Dense semantic vector representations & normalized cosine similarity search over 43 verified clinical guidelines (ACC/AHA, IDSA, GINA, KDIGO, WSES)."
+      desc: "Dense semantic vector representations and normalized cosine similarity search across 43 verified clinical guidelines (ACC/AHA, IDSA, GINA, KDIGO)."
     },
     {
       stage: "5. Grounded LLM Contextual Synthesis & Safety",
       icon: Sparkles,
-      color: "text-ai-soft",
-      border: "border-ai/30",
-      bg: "bg-ai/5",
-      desc: "Pluggable provider adapter (Gemini, OpenAI, Offline Educational Synthesizer) with prompt engineering, red-flag emergency rule checks, and disclaimer enforcement."
+      desc: "Constrained clinical synthesizer enforcing structured reasoning sections, deterministic vital sign threshold rules, and triage disclaimer validation."
     },
     {
-      stage: "6. Relational Persistence Layer (PostgreSQL)",
+      stage: "6. Relational Persistence Layer (PostgreSQL / SQLite)",
       icon: Database,
-      color: "text-semantic-success",
-      border: "border-semantic-success/40",
-      bg: "bg-semantic-success/5",
-      desc: "SQLAlchemy ORM with 10 structured schemas (users, patient_cases, models, predictions, prediction_probabilities, model_metrics, experiments, retrieval_results, llm_interactions, safety_events)."
+      desc: "SQLAlchemy ORM with structured schemas tracking patient encounters, models, predictions, probability vectors, retrieval results, and audit events."
     }
   ];
 
+  const relationalTables = [
+    { name: "patient_cases", role: "Clinical encounters, age, sex, vitals, symptoms, narratives" },
+    { name: "models", role: "Model registry, architecture type, weights path, configuration" },
+    { name: "predictions", role: "Inference outcomes, top predicted condition, latency, timestamp" },
+    { name: "prediction_probabilities", role: "Full softmax multiclass probability vectors per case" },
+    { name: "model_metrics", role: "Empirical test evaluation metrics (accuracy, precision, recall, F1)" },
+    { name: "retrieval_results", role: "RAG top-K retrieved evidence passages and cosine similarity scores" },
+    { name: "llm_interactions", role: "Synthesized markdown guidance, prompt tokens, model provider" },
+    { name: "safety_events", role: "Emergency red-flag rule triggers, vital violations, triage levels" }
+  ];
+
   return (
-    <div className="min-h-screen bg-dark-bg text-dark-text p-4 sm:p-6 lg:p-8 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-dark-border pb-5">
-        <div>
-          <div className="flex items-center gap-2">
-            <Layers className="w-6 h-6 text-ai" />
-            <h1 className="text-2xl font-bold text-white tracking-tight">System Architecture & Engineering Topology</h1>
-            <span className="text-[11px] font-mono-tech px-2 py-0.5 rounded bg-ai/10 text-ai border border-ai/20">
-              MEDINTEL TOPOLOGY
+    <div className="min-h-screen bg-[#fafaf8] text-[#292827] flex flex-col">
+      {/* ------------------------------------------------------------- */}
+      {/* 1. Page Header                                                */}
+      {/* ------------------------------------------------------------- */}
+      <section className="w-full bg-white border-b border-[#e8e4dd] py-10 md:py-14">
+        <div className="max-w-content mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+          <div className="space-y-1">
+            <span className="text-xs font-mono uppercase tracking-wider text-[#73706d] block">
+              Engineering Topology & Data Flow
             </span>
+            <h1 className="text-3xl sm:text-4xl font-medium tracking-tight text-[#292827]">
+              System Architecture
+            </h1>
+            <p className="text-base text-[#73706d] max-w-2xl">
+              Modular multi-tier architecture connecting data preprocessing, dual-model classification, RAG retrieval, LLM synthesis, and relational audit persistence.
+            </p>
           </div>
-          <p className="text-xs text-dark-secondary mt-1">
-            Modular multi-tier architecture connecting data validation, dual-model classification, RAG retrieval, LLM reasoning, and PostgreSQL persistence.
-          </p>
         </div>
-      </div>
+      </section>
 
-      {/* Pipeline Sequence Stack */}
-      <div className="max-w-4xl mx-auto space-y-4">
-        {pipelineSteps.map((step, idx) => {
-          const Icon = step.icon;
-          return (
-            <div key={idx} className="space-y-4">
-              <div className={`p-5 rounded-card ${step.bg} border ${step.border} space-y-2 relative transition-all hover:scale-[1.01]`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-button bg-dark-deep border border-dark-border ${step.color}`}>
-                      <Icon className="w-5 h-5" />
+      {/* ------------------------------------------------------------- */}
+      {/* 2. Pipeline Sequence Stack                                    */}
+      {/* ------------------------------------------------------------- */}
+      <section className="max-w-content mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full space-y-10 flex-1">
+        <div className="max-w-3xl mx-auto space-y-3">
+          {pipelineSteps.map((step, idx) => {
+            const Icon = step.icon;
+            return (
+              <div key={idx} className="space-y-3">
+                <div className="p-6 rounded-xl bg-white border border-[#e8e4dd] space-y-2 hover:border-[#1b1938]/40 transition-all">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-[#fafaf8] border border-[#e8e4dd] text-[#1b1938]">
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <h3 className="text-base font-medium text-[#292827]">{step.stage}</h3>
                     </div>
-                    <h3 className="text-base font-bold text-dark-text">{step.stage}</h3>
+                    <span className="text-xs font-mono text-[#73706d]">Tier 0{idx + 1}</span>
                   </div>
-                  <span className="text-xs font-mono-tech text-dark-muted">Tier 0{idx + 1}</span>
+                  <p className="text-xs text-[#73706d] leading-relaxed pl-11">{step.desc}</p>
                 </div>
-                <p className="text-xs text-dark-secondary leading-relaxed pl-12">{step.desc}</p>
-              </div>
 
-              {idx < pipelineSteps.length - 1 && (
-                <div className="flex justify-center my-1">
-                  <ArrowDown className="w-4 h-4 text-dark-muted animate-bounce" />
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+                {idx < pipelineSteps.length - 1 && (
+                  <div className="flex justify-center my-0.5">
+                    <ArrowDown className="w-3.5 h-3.5 text-[#9a9794]" />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Relational Schema Table Visualizer */}
+        <div className="max-w-3xl mx-auto p-6 rounded-xl bg-white border border-[#e8e4dd] space-y-4">
+          <div className="border-b border-[#e8e4dd] pb-3">
+            <h3 className="text-sm font-medium text-[#292827] flex items-center gap-2">
+              <Database className="w-4 h-4 text-[#1b1938]" />
+              <span>Relational Database Schema Entities (SQLAlchemy / PostgreSQL)</span>
+            </h3>
+            <p className="text-xs text-[#73706d] mt-0.5">Structured entity relationships for clinical case persistence and audit traceability.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono text-xs">
+            {relationalTables.map((t) => (
+              <div key={t.name} className="p-3.5 rounded-lg bg-[#fafaf8] border border-[#e8e4dd] space-y-1">
+                <span className="font-semibold text-[#1b1938] block">{t.name}</span>
+                <p className="text-[11px] text-[#73706d]">{t.role}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------- */}
+      {/* 3. Deep Teal Closing Resolution Section                       */}
+      {/* ------------------------------------------------------------- */}
+      <TealClosingCTA />
     </div>
   );
 };
+
+export default ArchitecturePage;

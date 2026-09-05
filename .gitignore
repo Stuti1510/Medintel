@@ -27,6 +27,7 @@ frontend/.tmp/
 # IDE / System
 .vscode/
 .idea/
-.DS_Store
-Thumbs.db
-*.log
+# Large datasets (>100MB GitHub limit)
+datasets/Final_Augmented_dataset_Diseases_and_Symptoms.csv
+*.large
+*.tar.gz

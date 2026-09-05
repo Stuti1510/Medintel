@@ -4,54 +4,58 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
-  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        dark: {
-          bg: "#07080A",
-          deep: "#0B0D10",
-          surface: "#111419",
-          elevated: "#171B21",
-          border: "#252A32",
-          strongBorder: "#343A45",
-          text: "#F5F7FA",
-          secondary: "#A7AFBA",
-          muted: "#737B87"
+        // Three-Canvas System
+        indigo: {
+          primary: "#1b1938",
+          deep: "#0e0c1f",
+          surface: "#232047",
+          hairline: "#3f3a52",
+          muted: "#bcbac9",
+          faint: "#5a5772",
         },
-        ai: {
-          DEFAULT: "#6C63FF",
-          hover: "#817AFF",
-          soft: "#9B95FF",
-          glow: "rgba(108, 99, 255, 0.25)"
+        ink: {
+          warm: "#292827",
+          muted: "#73706d",
+          faint: "#9a9794",
         },
-        semantic: {
-          success: "#35C98A",
-          warning: "#E9B949",
-          critical: "#EF6262",
-          info: "#62B5FF"
+        canvas: {
+          white: "#ffffff",
+          offwhite: "#fafaf8",
+          hairline: "#e8e4dd",
+        },
+        teal: {
+          deep: "#0e3030",
+          mid: "#155555",
+          hairline: "#1c5e5e",
+          muted: "#a3cfcf",
+        },
+        violet: {
+          soft: "#c9b4fa",
+          light: "#ebe4fd",
+        },
+        status: {
+          ready: "#10b981",
+          warning: "#f59e0b",
+          error: "#ef4444",
+          info: "#0284c7"
         }
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-        mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'monospace'],
+        editorial: ['Newsreader', 'Georgia', 'serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+      },
+      maxWidth: {
+        'content': '1152px',
       },
       borderRadius: {
-        'technical': '4px',
+        'subtle': '4px',
         'button': '8px',
         'card': '12px',
-        'panel': '16px',
-        'hero': '20px'
-      },
-      animation: {
-        'pulse-subtle': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'glow-flow': 'glowFlow 6s ease infinite',
-      },
-      keyframes: {
-        glowFlow: {
-          '0%, 100%': { opacity: '0.4' },
-          '50%': { opacity: '0.8' },
-        }
+        'pill': '9999px',
       }
     },
   },

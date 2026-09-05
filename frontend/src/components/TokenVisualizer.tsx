@@ -12,32 +12,34 @@ export const TokenVisualizer: React.FC<Props> = ({ tokenDetails }) => {
   }
 
   return (
-    <div className="p-5 rounded-card bg-dark-surface border border-dark-border">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-dark-text flex items-center gap-2">
-          <Hash className="w-4 h-4 text-ai" />
-          WordPiece Token Mapping & Attention Masks
+    <div className="p-6 rounded-xl bg-white border border-[#e8e4dd] space-y-4">
+      <div className="flex items-center justify-between border-b border-[#e8e4dd] pb-3">
+        <h3 className="text-sm font-medium text-[#292827] flex items-center gap-2">
+          <Hash className="w-4 h-4 text-[#1b1938]" />
+          <span>WordPiece Token Mapping & Vocabulary IDs</span>
         </h3>
-        <span className="text-xs font-mono-tech text-dark-muted">
+        <span className="text-xs font-mono text-[#73706d]">
           Active Tokens: {tokenDetails.filter(t => t.attention_mask === 1).length}
         </span>
       </div>
 
-      <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto p-2 bg-dark-deep rounded border border-dark-border">
+      <div className="flex flex-wrap gap-2 max-h-56 overflow-y-auto p-4 bg-[#fafaf8] rounded-lg border border-[#e8e4dd]">
         {tokenDetails.map((tok) => (
           <div
             key={tok.position}
-            className={`px-2 py-1 rounded text-xs font-mono-tech border flex items-center gap-1.5 ${
+            className={`px-2.5 py-1 rounded text-xs font-mono border flex items-center gap-2 ${
               tok.is_special
-                ? 'bg-ai/15 border-ai/40 text-ai'
-                : 'bg-dark-elevated border-dark-strongBorder text-dark-text'
+                ? 'bg-[#ebe4fd] border-[#c9b4fa] text-[#1b1938] font-medium'
+                : 'bg-white border-[#e8e4dd] text-[#292827]'
             }`}
           >
-            <span className="font-semibold">{tok.token}</span>
-            <span className="text-[10px] text-dark-muted">#{tok.token_id}</span>
+            <span>{tok.token}</span>
+            <span className="text-[10px] text-[#9a9794]">#{tok.token_id}</span>
           </div>
         ))}
       </div>
     </div>
   );
 };
+
+export default TokenVisualizer;

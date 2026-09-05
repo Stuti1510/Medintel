@@ -1,0 +1,74 @@
+{
+  "cardio_train": {
+    "dataset": "cardio_train",
+    "initial_rows": 70000,
+    "clean_rows": 68638,
+    "active_balanced_rows": 2400,
+    "removed_records": 1362,
+    "target_distribution_raw": {
+      "0": 35021,
+      "1": 34979
+    },
+    "target_distribution_clean": {
+      "0": 34681,
+      "1": 33957
+    },
+    "target_distribution_active": {
+      "1": 1200,
+      "0": 1200
+    }
+  },
+  "heart_disease": {
+    "dataset": "heart_disease",
+    "initial_rows": 1025,
+    "clean_rows": 302,
+    "active_balanced_rows": 302,
+    "removed_records": 723,
+    "target_distribution_raw": {
+      "1": 526,
+      "0": 499
+    },
+    "target_distribution_active": {
+      "1": 164,
+      "0": 138
+    }
+  },
+  "disease_profile": {
+    "dataset": "disease_profile",
+    "initial_rows": 349,
+    "clean_rows": 300,
+    "active_balanced_rows": 300,
+    "removed_records": 49,
+    "target_distribution_active": {
+      "Asthma": 16,
+      "Osteoporosis": 12,
+      "Stroke": 11,
+      "Diabetes": 10,
+      "Hypertension": 10,
+      "Migraine": 10,
+      "Influenza": 7,
+      "Bronchitis": 7,
+      "Pneumonia": 7,
+      "Common Cold": 6
+    }
+  },
+  "symptoms_augmented": {
+    "dataset": "symptoms_augmented",
+    "initial_rows": 246945,
+    "clean_rows": 246945,
+    "active_balanced_rows": 246945,
+    "removed_records": 0,
+    "target_distribution_active": {
+      "panic disorder": 909,
+      "vaginitis": 909,
+      "glaucoma": 498,
+      "eating disorder": 494,
+      "eye alignment disorder": 453,
+      "atrophic vaginitis": 329,
+      "tinnitus of unknown cause": 279,
+      "headache after lumbar puncture": 169,
+      "transient ischemic attack": 159,
+      "sick sinus syndrome": 158
+    }
+  }
+}

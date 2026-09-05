@@ -1,12 +1,13 @@
 """
-MEDINTEL AI - Vector Store Engine
-Indexes medical knowledge chunks and executes normalized cosine similarity vector search.
+MEDINTEL AI - Vector Store Engine with Metadata Filtering
+Indexes medical knowledge chunks and executes normalized cosine similarity vector search
+with metadata filtering (disease tag, source, category).
 """
 
 import os
 import json
 import numpy as np
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Optional
 
 DEFAULT_INDEX_PATH = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "../vectorstore/medical_index.json")
@@ -23,18 +24,55 @@ class MedicalVectorStore:
         self.documents = list(docs)
         self.embeddings = np.array(embeddings, dtype=np.float32)
 
-    def search(self, query_embedding: np.ndarray, top_k: int = 4, min_score: float = 0.05) -> List[Dict[str, Any]]:
+    def search(
+        self,
+        query_embedding: np.ndarray,
+        top_k: int = 4,
+        min_score: float = 0.05,
+        filters: Optional[Dict[str, Any]] = None
+    ) -> List[Dict[str, Any]]:
         if len(self.documents) == 0 or self.embeddings.size == 0:
             return []
 
-        # Cosine similarity (since embeddings are L2 normalized, dot product is cosine similarity)
+        # Cosine similarity (dot product over normalized embeddings)
         query_vec = query_embedding.reshape(1, -1)
         sim_scores = np.dot(self.embeddings, query_vec.T).flatten()
 
-        top_indices = np.argsort(sim_scores)[::-1][:top_k]
+        # Apply metadata filters if specified
+        filtered_indices = []
+        filter_dict = filters or {}
+        
+        disease_filter = filter_dict.get("disease", "").lower()
+        category_filter = filter_dict.get("category", "").lower()
+        source_filter = filter_dict.get("source", "").lower()
+
+        for idx, doc in enumerate(self.documents):
+            if disease_filter:
+                doc_title = doc.get("title", "").lower()
+                doc_content = doc.get("full_content", "").lower()
+                doc_cat = doc.get("category", "").lower()
+                if disease_filter not in doc_title and disease_filter not in doc_content and disease_filter not in doc_cat:
+                    # Give penalty if disease filter specified but not present
+                    sim_scores[idx] *= 0.5
+
+            if category_filter and category_filter != "all":
+                if category_filter not in doc.get("category", "").lower():
+                    continue
+
+            if source_filter and source_filter != "all":
+                if source_filter not in doc.get("source", "").lower():
+                    continue
+
+            filtered_indices.append(idx)
+
+        if not filtered_indices:
+            filtered_indices = list(range(len(self.documents)))
+
+        # Sort filtered documents by score descending
+        sorted_indices = sorted(filtered_indices, key=lambda i: sim_scores[i], reverse=True)[:top_k]
         results = []
 
-        for idx in top_indices:
+        for idx in sorted_indices:
             if idx >= len(self.documents):
                 continue
             score = float(sim_scores[idx])

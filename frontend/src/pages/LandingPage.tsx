@@ -1,332 +1,286 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, Cpu, Brain, BookOpen, Sparkles, ShieldCheck, ChevronRight, Play, CheckCircle2, ArrowRight } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { ArrowRight, Activity, ShieldCheck, Database, Cpu, BookOpen, Sparkles, Layers, ArrowUpRight } from 'lucide-react';
+import { TealClosingCTA } from '../components/TealClosingCTA';
 
 export const LandingPage: React.FC = () => {
-  const [selectedDemo, setSelectedDemo] = useState(0);
-
-  const demoCases = [
+  const capabilities = [
     {
-      title: "Acute Chest Pain",
-      age: 58,
-      sex: "Male",
-      symptoms: "Crushing substernal chest pressure, radiation to left arm and jaw, diaphoresis, dyspnea",
-      mlPrediction: "Myocardial Infarction",
-      mlConfidence: "96.4%",
-      transformerPrediction: "Myocardial Infarction",
-      transformerConfidence: "98.2%",
-      flag: "CRITICAL: Acute Coronary Syndrome",
-      ragCitation: "AHA/ACC Clinical Guidelines on AMI"
+      num: "01",
+      title: "Clinical Analysis",
+      description: "Evaluate complex multimodal clinical inputs with patient vitals, structured physical biometrics, and unstructured symptom narratives.",
+      link: "/clinical-analysis"
     },
     {
-      title: "Productive Respiratory Infection",
-      age: 64,
-      sex: "Female",
-      symptoms: "High fever, productive cough with rust-colored sputum, pleuritic chest pain, rigors",
-      mlPrediction: "Pneumonia",
-      mlConfidence: "98.1%",
-      transformerPrediction: "Pneumonia",
-      transformerConfidence: "99.0%",
-      flag: "WARNING: High Fever & Consolidation",
-      ragCitation: "IDSA/ATS Guidelines on Community-Acquired Pneumonia"
+      num: "02",
+      title: "Model Benchmarking",
+      description: "Examine balanced classical ML baselines (Logistic Regression, Random Forest, XGBoost) on held-out test splits (N=10,296) with zero test leakage.",
+      link: "/model-comparison"
     },
     {
-      title: "Acute Migrating Abdominal Pain",
-      age: 23,
-      sex: "Male",
-      symptoms: "Periumbilical visceral pain migrating to right lower quadrant, McBurney tenderness, nausea, low grade fever",
-      mlPrediction: "Acute Appendicitis",
-      mlConfidence: "97.5%",
-      transformerPrediction: "Acute Appendicitis",
-      transformerConfidence: "98.8%",
-      flag: "WARNING: Surgical Abdomen Evaluation",
-      ragCitation: "WSES Jerusalem Guidelines on Appendicitis"
+      num: "03",
+      title: "Transformer Analysis",
+      description: "Analyze clinical narratives using medical BioBERT with 4-layer multi-head self-attention and contextualized biomedical embeddings.",
+      link: "/transformer-lab"
+    },
+    {
+      num: "04",
+      title: "Explainability & Feature Attribution",
+      description: "Inspect SHAP and LIME tabular feature contributions, token-level salience, and attention distributions with scientific clarity.",
+      link: "/explainability"
+    },
+    {
+      num: "05",
+      title: "Evidence Retrieval (RAG)",
+      description: "Trace predictions to dense vector-retrieved citations from 43 peer-reviewed clinical guidelines (ACC/AHA, IDSA, GINA, KDIGO).",
+      link: "/knowledge"
+    },
+    {
+      num: "06",
+      title: "Grounded LLM Synthesis",
+      description: "Transform empirical model predictions, probabilities, and retrieved evidence into bounded, non-hallucinatory clinical summaries.",
+      link: "/llm-lab"
+    },
+    {
+      num: "07",
+      title: "Dataset Discovery & Topology",
+      description: "Audit 4 real clinical datasets spanning 316,185 verified records, 821 authentic disease entities, and strict train/validation/test partitions.",
+      link: "/datasets"
     }
   ];
 
-  const currentDemo = demoCases[selectedDemo];
+  const pipelineSteps = [
+    { name: "Clinical Input", detail: "Vitals & Narrative" },
+    { name: "Preprocessing", detail: "Leakage-Safe Scaling" },
+    { name: "ML Prediction", detail: "Balanced Baselines" },
+    { name: "BioBERT", detail: "Self-Attention" },
+    { name: "Explainability", detail: "SHAP & Salience" },
+    { name: "Evidence Retrieval", detail: "Vector Search" },
+    { name: "Safety Bounds", detail: "Rule Checks" },
+    { name: "Grounded LLM", detail: "Constrained Synthesis" },
+    { name: "Clinical Summary", detail: "Interpretable Report" },
+  ];
 
   return (
-    <div className="min-h-screen bg-dark-bg text-dark-text">
-      {/* Hero Section */}
-      <section className="relative pt-20 pb-28 overflow-hidden border-b border-dark-border">
-        {/* Ambient Glow */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-ai/15 blur-[120px] rounded-full pointer-events-none" />
+    <div className="min-h-screen bg-[#fafaf8] text-[#292827] flex flex-col">
+      {/* ------------------------------------------------------------- */}
+      {/* 1. HERO SECTION (Deep Indigo #1b1938)                         */}
+      {/* ------------------------------------------------------------- */}
+      <section className="w-full bg-[#1b1938] text-white pt-16 pb-20 md:pt-24 md:pb-28 border-b border-[#3f3a52] relative overflow-hidden">
+        {/* Subtle Ambient Background */}
+        <div className="absolute inset-0 opacity-20 pointer-events-none">
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-[#c9b4fa] rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-1/4 w-80 h-80 bg-[#0e3030] rounded-full blur-3xl" />
+        </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center max-w-3xl mx-auto space-y-6">
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-dark-surface border border-dark-strongBorder text-xs font-mono-tech text-ai"
-            >
-              <span className="w-2 h-2 rounded-full bg-semantic-success animate-pulse" />
-              <span>RESEARCH PROTOTYPE • ML + BIOBERT + RAG + LLM</span>
-            </motion.div>
-
-            <motion.h1
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-tight"
-            >
-              Clinical Intelligence, <br />
-              <span className="bg-gradient-to-r from-ai via-ai-soft to-white bg-clip-text text-transparent">
-                Made Interpretable.
-              </span>
-            </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="text-base sm:text-lg text-dark-secondary leading-relaxed"
-            >
-              An end-to-end clinical decision-support system uniting classical machine learning baselines,
-              medical Transformers (BioBERT), vector-retrieved evidence grounding, and safety-verified LLM synthesis.
-            </motion.p>
-
-            {/* CTAs */}
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="flex flex-wrap items-center justify-center gap-4 pt-2"
-            >
-              <Link
-                to="/clinical-analysis"
-                className="px-6 py-3.5 rounded-button text-sm font-semibold bg-ai hover:bg-ai-hover text-white shadow-lg shadow-ai/30 hover:scale-[1.02] transition-all flex items-center gap-2"
-              >
-                <Activity className="w-4 h-4" />
-                <span>Run Clinical Analysis</span>
-                <ArrowRight className="w-4 h-4 ml-1" />
-              </Link>
-              <Link
-                to="/transformer-lab"
-                className="px-6 py-3.5 rounded-button text-sm font-semibold bg-dark-surface hover:bg-dark-elevated text-dark-text border border-dark-strongBorder transition-all flex items-center gap-2"
-              >
-                <Cpu className="w-4 h-4 text-ai" />
-                <span>Transformer Lab</span>
-              </Link>
-            </motion.div>
-
-            {/* Live Telemetry Status Bar */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-              className="pt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 text-left"
-            >
-              <div className="p-3 rounded-button bg-dark-surface/80 border border-dark-border">
-                <span className="text-[10px] font-mono-tech text-dark-muted block">CLASSICAL ML</span>
-                <span className="text-xs font-semibold text-semantic-success flex items-center gap-1.5 mt-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-semantic-success" /> ONLINE (LR, RF, XGB)
-                </span>
-              </div>
-              <div className="p-3 rounded-button bg-dark-surface/80 border border-dark-border">
-                <span className="text-[10px] font-mono-tech text-dark-muted block">MEDICAL TRANSFORMER</span>
-                <span className="text-xs font-semibold text-semantic-info flex items-center gap-1.5 mt-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-semantic-info" /> BioBERT-v1.1 READY
-                </span>
-              </div>
-              <div className="p-3 rounded-button bg-dark-surface/80 border border-dark-border">
-                <span className="text-[10px] font-mono-tech text-dark-muted block">VECTOR RAG</span>
-                <span className="text-xs font-semibold text-ai flex items-center gap-1.5 mt-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-ai" /> EVIDENCE GROUNDED
-                </span>
-              </div>
-              <div className="p-3 rounded-button bg-dark-surface/80 border border-dark-border">
-                <span className="text-[10px] font-mono-tech text-dark-muted block">DATABASE</span>
-                <span className="text-xs font-semibold text-dark-text flex items-center gap-1.5 mt-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-semantic-success" /> POSTGRESQL / SQLITE
-                </span>
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Interactive Hero Console Preview */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.45 }}
-            className="mt-14 max-w-5xl mx-auto rounded-hero glass-panel-elevated p-6 border border-dark-strongBorder shadow-2xl relative"
-          >
-            <div className="flex items-center justify-between border-b border-dark-border pb-4 mb-5">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-semantic-critical" />
-                <span className="w-3 h-3 rounded-full bg-semantic-warning" />
-                <span className="w-3 h-3 rounded-full bg-semantic-success" />
-                <span className="ml-3 text-xs font-mono-tech text-dark-secondary">
-                  MEDINTEL RESEARCH CONSOLE • LIVE DEMONSTRATION
-                </span>
-              </div>
-              {/* Demo selector pills */}
-              <div className="flex items-center gap-1 bg-dark-deep p-1 rounded-full border border-dark-border">
-                {demoCases.map((d, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setSelectedDemo(i)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                      selectedDemo === i ? 'bg-ai text-white shadow-sm' : 'text-dark-muted hover:text-dark-text'
-                    }`}
-                  >
-                    {d.title}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
-              {/* Left Input Overview */}
-              <div className="md:col-span-5 space-y-3 bg-dark-surface p-4 rounded-card border border-dark-border">
-                <span className="text-[11px] font-mono-tech text-ai uppercase font-semibold">1. Clinical Presentation</span>
-                <div className="text-xs space-y-2">
-                  <p className="text-dark-secondary">
-                    <strong className="text-dark-text">Patient:</strong> {currentDemo.age} yo {currentDemo.sex}
-                  </p>
-                  <p className="text-dark-secondary leading-relaxed bg-dark-deep p-2.5 rounded border border-dark-border">
-                    "{currentDemo.symptoms}"
-                  </p>
-                </div>
-                <div className="p-2.5 rounded bg-semantic-critical/10 border border-semantic-critical/30 text-semantic-critical text-[11px] font-mono-tech">
-                  ⚠ {currentDemo.flag}
-                </div>
+        <div className="max-w-content mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+            {/* Left: Editorial Headline & Single Primary CTA */}
+            <div className="lg:col-span-7 space-y-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#232047] border border-[#3f3a52] text-xs font-mono text-[#c9b4fa]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#c9b4fa] animate-pulse" />
+                <span>Clinical AI Research Platform</span>
               </div>
 
-              {/* Middle Model Predictions */}
-              <div className="md:col-span-4 space-y-3 bg-dark-surface p-4 rounded-card border border-dark-border">
-                <span className="text-[11px] font-mono-tech text-ai uppercase font-semibold">2. Dual Intelligence</span>
-                <div className="space-y-3">
-                  <div className="p-2.5 rounded bg-dark-elevated border border-dark-strongBorder">
-                    <div className="flex justify-between text-xs font-mono-tech">
-                      <span className="text-dark-muted">CLASSICAL ML</span>
-                      <span className="text-semantic-success">{currentDemo.mlConfidence}</span>
-                    </div>
-                    <p className="text-xs font-bold text-dark-text mt-1">{currentDemo.mlPrediction}</p>
-                  </div>
-                  <div className="p-2.5 rounded bg-dark-elevated border border-dark-strongBorder">
-                    <div className="flex justify-between text-xs font-mono-tech">
-                      <span className="text-ai">BIOBERT TRANSFORMER</span>
-                      <span className="text-ai">{currentDemo.transformerConfidence}</span>
-                    </div>
-                    <p className="text-xs font-bold text-dark-text mt-1">{currentDemo.transformerPrediction}</p>
-                  </div>
-                </div>
-              </div>
+              <h1 className="text-4xl sm:text-6xl font-medium tracking-tight text-white leading-[0.98]">
+                Clinical intelligence,<br />
+                made interpretable.
+              </h1>
 
-              {/* Right RAG & Synthesis */}
-              <div className="md:col-span-3 space-y-3 bg-dark-surface p-4 rounded-card border border-dark-border">
-                <span className="text-[11px] font-mono-tech text-ai uppercase font-semibold">3. RAG Grounding</span>
-                <div className="p-2.5 rounded bg-dark-elevated border border-dark-strongBorder text-[11px] space-y-1">
-                  <span className="text-dark-muted font-mono-tech block">TOP EVIDENCE CHUNK</span>
-                  <p className="text-dark-text font-medium">{currentDemo.ragCitation}</p>
-                  <span className="text-[10px] text-semantic-info font-mono-tech">Similarity Score: 0.942</span>
-                </div>
+              <p className="text-lg sm:text-xl text-[#bcbac9] font-normal leading-relaxed max-w-xl">
+                An evidence-aware clinical AI research platform combining machine learning, biomedical transformers, explainability, retrieval, and responsible LLM synthesis.
+              </p>
+
+              <div className="pt-2">
                 <Link
                   to="/clinical-analysis"
-                  className="w-full py-2 rounded-button bg-ai/20 hover:bg-ai/30 text-ai text-xs font-semibold flex items-center justify-center gap-1 border border-ai/40 transition-all"
+                  className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-[#c9b4fa] hover:bg-[#d8c7fd] text-[#1b1938] font-semibold text-base transition-all shadow-md hover:shadow-lg"
                 >
-                  Analyze Case <ChevronRight className="w-3.5 h-3.5" />
+                  <span>Run Clinical Analysis</span>
+                  <ArrowRight className="w-4 h-4 text-[#1b1938]" />
                 </Link>
               </div>
             </div>
-          </motion.div>
-        </div>
-      </section>
 
-      {/* 3 Pillar Architecture Section */}
-      <section className="py-20 border-b border-dark-border bg-dark-deep/40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-14 space-y-3">
-            <span className="text-xs font-mono-tech text-ai uppercase font-semibold">THE AI PIPELINE IS THE PRODUCT</span>
-            <h2 className="text-3xl font-bold text-white">Three Layers of Medical Machine Intelligence</h2>
-            <p className="text-sm text-dark-secondary">
-              We never hide models behind a generic chatbot. Every layer has distinct scientific responsibilities.
-            </p>
-          </div>
+            {/* Right: Abstract Clinical Intelligence Visualization */}
+            <div className="lg:col-span-5">
+              <div className="p-6 rounded-2xl bg-[#0e0c1f]/80 border border-[#3f3a52] space-y-5 backdrop-blur-sm shadow-xl">
+                <div className="flex items-center justify-between border-b border-[#3f3a52] pb-3 text-xs font-mono text-[#bcbac9]">
+                  <span className="uppercase tracking-wider">Multimodal Pipeline Telemetry</span>
+                  <span className="text-emerald-400 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    LIVE
+                  </span>
+                </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Pillar 1 */}
-            <div className="p-6 rounded-card bg-dark-surface border border-dark-border hover:border-ai/40 transition-all space-y-4">
-              <div className="w-10 h-10 rounded-button bg-semantic-success/15 border border-semantic-success/30 flex items-center justify-center text-semantic-success">
-                <Brain className="w-5 h-5" />
+                {/* Structured Waveform & Layer Stream */}
+                <div className="space-y-3 font-mono text-xs">
+                  <div className="p-3 rounded-lg bg-[#1b1938] border border-[#3f3a52]/60 flex items-center justify-between">
+                    <span className="text-[#bcbac9]">Tabular Predictors</span>
+                    <span className="text-white font-medium">12 Biometric Features</span>
+                  </div>
+                  <div className="p-3 rounded-lg bg-[#1b1938] border border-[#3f3a52]/60 flex items-center justify-between">
+                    <span className="text-[#bcbac9]">Narrative Representation</span>
+                    <span className="text-[#c9b4fa] font-medium">BioBERT Self-Attention</span>
+                  </div>
+                  <div className="p-3 rounded-lg bg-[#1b1938] border border-[#3f3a52]/60 flex items-center justify-between">
+                    <span className="text-[#bcbac9]">Evidence Grounding</span>
+                    <span className="text-[#a3cfcf] font-medium">43 Guidelines Indexed</span>
+                  </div>
+                  <div className="p-3 rounded-lg bg-[#1b1938] border border-[#3f3a52]/60 flex items-center justify-between">
+                    <span className="text-[#bcbac9]">Held-Out Test Parity</span>
+                    <span className="text-white font-medium">ROC-AUC: 0.7982</span>
+                  </div>
+                </div>
+
+                <div className="pt-1 flex items-center justify-between text-[11px] font-mono text-[#5a5772]">
+                  <span>Deterministic Safety Filter: Active</span>
+                  <span>Zero Test Contamination</span>
+                </div>
               </div>
-              <h3 className="text-lg font-bold text-dark-text">1. Classical ML Baseline</h3>
-              <p className="text-xs text-dark-secondary leading-relaxed">
-                Logistic Regression, Random Forest, and XGBoost trained on TF-IDF clinical vocabulary matrices.
-                Establishes the transparent benchmark on untouched test data.
-              </p>
-              <ul className="text-xs font-mono-tech text-dark-muted space-y-1">
-                <li>• High-speed inference (&lt;1ms)</li>
-                <li>• Transparent feature weights</li>
-                <li>• No data leakage protocol</li>
-              </ul>
-            </div>
-
-            {/* Pillar 2 */}
-            <div className="p-6 rounded-card bg-dark-surface border border-dark-border hover:border-ai/40 transition-all space-y-4">
-              <div className="w-10 h-10 rounded-button bg-ai/15 border border-ai/30 flex items-center justify-center text-ai">
-                <Cpu className="w-5 h-5" />
-              </div>
-              <h3 className="text-lg font-bold text-dark-text">2. BioBERT Transformer</h3>
-              <p className="text-xs text-dark-secondary leading-relaxed">
-                Biomedical BERT Transformer with WordPiece tokenization and custom classification head.
-                Captures nuanced contextual semantic relationships across clinical narratives.
-              </p>
-              <ul className="text-xs font-mono-tech text-dark-muted space-y-1">
-                <li>• Real PyTorch model & tokenizer</li>
-                <li>• Multi-head self-attention heatmap</li>
-                <li>• [CLS] pooler representation</li>
-              </ul>
-            </div>
-
-            {/* Pillar 3 */}
-            <div className="p-6 rounded-card bg-dark-surface border border-dark-border hover:border-ai/40 transition-all space-y-4">
-              <div className="w-10 h-10 rounded-button bg-semantic-info/15 border border-semantic-info/30 flex items-center justify-center text-semantic-info">
-                <BookOpen className="w-5 h-5" />
-              </div>
-              <h3 className="text-lg font-bold text-dark-text">3. Vector RAG & Grounded LLM</h3>
-              <p className="text-xs text-dark-secondary leading-relaxed">
-                Normalized cosine similarity vector retrieval grounds the output in peer-reviewed clinical guidelines.
-                The LLM synthesizes reasoning without inventing diagnoses.
-              </p>
-              <ul className="text-xs font-mono-tech text-dark-muted space-y-1">
-                <li>• Verified medical guidelines</li>
-                <li>• Rule-based red-flag triage</li>
-                <li>• PostgreSQL audit logging</li>
-              </ul>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Final Call to Action */}
-      <section className="py-20 text-center relative overflow-hidden">
-        <div className="max-w-4xl mx-auto px-4 space-y-6">
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white">
-            Explore the Clinical Intelligence Console
-          </h2>
-          <p className="text-sm text-dark-secondary max-w-xl mx-auto">
-            Test custom clinical narratives, inspect attention heatmaps, compare model confusion matrices, and review PostgreSQL historical cases.
-          </p>
-          <div className="flex justify-center gap-4 pt-2">
-            <Link
-              to="/clinical-analysis"
-              className="px-6 py-3 rounded-button bg-ai hover:bg-ai-hover text-white text-sm font-semibold shadow-lg shadow-ai/30 transition-all flex items-center gap-2"
-            >
-              <span>Launch Clinical Console</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link
-              to="/presentation"
-              className="px-6 py-3 rounded-button bg-dark-surface hover:bg-dark-elevated text-dark-text border border-dark-strongBorder text-sm font-semibold transition-all"
-            >
-              Presentation Mode
-            </Link>
+      {/* ------------------------------------------------------------- */}
+      {/* 2. RESTRAINED HERO STATUS STRIP                               */}
+      {/* ------------------------------------------------------------- */}
+      <section className="w-full bg-[#0e0c1f] text-[#bcbac9] border-b border-[#3f3a52] py-4 text-xs font-mono">
+        <div className="max-w-content mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 divide-x-0 md:divide-x divide-[#3f3a52]">
+            <div className="space-y-0.5">
+              <span className="text-[10px] uppercase text-[#5a5772] block">Classical ML Baseline</span>
+              <span className="text-white font-medium">Logistic Reg • 73.15% Acc</span>
+            </div>
+            <div className="space-y-0.5 md:pl-4">
+              <span className="text-[10px] uppercase text-[#5a5772] block">Biomedical Transformer</span>
+              <span className="text-white font-medium">BioBERT • 10.1M Parameters</span>
+            </div>
+            <div className="space-y-0.5 md:pl-4">
+              <span className="text-[10px] uppercase text-[#5a5772] block">Vector RAG Knowledge</span>
+              <span className="text-white font-medium">43 Verified Guidelines</span>
+            </div>
+            <div className="space-y-0.5 md:pl-4">
+              <span className="text-[10px] uppercase text-[#5a5772] block">Dataset Topology</span>
+              <span className="text-white font-medium">4 Datasets • 821 Entities</span>
+            </div>
           </div>
         </div>
       </section>
+
+      {/* ------------------------------------------------------------- */}
+      {/* 3. HOMEPAGE RESEARCH INTRODUCTION (White Canvas #ffffff)      */}
+      {/* ------------------------------------------------------------- */}
+      <section className="w-full bg-white text-[#292827] py-20 md:py-28 border-b border-[#e8e4dd]">
+        <div className="max-w-content mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+          {/* Two-Column Editorial Composition */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <div className="lg:col-span-6 space-y-2">
+              <span className="text-xs font-mono uppercase tracking-wider text-[#73706d] block">
+                Research Methodology
+              </span>
+              <h2 className="text-3xl sm:text-5xl font-medium tracking-tight text-[#292827] leading-[1.02]">
+                From clinical input<br />
+                to evidence-grounded insight.
+              </h2>
+            </div>
+            <div className="lg:col-span-6 space-y-4 pt-2">
+              <p className="text-lg text-[#292827] font-medium leading-relaxed">
+                Conventional clinical prediction models act as opaque black boxes. MEDINTEL AI replaces disconnected predictions with a unified, transparent research workflow.
+              </p>
+              <p className="text-base text-[#73706d] leading-relaxed">
+                Every clinical prediction is contextualized by dual machine learning representations, validated through attention and attribution heatmaps, referenced against authoritative medical literature, and bounded by deterministic clinical safety constraints.
+              </p>
+            </div>
+          </div>
+
+          {/* Publication Pipeline Diagram */}
+          <div className="border border-[#e8e4dd] rounded-xl p-6 sm:p-8 bg-[#fafaf8] space-y-6">
+            <div className="flex items-center justify-between border-b border-[#e8e4dd] pb-4">
+              <span className="text-xs font-mono uppercase tracking-wider text-[#73706d] font-semibold">
+                Sequential Research Architecture
+              </span>
+              <span className="text-xs font-mono text-[#9a9794]">
+                9 Verifiable Stages
+              </span>
+            </div>
+
+            {/* Horizontal Research Steps */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-9 gap-3">
+              {pipelineSteps.map((step, idx) => (
+                <div
+                  key={idx}
+                  className="p-3.5 rounded-lg bg-white border border-[#e8e4dd] flex flex-col justify-between space-y-2 text-left"
+                >
+                  <div className="flex items-center justify-between text-[10px] font-mono text-[#9a9794]">
+                    <span>0{idx + 1}</span>
+                    {idx < pipelineSteps.length - 1 && <span className="hidden lg:inline text-[#73706d]">→</span>}
+                  </div>
+                  <div>
+                    <div className="text-xs font-medium text-[#292827] leading-snug">{step.name}</div>
+                    <div className="text-[11px] text-[#73706d] font-mono mt-0.5">{step.detail}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------- */}
+      {/* 4. CORE CAPABILITIES (Off-White Canvas #fafaf8)               */}
+      {/* ------------------------------------------------------------- */}
+      <section className="w-full bg-[#fafaf8] text-[#292827] py-20 md:py-28 border-b border-[#e8e4dd]">
+        <div className="max-w-content mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          <div>
+            <span className="text-xs font-mono uppercase tracking-wider text-[#73706d] block">
+              Platform Modules
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-medium tracking-tight text-[#292827] mt-1">
+              One platform.<br />
+              A complete clinical AI workflow.
+            </h2>
+          </div>
+
+          {/* Interactive Feature Rows */}
+          <div className="divide-y divide-[#e8e4dd] border-t border-b border-[#e8e4dd]">
+            {capabilities.map((cap, idx) => (
+              <Link
+                key={idx}
+                to={cap.link}
+                className="group py-6 sm:py-7 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-150 hover:bg-white hover:px-4 rounded-lg"
+              >
+                <div className="flex items-start sm:items-center gap-6 max-w-3xl">
+                  <span className="text-xs font-mono text-[#9a9794] group-hover:text-[#1b1938] font-medium pt-1 sm:pt-0">
+                    {cap.num}
+                  </span>
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-medium text-[#292827] group-hover:text-[#1b1938] transition-colors">
+                      {cap.title}
+                    </h3>
+                    <p className="text-sm text-[#73706d] mt-1 leading-relaxed">
+                      {cap.description}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="self-end sm:self-center shrink-0 flex items-center gap-1 text-sm font-medium text-[#73706d] group-hover:text-[#1b1938] group-hover:translate-x-1 transition-all">
+                  <span>Explore</span>
+                  <ArrowRight className="w-4 h-4" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------- */}
+      {/* 5. DEEP TEAL CLOSING CTA SECTION (#0e3030)                    */}
+      {/* ------------------------------------------------------------- */}
+      <TealClosingCTA />
     </div>
   );
 };
+
+export default LandingPage;

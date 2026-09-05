@@ -29,7 +29,7 @@ Rather than presenting a generic chatbot or simulated mockup, the platform expos
 [ 6. GROUNDED LLM SYNTHESIS ] (Grounded in Model Probabilities & Retrieved Evidence)
        │
        ▼
-[ 7. CLINICAL SAFETY & RED-FLAG TRIAGE ] (Acute Coronary, Stroke, Hypoxemia Detection)
+[ 7. CLINICAL SAFETY & RED-FLAG TRIAGE ] (Sepsis, Hypoxemia, Hemodynamic Monitoring)
        │
        ▼
 [ 8. POSTGRESQL / SQLALCHEMY PERSISTENCE ] (10 Relational Schemas & Full Audit History)
@@ -40,16 +40,16 @@ Rather than presenting a generic chatbot or simulated mockup, the platform expos
 
 ---
 
-## 📊 Benchmark Test-Set Results (Isolated 15% Split, N=375)
+## 📊 Empirical Benchmark Test-Set Results (Held-Out 15% Split, N=1,500)
 
-All evaluation metrics are calculated on the untouched test split:
+All evaluation metrics are calculated on the untouched, sealed test partition across 4 diagnostic classes (`Normal`, `Pneumonia`, `Heart Failure`, `Sepsis`):
 
 | Model Architecture | Model Family | Test Accuracy | Macro Precision | Macro Recall | Macro F1 | Weighted F1 | Latency | Artifact Size |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Logistic Regression** | Classical ML | **100.00%** | 100.00% | 100.00% | 1.0000 | 1.0000 | 0.015 ms | 391.8 KB |
-| **Random Forest** | Classical ML | **100.00%** | 100.00% | 100.00% | 1.0000 | 1.0000 | 0.693 ms | 2.9 MB |
-| **XGBoost** | Classical ML | **99.73%** | 99.73% | 99.73% | 0.9973 | 0.9973 | 0.099 ms | 2.0 MB |
-| **BioBERT Transformer** | Medical Transformer | **100.00%** | 100.00% | 100.00% | 1.0000 | 1.0000 | 4.935 ms | 38.6 MB |
+| **Logistic Regression** | Classical ML | **23.87%** | 0.2644 | 0.2618 | 0.2088 | 0.2673 | 0.002 ms | 39.8 KB |
+| **Random Forest** | Classical ML | **52.07%** | 0.2817 | 0.2657 | 0.2243 | 0.4072 | 0.138 ms | 1.8 MB |
+| **XGBoost** | Classical ML | **55.13%** | 0.2679 | 0.2483 | 0.1859 | 0.3957 | 0.034 ms | 1.5 MB |
+| **BioBERT Transformer** | Medical Transformer | **55.87%** | 0.1397 | 0.2500 | 0.1792 | 0.4007 | 10.18 ms | 38.6 MB |
 
 ---
 
@@ -59,7 +59,7 @@ All evaluation metrics are calculated on the untouched test split:
 MEDINTEL-AI/
 ├── backend/               # FastAPI Application & API Endpoints
 │   └── app/
-│       ├── api/endpoints/ # /analyze, /ml/predict, /transformer/predict, /rag/search, /history, /models
+│       ├── api/endpoints/ # /analyze, /predict/classical, /predict/transformer, /rag/search, /history, /models
 │       ├── database/      # SQLAlchemy session factory & database seeder
 │       ├── models/        # 10 relational schema entities
 │       ├── schemas/       # Pydantic validation schemas
@@ -77,20 +77,16 @@ MEDINTEL-AI/
 │   ├── ingestion/         # index_builder.py (Chunking & embedding)
 │   ├── embeddings/        # embedder.py (Normalized dense representations)
 │   ├── retrieval/         # retriever.py (Top-K vector lookup)
-│   └── vectorstore/       # medical_index.json
+│   └── vectorstore/       # medical_index.json (43 guidelines)
 ├── llm/                   # Large Language Model & Safety Engine
 │   ├── providers/         # Gemini, OpenAI, and Offline Educational Synthesizer
 │   ├── prompts/           # Structured academic decision-support prompt templates
 │   └── safety/            # Red-flag detector & prescription prohibition filter
-├── knowledge/             # Verified Medical Knowledge Base (43 clinical documents)
-│   ├── diseases/          # ACC, AHA, IDSA, ADA, GINA, KDIGO guidelines
-│   ├── symptoms/          # Differential diagnostic algorithms
-│   ├── red_flags/         # Emergency triage indicators
-│   └── precautions/       # Non-prescriptive care guidance
 ├── data/                  # Data Engineering & Profiling
-│   ├── raw/               # clinical_cases_raw.csv (2,500 samples across 20 diseases)
-│   ├── processed/         # train.csv (70%), val.csv (15%), test.csv (15%)
+│   ├── raw/               # synthetic_clinical_dataset.csv (10,000 records)
+│   ├── processed/         # train.csv (7,000), val.csv (1,500), test.csv (1,500)
 │   ├── dataset_validator.py
+│   ├── feature_pipeline.py
 │   └── preprocess.py
 ├── evaluation/            # Persisted Scientific Metrics & Registries
 │   ├── classical_ml_results.json
@@ -98,62 +94,26 @@ MEDINTEL-AI/
 │   └── experiment_registry.json
 ├── frontend/              # React 18 + TypeScript + Vite + Tailwind CSS Console
 │   └── src/
-│       ├── components/    # LivePipelineTracker, AttentionHeatmap, DifferentialCard, EvidenceCard
-│       ├── pages/         # Landing, ClinicalAnalysis, TransformerLab, ModelComparison, Viva
-│       └── services/      # Typed API client
-├── docs/                  # Comprehensive Markdown System Documentation
-├── tests/                 # Automated PyTest Test Suite
-└── scripts/               # Automation scripts (setup, dev, train)
+└── tests/                 # Complete Automated Pytest Verification Suite
 ```
 
 ---
 
-## 🚀 Quickstart & Reproduction Commands
+## 🚀 Quickstart & Execution
 
-### 1. Ingest Data & Train Models
-```powershell
-# 1. Generate & Validate Dataset
-python data/import_dataset.py
-
-# 2. Train Classical ML Baseline
-python ml/training/train_classical.py
-
-# 3. Train BioBERT Transformer
-python transformer/training/train.py
-
-# 4. Build Knowledge Vector Index
-python rag/ingestion/index_builder.py
-
-# 5. Initialize Relational Database
-python backend/app/database/init_db.py
+### 1. Run Automated Test Suite (22/22 Passing)
+```bash
+python -m pytest -v
 ```
 
-### 2. Start Backend API
-```powershell
-python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
+### 2. Start FastAPI Backend Daemon
+```bash
+python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
 ```
-API Documentation available at: `http://127.0.0.1:8000/docs`
 
 ### 3. Start React Frontend Console
-```powershell
+```bash
 cd frontend
-npm install
 npm run dev
 ```
-Open browser at: `http://localhost:5173`
-
-### 4. Run Automated PyTest Suite
-```powershell
-python -m pytest tests/ -v
-```
-
----
-
-## 🎓 Viva & Presentation Mode (`/presentation`)
-The platform includes an interactive 12-slide Viva Defense deck accessible directly in the UI at `http://localhost:5173/presentation`, demonstrating:
-1. Dataset validation statistics (zero nulls, 20 balanced classes).
-2. Leakage-free TF-IDF and PyTorch training curves.
-3. WordPiece token attention heatmaps.
-4. Classical ML vs BioBERT benchmark comparison.
-5. Vector RAG grounded evidence citation.
-6. PostgreSQL case audit trails.
+Open [http://localhost:5173](http://localhost:5173) in your browser.

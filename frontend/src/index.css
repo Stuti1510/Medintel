@@ -1,70 +1,81 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    color-scheme: dark;
+    color-scheme: light;
+    --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --font-editorial: 'Newsreader', Georgia, serif;
   }
   
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
-    background-color: #07080A;
-    color: #F5F7FA;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: #fafaf8;
+    color: #292827;
+    font-family: var(--font-sans);
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    selection-background-color: #c9b4fa;
+    selection-color: #1b1938;
+  }
+
+  /* Editorial display headings */
+  h1, h2, h3, h4, h5, h6 {
+    color: #292827;
+    letter-spacing: -0.02em;
   }
 }
 
-/* Custom Scrollbars */
+/* Custom Minimal Hairline Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0B0D10;
+  background: #f1f0ec;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #252A32;
+  background: #d3cfc8;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #343A45;
+  background: #b5b0a8;
 }
 
-/* Technical Monospace Elements */
+/* Typography helper classes */
 .font-mono-tech {
-  font-family: 'JetBrains Mono', monospace;
-  letter-spacing: -0.02em;
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum" 1;
 }
 
-/* Glassmorphic Technical Surfaces */
-.glass-panel {
-  background: rgba(17, 20, 25, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(37, 42, 50, 0.8);
+.font-editorial {
+  font-family: var(--font-editorial);
 }
 
-.glass-panel-elevated {
-  background: rgba(23, 27, 33, 0.9);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(52, 58, 69, 0.8);
+/* Clean Research Card */
+.research-card {
+  background-color: #ffffff;
+  border: 1px solid #e8e4dd;
+  border-radius: 12px;
 }
 
-.glow-ai {
-  box-shadow: 0 0 24px rgba(108, 99, 255, 0.15);
+.research-card-flat {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e8e4dd;
 }
 
-.glow-semantic-critical {
-  box-shadow: 0 0 20px rgba(239, 98, 98, 0.2);
+.research-row-hover {
+  transition: all 180ms ease-in-out;
 }
-
-.glow-semantic-success {
-  box-shadow: 0 0 20px rgba(53, 201, 138, 0.2);
+.research-row-hover:hover {
+  background-color: #f5f4f0;
 }

@@ -1,156 +1,129 @@
 {
-  "dataset_name": "MEDINTEL Clinical Disease Benchmark Dataset",
-  "raw_file": "data/raw/clinical_cases_raw.csv",
-  "generated_at": "2026-09-02T07:51:09.739024Z",
-  "total_samples": 2500,
-  "total_features": 15,
-  "num_classes": 20,
-  "target_column": "condition",
-  "missing_values": 596,
-  "missing_per_col": {
-    "case_id": 0,
-    "age": 0,
-    "sex": 0,
-    "symptoms": 0,
-    "duration": 0,
-    "severity": 0,
-    "heart_rate": 0,
-    "systolic_bp": 0,
-    "diastolic_bp": 0,
-    "temperature": 0,
-    "spo2": 0,
-    "medical_history": 42,
-    "current_medications": 554,
-    "clinical_narrative": 0,
-    "condition": 0
-  },
-  "duplicates": 0,
-  "classes": [
-    "Hyperthyroidism",
-    "Major Depressive Disorder",
-    "Infectious Mononucleosis",
-    "Pulmonary Embolism",
-    "Hypertension",
-    "Iron Deficiency Anemia",
-    "Bronchial Asthma",
-    "Pneumonia",
-    "Gastroenteritis",
-    "Chronic Kidney Disease",
-    "GERD",
-    "Rheumatoid Arthritis",
-    "Acute Appendicitis",
-    "Urinary Tract Infection",
-    "Ischemic Stroke",
-    "Migraine with Aura",
-    "Myocardial Infarction",
-    "Type 2 Diabetes Mellitus",
-    "Atopic Dermatitis",
-    "Acute Bronchitis"
+  "dataset_id": "cardio_train",
+  "name": "Cardiovascular Disease Clinical Risk Benchmark",
+  "version": "v2.2-4DATA",
+  "category": "Cardiovascular Risk",
+  "task_type": "Binary Classification",
+  "total_samples": 70000,
+  "total_columns": 13,
+  "columns": [
+    "id",
+    "age",
+    "gender",
+    "height",
+    "weight",
+    "ap_hi",
+    "ap_lo",
+    "cholesterol",
+    "gluc",
+    "smoke",
+    "alco",
+    "active",
+    "cardio"
   ],
+  "target_column": "cardio",
+  "num_classes": 2,
   "class_distribution": {
-    "Hyperthyroidism": 125,
-    "Major Depressive Disorder": 125,
-    "Infectious Mononucleosis": 125,
-    "Pulmonary Embolism": 125,
-    "Hypertension": 125,
-    "Iron Deficiency Anemia": 125,
-    "Bronchial Asthma": 125,
-    "Pneumonia": 125,
-    "Gastroenteritis": 125,
-    "Chronic Kidney Disease": 125,
-    "GERD": 125,
-    "Rheumatoid Arthritis": 125,
-    "Acute Appendicitis": 125,
-    "Urinary Tract Infection": 125,
-    "Ischemic Stroke": 125,
-    "Migraine with Aura": 125,
-    "Myocardial Infarction": 125,
-    "Type 2 Diabetes Mellitus": 125,
-    "Atopic Dermatitis": 125,
-    "Acute Bronchitis": 125
+    "0": 35021,
+    "1": 34979
   },
-  "demographics": {
+  "feature_count": 12,
+  "numerical_features_count": 13,
+  "categorical_features_count": 0,
+  "missing_values": 0,
+  "duplicate_records": 0,
+  "dataset_hash": "21a705d23381b0dfd6a6416da701b490744f1fc3b47e9ff3db3968c420ffa10c",
+  "numerical_summary": {
+    "id": {
+      "mean": 49972.42,
+      "std": 28851.3,
+      "min": 0.0,
+      "max": 99999.0,
+      "median": 50001.5
+    },
     "age": {
-      "mean": 45.85,
-      "std": 18.22,
-      "min": 5,
-      "max": 88,
-      "median": 46.0
+      "mean": 19468.87,
+      "std": 2467.25,
+      "min": 10798.0,
+      "max": 23713.0,
+      "median": 19703.0
     },
-    "sex": {
-      "Female": 1403,
-      "Male": 1097
+    "gender": {
+      "mean": 1.35,
+      "std": 0.48,
+      "min": 1.0,
+      "max": 2.0,
+      "median": 1.0
     },
-    "severity": {
-      "Moderate": 960,
-      "Severe": 700,
-      "Mild": 587,
-      "Critical": 253
+    "height": {
+      "mean": 164.36,
+      "std": 8.21,
+      "min": 55.0,
+      "max": 250.0,
+      "median": 165.0
+    },
+    "weight": {
+      "mean": 74.21,
+      "std": 14.4,
+      "min": 10.0,
+      "max": 200.0,
+      "median": 72.0
+    },
+    "ap_hi": {
+      "mean": 128.82,
+      "std": 154.01,
+      "min": -150.0,
+      "max": 16020.0,
+      "median": 120.0
+    },
+    "ap_lo": {
+      "mean": 96.63,
+      "std": 188.47,
+      "min": -70.0,
+      "max": 11000.0,
+      "median": 80.0
+    },
+    "cholesterol": {
+      "mean": 1.37,
+      "std": 0.68,
+      "min": 1.0,
+      "max": 3.0,
+      "median": 1.0
+    },
+    "gluc": {
+      "mean": 1.23,
+      "std": 0.57,
+      "min": 1.0,
+      "max": 3.0,
+      "median": 1.0
+    },
+    "smoke": {
+      "mean": 0.09,
+      "std": 0.28,
+      "min": 0.0,
+      "max": 1.0,
+      "median": 0.0
     }
   },
-  "vitals_summary": {
-    "heart_rate": {
-      "mean": 91.8,
-      "min": 64,
-      "max": 140
-    },
-    "systolic_bp": {
-      "mean": 132.9,
-      "min": 90,
-      "max": 220
-    },
-    "diastolic_bp": {
-      "mean": 81.8,
-      "min": 60,
-      "max": 125
-    },
-    "temperature": {
-      "mean": 37.31,
-      "min": 36.4,
-      "max": 39.8
-    },
-    "spo2": {
-      "mean": 97.1,
-      "min": 86,
-      "max": 100
+  "description": "70,000 patient physical examinations profiling blood pressure, serum cholesterol, glucose, and lifestyle factors.",
+  "validation_status": "DATASET VALIDATED",
+  "datasetMetadata": {
+    "name": "Cardiovascular Disease Clinical Risk Benchmark",
+    "version": "v2.2-4DATA",
+    "samples": 70000,
+    "trainSamples": 49000,
+    "validationSamples": 10500,
+    "testSamples": 10500,
+    "classes": 2,
+    "features": 12,
+    "missingValues": 0,
+    "duplicateRecords": 0,
+    "targetColumn": "cardio",
+    "validationStatus": "DATASET VALIDATED",
+    "datasetHash": "21a705d23381b0dfd6a6416da701b490744f1fc3b47e9ff3db3968c420ffa10c",
+    "classDistribution": {
+      "0": 35021,
+      "1": 34979
     }
-  },
-  "text_summary": {
-    "mean_words": 70.4,
-    "min_words": 52,
-    "max_words": 94
-  },
-  "validation_status": {
-    "is_valid": true,
-    "missing_required_columns": [],
-    "has_missing_values": true,
-    "has_duplicates": false,
-    "checks": [
-      {
-        "check": "File Existence & Readability",
-        "passed": true,
-        "details": "Successfully loaded data/raw/clinical_cases_raw.csv"
-      },
-      {
-        "check": "Required Columns Schema",
-        "passed": true,
-        "details": "15 features present"
-      },
-      {
-        "check": "Missing Value Integrity",
-        "passed": false,
-        "details": "596 missing cells detected"
-      },
-      {
-        "check": "Duplicate Narrative Check",
-        "passed": true,
-        "details": "0 duplicate cases found"
-      },
-      {
-        "check": "Target Label Integrity",
-        "passed": true,
-        "details": "20 distinct disease classes verified"
-      }
-    ]
   }
 }
