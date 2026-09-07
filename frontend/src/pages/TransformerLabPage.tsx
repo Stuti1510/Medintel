@@ -1,17 +1,19 @@
 import React, { useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Cpu, Play, Layers, ArrowRight, Loader2, Sparkles, BookOpen, ShieldCheck,
   Scale, Sliders, CheckCircle2, AlertCircle, Info, BarChart3, Database,
-  Upload, FileText, AlertTriangle, Check, RefreshCw
+  Upload, FileText, AlertTriangle, Check, RefreshCw, Activity
 } from 'lucide-react';
 import { predictTransformer, predictClassicalML, uploadMedicalDocument } from '../services/api';
 import { TransformerResult, ClassicalMLResult, DocumentUploadResult } from '../types/clinical';
 import { AttentionHeatmap } from '../components/AttentionHeatmap';
 import { TokenVisualizer } from '../components/TokenVisualizer';
 import { TealClosingCTA } from '../components/TealClosingCTA';
+import { MotorResearchDashboard } from '../components/motor/MotorResearchDashboard';
 
 export const TransformerLabPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<"overview" | "upload" | "calibration" | "ablation" | "robustness" | "subgroups">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "upload" | "calibration" | "ablation" | "robustness" | "subgroups" | "motor-registry">("overview");
 
   // Transformer Interactive State
   const [inputText, setInputText] = useState<string>(
@@ -163,6 +165,24 @@ export const TransformerLabPage: React.FC = () => {
             >
               Subgroup Evaluation
             </button>
+            <button
+              onClick={() => setActiveTab("motor-registry")}
+              className={`px-4 py-2.5 text-xs font-medium border-b-2 transition-all shrink-0 flex items-center gap-1.5 ${
+                activeTab === "motor-registry"
+                  ? "border-[#1b1938] text-[#1b1938] font-semibold"
+                  : "border-transparent text-[#73706d] hover:text-[#292827]"
+              }`}
+            >
+              <Activity className="w-3.5 h-3.5 text-[#155555]" />
+              <span>Motor Screening Registry</span>
+            </button>
+            <Link
+              to="/motor-screening"
+              className="px-4 py-2.5 text-xs font-medium border-b-2 border-transparent text-[#155555] hover:text-[#0e3030] hover:border-[#155555] transition-all shrink-0 flex items-center gap-1 font-semibold"
+            >
+              <span>Screening Suite</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
           </div>
         </div>
       </section>
@@ -730,6 +750,11 @@ export const TransformerLabPage: React.FC = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* TAB 7: MOTOR & BEHAVIORAL SCREENING REGISTRY (Section 30) */}
+        {activeTab === "motor-registry" && (
+          <MotorResearchDashboard />
         )}
       </section>
 

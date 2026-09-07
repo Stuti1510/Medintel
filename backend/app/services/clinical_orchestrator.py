@@ -277,6 +277,40 @@ class ClinicalAnalysisOrchestrator:
                     )
                     db.add(prob_db)
 
+                # Retrieval Results
+                for ev in rag_results.get("evidence", []):
+                    ret_db = RetrievalResult(
+                        case_id=patient_case_db.id,
+                        query=rag_query,
+                        document=ev.get("snippet", ""),
+                        source=ev.get("source", ""),
+                        source_url=ev.get("source_url", ""),
+                        similarity_score=float(ev.get("similarity_score", 0.8))
+                    )
+                    db.add(ret_db)
+
+                # LLM Interaction
+                llm_db = LLMInteraction(
+                    case_id=patient_case_db.id,
+                    model_prediction=ml_pred.get("predicted_condition", "Unknown"),
+                    retrieved_context=json.dumps(rag_results.get("evidence", [])[:2]),
+                    llm_response=llm_out.get("clinical_summary", "") or json.dumps(llm_out),
+                    provider=os.getenv("LLM_PROVIDER", "demo").upper(),
+                    model_name=llm_out.get("model_used", "Educational Clinical Synthesis")
+                )
+                db.add(llm_db)
+
+                # Safety Events
+                for flag in safety_flags:
+                    sf_db = SafetyEvent(
+                        case_id=patient_case_db.id,
+                        flag_type=flag.get("type", "CLINICAL_ALERT"),
+                        severity=flag.get("severity", "MEDIUM"),
+                        trigger_text=flag.get("trigger", ""),
+                        description=flag.get("description", "")
+                    )
+                    db.add(sf_db)
+
                 db.commit()
                 db_persisted = True
             except Exception as dbe:

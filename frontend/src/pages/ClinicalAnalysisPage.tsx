@@ -14,9 +14,8 @@ import { TealClosingCTA } from '../components/TealClosingCTA';
 
 const PRESET_CASES = [
   {
-    name: "Hypertensive Urgency & Cardiovascular Risk",
-    condition: "Cardiovascular Disease Present",
-    targetDisease: "Cardiovascular Disease (CVD)",
+    name: "Hypertensive Urgency & Arterial Stiffness",
+    category: "Cardiovascular / Vascular",
     age: 58,
     sex: "Male",
     height: 172,
@@ -26,39 +25,17 @@ const PRESET_CASES = [
     smoke: 1,
     alco: 0,
     active: 0,
-    symptoms: "Occipital headache, dyspnea on mild exertion, chest tightness, palpitations, elevated blood pressure (168/105 mmHg)",
+    symptoms: "Occipital morning headache, severe exertional dyspnea, blurred vision, epistaxis, facial flushing, elevated blood pressure (168/105 mmHg)",
     duration: "2 weeks",
     severity: "Critical",
     medical_history: "Essential hypertension, dyslipidemia",
     current_medications: "Amlodipine 5mg",
     vitals: { heart_rate: 96, systolic_bp: 168, diastolic_bp: 105, temperature: 36.8, spo2: 95 },
-    clinical_narrative: "58-year-old male presenting with Stage 2 hypertensive urgency, severe exertional dyspnea, elevated BMI (29.7 kg/m2), elevated serum cholesterol, and chronic tobacco use."
+    clinical_narrative: "58-year-old male presenting with Stage 2 hypertensive urgency, severe occipital headache, elevated BMI (29.7 kg/m²), elevated serum cholesterol, and chronic tobacco use."
   },
   {
-    name: "Coronary Artery Ischemic Presentation",
-    condition: "Cardiovascular Disease Present",
-    targetDisease: "Coronary Artery Disease",
-    age: 64,
-    sex: "Male",
-    height: 168,
-    weight: 82,
-    cholesterol: 3,
-    gluc: 2,
-    smoke: 1,
-    alco: 1,
-    active: 0,
-    symptoms: "Substernal chest pressure radiating to left shoulder, diaphoresis, resting BP 155/95 mmHg, post-prandial fatigue",
-    duration: "3 days",
-    severity: "Severe",
-    medical_history: "Coronary artery disease, elevated LDL",
-    current_medications: "Atorvastatin 20mg, Aspirin 81mg",
-    vitals: { heart_rate: 88, systolic_bp: 155, diastolic_bp: 95, temperature: 37.0, spo2: 94 },
-    clinical_narrative: "64-year-old male with recurring exertional angina, heavy tobacco use, elevated serum lipids, and borderline hyperglycemia."
-  },
-  {
-    name: "Symptomatic Asthmatic Bronchospasm",
-    condition: "No Cardiovascular Disease",
-    targetDisease: "Bronchial Asthma",
+    name: "Acute Exacerbation of Bronchial Asthma",
+    category: "Pulmonology / Respiratory",
     age: 38,
     sex: "Female",
     height: 162,
@@ -68,40 +45,98 @@ const PRESET_CASES = [
     smoke: 0,
     alco: 0,
     active: 1,
-    symptoms: "Bilateral expiratory wheezing, persistent dry cough, nocturnal dyspnea, normal blood pressure (118/74 mmHg)",
+    symptoms: "Bilateral expiratory wheezing, severe bronchospasm, dry nocturnal cough, dyspnea, chest tightness, normal blood pressure (118/74 mmHg)",
     duration: "4 days",
     severity: "Moderate",
-    medical_history: "Allergic rhinitis, mild intermittent asthma",
+    medical_history: "Allergic rhinitis, bronchial asthma",
     current_medications: "Albuterol MDI PRN",
-    vitals: { heart_rate: 84, systolic_bp: 118, diastolic_bp: 74, temperature: 36.9, spo2: 97 },
-    clinical_narrative: "38-year-old female presenting with acute respiratory wheezing and cough triggered by seasonal aeroallergens. Normal cardiovascular biometrics."
+    vitals: { heart_rate: 88, systolic_bp: 118, diastolic_bp: 74, temperature: 36.9, spo2: 94 },
+    clinical_narrative: "38-year-old female presenting with acute respiratory wheezing, prolonged expiratory phase, and dyspnea triggered by cold air exposure. Normotensive vitals."
   },
   {
-    name: "Normative Preventive Health Baseline",
-    condition: "No Cardiovascular Disease",
-    targetDisease: "Normative Physiological Baseline",
-    age: 42,
+    name: "Acute Myocardial Infarction / Angina",
+    category: "Cardiology",
+    age: 64,
+    sex: "Male",
+    height: 168,
+    weight: 82,
+    cholesterol: 3,
+    gluc: 2,
+    smoke: 1,
+    alco: 1,
+    active: 0,
+    symptoms: "Crushing substernal chest pain radiating to left jaw and shoulder, profuse diaphoresis, nausea, resting blood pressure 155/95 mmHg",
+    duration: "3 hours",
+    severity: "Critical",
+    medical_history: "Coronary artery disease, elevated LDL",
+    current_medications: "Atorvastatin 20mg, Aspirin 81mg",
+    vitals: { heart_rate: 104, systolic_bp: 155, diastolic_bp: 95, temperature: 37.1, spo2: 93 },
+    clinical_narrative: "64-year-old male presenting with acute retrosternal chest pressure unrelieved by rest, diaphoresis, dyspnea, and elevated cardiac risk factors."
+  },
+  {
+    name: "Uncontrolled Type 2 Diabetes Mellitus",
+    category: "Endocrinology / Metabolism",
+    age: 52,
+    sex: "Male",
+    height: 175,
+    weight: 96,
+    cholesterol: 2,
+    gluc: 3,
+    smoke: 0,
+    alco: 0,
+    active: 0,
+    symptoms: "Polyuria, polydipsia, unquenchable thirst, blurred vision, progressive generalized fatigue, weight loss despite polyphagia",
+    duration: "1 month",
+    severity: "Moderate",
+    medical_history: "Obesity, prediabetes",
+    current_medications: "Metformin 500mg BID",
+    vitals: { heart_rate: 78, systolic_bp: 132, diastolic_bp: 84, temperature: 36.7, spo2: 98 },
+    clinical_narrative: "52-year-old male presenting with classical osmotic symptoms (polyuria, polydipsia), marked hyperglycemia, fasting blood glucose 240 mg/dL, and elevated HbA1c."
+  },
+  {
+    name: "Acute Appendicitis with Peritoneal Signs",
+    category: "Gastrointestinal Surgery",
+    age: 26,
     sex: "Female",
     height: 165,
-    weight: 62,
+    weight: 58,
     cholesterol: 1,
     gluc: 1,
     smoke: 0,
     alco: 0,
     active: 1,
-    symptoms: "Routine annual preventive health assessment, asymptomatic, optimal blood pressure (115/72 mmHg)",
-    duration: "Routine",
-    severity: "Mild",
-    medical_history: "No chronic illnesses",
+    symptoms: "Right lower quadrant abdominal pain, periumbilical migration, McBurney tenderness, rebound pain, nausea, vomiting, low-grade fever",
+    duration: "24 hours",
+    severity: "Severe",
+    medical_history: "None",
     current_medications: "None",
-    vitals: { heart_rate: 70, systolic_bp: 115, diastolic_bp: 72, temperature: 36.6, spo2: 99 },
-    clinical_narrative: "42-year-old active female presenting for routine clinical examination. Normotensive vitals, optimal cholesterol, and normal physiological biometrics."
+    vitals: { heart_rate: 102, systolic_bp: 112, diastolic_bp: 72, temperature: 38.2, spo2: 99 },
+    clinical_narrative: "26-year-old female presenting with acute periumbilical abdominal pain migrating to the right iliac fossa, marked rebound tenderness, leukocytosis, and fever."
+  },
+  {
+    name: "Acute Ischemic Stroke / Neurological Deficit",
+    category: "Neurology / Vascular",
+    age: 69,
+    sex: "Female",
+    height: 160,
+    weight: 68,
+    cholesterol: 2,
+    gluc: 2,
+    smoke: 0,
+    alco: 0,
+    active: 0,
+    symptoms: "Sudden onset right-sided facial droop, right upper extremity hemiparesis, expressive dysphasia, pronator drift, blood pressure 178/102 mmHg",
+    duration: "90 minutes",
+    severity: "Critical",
+    medical_history: "Atrial fibrillation, hypertension",
+    current_medications: "Warfarin 5mg, Lisinopril 20mg",
+    vitals: { heart_rate: 92, systolic_bp: 178, diastolic_bp: 102, temperature: 36.9, spo2: 96 },
+    clinical_narrative: "69-year-old female presenting with acute focal neurological deficit, right hemiparesis, aphasia, and severe systemic hypertension within thrombolytic window."
   }
 ];
 
 export const ClinicalAnalysisPage: React.FC = () => {
   // Encounter Form State
-  const [selectedDisease, setSelectedDisease] = useState<string>("Cardiovascular Disease (CVD)");
   const [age, setAge] = useState<number>(58);
   const [sex, setSex] = useState<string>("Male");
   const [height, setHeight] = useState<number>(172);
@@ -112,12 +147,12 @@ export const ClinicalAnalysisPage: React.FC = () => {
   const [alco, setAlco] = useState<number>(0);
   const [active, setActive] = useState<number>(0);
 
-  const [symptoms, setSymptoms] = useState<string>("Occipital headache, dyspnea on mild exertion, chest tightness, palpitations, elevated blood pressure (168/105 mmHg)");
+  const [symptoms, setSymptoms] = useState<string>("Occipital morning headache, severe exertional dyspnea, blurred vision, epistaxis, facial flushing, elevated blood pressure (168/105 mmHg)");
   const [duration, setDuration] = useState<string>("2 weeks");
   const [severity, setSeverity] = useState<string>("Critical");
   const [history, setHistory] = useState<string>("Essential hypertension, dyslipidemia");
   const [medications, setMedications] = useState<string>("Amlodipine 5mg");
-  const [narrative, setNarrative] = useState<string>("58-year-old male presenting with Stage 2 hypertensive urgency, severe exertional dyspnea, elevated BMI (29.7 kg/m2), elevated serum cholesterol, and chronic tobacco use.");
+  const [narrative, setNarrative] = useState<string>("58-year-old male presenting with Stage 2 hypertensive urgency, severe occipital headache, elevated BMI (29.7 kg/m²), elevated serum cholesterol, and chronic tobacco use.");
   
   const [heartRate, setHeartRate] = useState<number>(96);
   const [bpSys, setBpSys] = useState<number>(168);
@@ -140,7 +175,6 @@ export const ClinicalAnalysisPage: React.FC = () => {
   const calculatedBMI = height > 0 ? (weight / ((height / 100) ** 2)).toFixed(1) : "25.0";
 
   const loadPreset = (preset: typeof PRESET_CASES[0]) => {
-    setSelectedDisease(preset.targetDisease || "Cardiovascular Disease (CVD)");
     setAge(preset.age);
     setSex(preset.sex);
     setHeight(preset.height);
@@ -220,7 +254,6 @@ export const ClinicalAnalysisPage: React.FC = () => {
         },
         clinical_narrative: narrative,
         selected_ml_model: selectedMLModel,
-        selected_disease: selectedDisease,
         height,
         weight,
         cholesterol,
@@ -266,7 +299,7 @@ export const ClinicalAnalysisPage: React.FC = () => {
                 Clinical Analysis
               </h1>
               <p className="text-base text-[#73706d] max-w-2xl">
-                Evaluate a clinical encounter through the complete MEDINTEL research pipeline with genuine softmax probabilities, differential diagnosis, and RAG literature grounding.
+                Evaluate a clinical encounter through the complete MEDINTEL research pipeline with genuine softmax probabilities, 20-class differential diagnosis, and RAG literature grounding.
               </p>
             </div>
 
@@ -303,9 +336,9 @@ export const ClinicalAnalysisPage: React.FC = () => {
           {/* Benchmark Preset Encounter Cards */}
           <div className="pt-4 border-t border-[#e8e4dd] space-y-2">
             <span className="text-[11px] font-mono uppercase text-[#73706d] tracking-wider block">
-              Load Verified Clinical Preset
+              Load Verified Clinical Case Presets
             </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
               {PRESET_CASES.map((preset, idx) => (
                 <button
                   key={idx}
@@ -317,7 +350,7 @@ export const ClinicalAnalysisPage: React.FC = () => {
                   </div>
                   <div className="text-[11px] font-mono text-[#73706d] mt-1 flex items-center justify-between">
                     <span>{preset.sex}, {preset.age}y</span>
-                    <span className="text-[#1b1938] font-medium">{preset.targetDisease.split(' ')[0]}</span>
+                    <span className="text-[#1b1938] font-medium">{preset.category}</span>
                   </div>
                 </button>
               ))}
@@ -337,31 +370,24 @@ export const ClinicalAnalysisPage: React.FC = () => {
           {/* Left Column: Clinical Input Form (5 cols) */}
           <div className="lg:col-span-5 space-y-6">
             <div className="p-6 rounded-xl bg-white border border-[#e8e4dd] space-y-5">
-              {/* Target Disease Selector & Quick Upload */}
+              {/* Patient-Evidence Driven Mode Badge & Report Autofill */}
               <div className="space-y-3 border-b border-[#e8e4dd] pb-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-[#292827] font-mono">
-                    Target Evaluation Disease
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[#1b1938]" />
+                    <span className="text-xs font-semibold uppercase tracking-wider text-[#292827] font-mono">
+                      Patient Evidence-Driven Mode
+                    </span>
+                  </div>
                   <span className="text-xs font-mono text-[#73706d]">
                     BMI: <strong className="text-[#292827]">{calculatedBMI}</strong> kg/m²
                   </span>
                 </div>
 
-                <select
-                  value={selectedDisease}
-                  onChange={(e) => setSelectedDisease(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-[#fafaf8] border border-[#e8e4dd] text-xs font-mono text-[#292827] focus:outline-none focus:border-[#1b1938]"
-                >
-                  <option value="Cardiovascular Disease (CVD)">Cardiovascular Disease (CVD)</option>
-                  <option value="Coronary Artery Disease">Coronary Artery Disease</option>
-                  <option value="Hypertension">Hypertension</option>
-                  <option value="Bronchial Asthma">Bronchial Asthma</option>
-                  <option value="Type 2 Diabetes Mellitus">Type 2 Diabetes Mellitus</option>
-                  <option value="Normative Physiological Baseline">Normative Physiological Baseline</option>
-                  <option value="Sepsis Protocol">Sepsis Protocol</option>
-                  <option value="Myocardial Infarction">Myocardial Infarction</option>
-                </select>
+                <div className="p-2.5 rounded-lg bg-[#f5f4f0] border border-[#e8e4dd] text-[11px] text-[#73706d] flex items-center gap-2">
+                  <Info className="w-4 h-4 text-[#1b1938] shrink-0" />
+                  <span>Disease diagnosis, probability distributions, and differential rankings are derived autonomously from patient symptoms, vitals, and reports.</span>
+                </div>
 
                 {/* Quick OCR File Ingestion Trigger */}
                 <div>

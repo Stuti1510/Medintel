@@ -1,8 +1,9 @@
 """
 MEDINTEL AI - BioBERT Transformer Inference Service
 Loads trained PyTorch Transformer model checkpoint and tokenizer.
-Performs clinical text classification, computes confidence, extracts top differentials,
-and extracts multi-head attention scores for the Transformer Lab.
+Performs 20-class clinical text classification, computes calibrated probabilities,
+extracts ranked differential diagnoses, and extracts genuine multi-head attention weights
+directly from the Transformer encoder forward pass.
 """
 
 import os
@@ -27,7 +28,6 @@ class BioBERTInferenceService:
         self.config = {}
         self.label_mapping = {}
         self.is_loaded = False
-        # Lazy load on first predict call
 
     def load_model(self):
         try:
@@ -45,7 +45,7 @@ class BioBERTInferenceService:
             with open(label_path, "r") as f:
                 self.label_mapping = json.load(f)
 
-            self.tokenizer_service = BioBERTTokenizerService(max_length=self.config.get("max_length", 128))
+            self.tokenizer_service = BioBERTTokenizerService(max_length=self.config.get("max_length", 64))
 
             vocab_size = self.config.get("vocab_size", 30522)
             num_classes = self.config.get("num_classes", len(self.label_mapping))
@@ -65,7 +65,7 @@ class BioBERTInferenceService:
                 state_dict = torch.load(model_path, map_location=self.device, weights_only=False)
             except Exception:
                 state_dict = torch.load(model_path, map_location=self.device)
-            # Filter out head mismatch if classes changed
+                
             model_dict = self.model.state_dict()
             filtered_dict = {
                 k: v for k, v in state_dict.items()
@@ -75,7 +75,7 @@ class BioBERTInferenceService:
             self.model.load_state_dict(model_dict)
             self.model.eval()
             self.is_loaded = True
-            print(f"[BIOBERT INFERENCE] Loaded BioBERT model successfully ({self.config.get('total_parameters', 0):,} parameters).")
+            print(f"[BIOBERT INFERENCE] Loaded BioBERT model successfully ({self.config.get('total_parameters', 0):,} parameters across {num_classes} classes).")
         except Exception as e:
             print(f"[BIOBERT INFERENCE] Error loading Transformer: {e}")
             self.is_loaded = False
@@ -94,7 +94,7 @@ class BioBERTInferenceService:
         attention_mask = torch.tensor([tok_out["attention_mask"]], dtype=torch.long).to(self.device)
 
         with torch.no_grad():
-            logits, pooled_cls = self.model(input_ids, attention_mask=attention_mask)
+            logits, pooled_cls, raw_attention = self.model(input_ids, attention_mask=attention_mask)
             probs = torch.softmax(logits, dim=1)[0].cpu().numpy()
 
         pred_idx = int(np.argmax(probs))
@@ -116,21 +116,13 @@ class BioBERTInferenceService:
         tokens = tok_out["tokens"]
         seq_len = len(tokens)
         
-        # Synthetic attention matrix for visualization
-        attention_matrix = []
-        for i in range(seq_len):
-            row_attn = []
-            for j in range(seq_len):
-                if i == j:
-                    val = 0.4
-                elif abs(i - j) == 1:
-                    val = 0.25
-                elif tokens[j] in ["[CLS]", "fever", "heart", "failure", "pressure", "sepsis", "pain", "bp", "cardio", "hypertensive"]:
-                    val = 0.15
-                else:
-                    val = 0.05 / (seq_len or 1)
-                row_attn.append(round(val, 4))
-            attention_matrix.append(row_attn)
+        # Extract REAL Attention Matrix directly from the Transformer encoder
+        attn_matrix_np = raw_attention[0, :seq_len, :seq_len].cpu().numpy()
+        # Normalize rows so each token's attention distribution sums to 1.0
+        row_sums = attn_matrix_np.sum(axis=-1, keepdims=True)
+        row_sums[row_sums == 0] = 1.0
+        norm_attn = attn_matrix_np / row_sums
+        attention_matrix = [[float(round(val, 4)) for val in row] for row in norm_attn]
 
         return {
             "status": "SUCCESS",
@@ -144,3 +136,4 @@ class BioBERTInferenceService:
             "attention_matrix": attention_matrix,
             "inference_time_ms": latency
         }
+

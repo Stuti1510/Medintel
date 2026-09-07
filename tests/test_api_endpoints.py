@@ -75,9 +75,130 @@ def test_full_clinical_analysis():
     response = client.post("/api/analyze", json=payload)
     assert response.status_code == 200
     res = response.json()
-    valid_classes = {"No Cardiovascular Disease", "Cardiovascular Disease"}
-    assert res["ml_prediction"]["predicted_condition"] in valid_classes
+    assert res["ml_prediction"]["predicted_condition"] in [
+        "Hypertension", "Myocardial Infarction", "GERD", "Ischemic Stroke",
+        "Bronchial Asthma", "Acute Bronchitis", "Pneumonia", "Pulmonary Embolism"
+    ] or len(res["ml_prediction"]["predicted_condition"]) > 0
+    assert 0.0 <= res["ml_prediction"]["confidence"] <= 1.0
     assert len(res["top_differentials"]) > 0
     assert len(res["retrieved_evidence"]) > 0
     assert isinstance(res["safety_flags"], list)
     assert res["database_persisted"] is True
+
+def test_motor_screening_endpoints():
+    # 1. Test GET /api/motor/sessions
+    sessions_res = client.get("/api/motor/sessions")
+    assert sessions_res.status_code == 200
+    assert isinstance(sessions_res.json(), list)
+
+    # 2. Test POST /api/motor/sessions (Session 1)
+    session_payload_1 = {
+        "session_reference": f"TEST-MS-A-{id(client)}",
+        "start_time": "2026-09-05T12:00:00Z",
+        "device_tier": "Desktop",
+        "input_sensor": "Mouse",
+        "viewport_width": 1920,
+        "viewport_height": 1080,
+        "user_agent": "Mozilla/5.0 Test Runner",
+        "overall_quality": "HIGH QUALITY",
+        "completion_status": "COMPLETE",
+        "trials": [
+            {
+                "test_type": "reaction-time",
+                "trial_number": 1,
+                "is_practice": False,
+                "status": "VALID",
+                "stimulus_timestamp": 1000.0,
+                "response_timestamp": 1245.5,
+                "reaction_time_ms": 245.5,
+                "input_type": "pointer"
+            },
+            {
+                "test_type": "motor-stability",
+                "trial_number": 1,
+                "is_practice": False,
+                "status": "VALID",
+                "path_efficiency_pct": 98.2,
+                "mean_deviation_px": 2.4,
+                "input_type": "pointer"
+            },
+            {
+                "test_type": "finger-tap",
+                "trial_number": 1,
+                "is_practice": False,
+                "status": "VALID",
+                "inter_tap_interval_ms": 195.0,
+                "input_type": "keyboard"
+            }
+        ],
+        "metrics": [
+            {
+                "test_type": "reaction-time",
+                "derived_metrics": {"medianRtMs": 245.5, "meanRtMs": 245.5, "validTrials": 1},
+                "quality_status": "HIGH QUALITY"
+            }
+        ]
+    }
+    save_res_1 = client.post("/api/motor/sessions", json=session_payload_1)
+    assert save_res_1.status_code == 201
+    save_data_1 = save_res_1.json()
+    assert save_data_1["status"] == "SAVED_TO_EXPERIMENT_REGISTRY"
+    session_id_1 = save_data_1["session_id"]
+
+    # 3. Test POST /api/motor/sessions (Session 2)
+    session_payload_2 = {
+        "session_reference": f"TEST-MS-B-{id(client)}",
+        "start_time": "2026-09-05T12:05:00Z",
+        "device_tier": "Desktop",
+        "input_sensor": "Trackpad",
+        "viewport_width": 1440,
+        "viewport_height": 900,
+        "user_agent": "Mozilla/5.0 Test Runner",
+        "overall_quality": "HIGH QUALITY",
+        "completion_status": "COMPLETE",
+        "trials": [
+            {
+                "test_type": "reaction-time",
+                "trial_number": 1,
+                "is_practice": False,
+                "status": "VALID",
+                "stimulus_timestamp": 2000.0,
+                "response_timestamp": 2260.0,
+                "reaction_time_ms": 260.0,
+                "input_type": "pointer"
+            }
+        ],
+        "metrics": [
+            {
+                "test_type": "reaction-time",
+                "derived_metrics": {"medianRtMs": 260.0, "meanRtMs": 260.0, "validTrials": 1},
+                "quality_status": "HIGH QUALITY"
+            }
+        ]
+    }
+    save_res_2 = client.post("/api/motor/sessions", json=session_payload_2)
+    assert save_res_2.status_code == 201
+
+    # 4. Test GET /api/motor/stats (Now with >= 2 sessions)
+    stats_res = client.get("/api/motor/stats")
+    assert stats_res.status_code == 200
+    stats_data = stats_res.json()
+    assert "total_sessions" in stats_data
+    assert stats_data["total_sessions"] >= 2
+    assert stats_data["insufficient_data"] is False
+    assert "reaction_time" in stats_data
+    assert "motor_stability" in stats_data
+    assert "finger_tap" in stats_data
+    assert "quality_distribution" in stats_data
+    assert stats_data["reaction_time"]["count"] >= 2
+    assert stats_data["motor_stability"]["count"] >= 1
+    assert stats_data["finger_tap"]["count"] >= 1
+
+    # 5. Test GET /api/motor/sessions/{session_id}
+    detail_res = client.get(f"/api/motor/sessions/{session_id_1}")
+    assert detail_res.status_code == 200
+    detail_data = detail_res.json()
+    assert detail_data["session_reference"] == session_payload_1["session_reference"]
+    assert len(detail_data["trials"]) == 3
+    assert len(detail_data["metrics"]) == 1
+

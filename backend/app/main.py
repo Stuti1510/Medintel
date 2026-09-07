@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 from backend.app.api.endpoints.clinical import router as clinical_router
 from backend.app.api.endpoints.models_eval import router as models_eval_router
 from backend.app.api.endpoints.viva import router as viva_router
+from backend.app.api.endpoints.motor import router as motor_router
 from backend.app.database.init_db import init_database
 from rag.ingestion.index_builder import build_knowledge_index
 
@@ -60,6 +61,7 @@ app.add_middleware(
 app.include_router(clinical_router)
 app.include_router(models_eval_router)
 app.include_router(viva_router)
+app.include_router(motor_router, prefix="/api/motor", tags=["Motor Screening"])
 
 @app.get("/")
 async def root():

@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Navigation } from './components/Navigation';
 import { LandingPage } from './pages/LandingPage';
 import { ClinicalAnalysisPage } from './pages/ClinicalAnalysisPage';
+import { MotorScreeningPage } from './pages/MotorScreeningPage';
 import { TransformerLabPage } from './pages/TransformerLabPage';
 import { ModelComparisonPage } from './pages/ModelComparisonPage';
 import { ExplainabilityPage } from './pages/ExplainabilityPage';
@@ -22,6 +23,7 @@ export function App() {
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/clinical-analysis" element={<ClinicalAnalysisPage />} />
+            <Route path="/motor-screening" element={<MotorScreeningPage />} />
             <Route path="/transformer-lab" element={<TransformerLabPage />} />
             <Route path="/model-comparison" element={<ModelComparisonPage />} />
             <Route path="/explainability" element={<ExplainabilityPage />} />

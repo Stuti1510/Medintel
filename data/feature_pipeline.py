@@ -1,9 +1,9 @@
 """
-MEDINTEL AI - Leakage-Safe Feature Engineering Pipeline (Active Master Dataset)
-1. Tabular Transformer: StandardScaler on continuous biometrics + OneHotEncoder on categories + Passthrough on binaries.
-2. Text Transformer: TF-IDF on clinical narratives.
-3. Active Master Dataset: Pre-split dataset-level balancing already applied.
-All transformers fit EXCLUSIVELY on training partition (train.csv N=1,680).
+MEDINTEL AI - Leakage-Safe Multi-Class Clinical Feature Engineering Pipeline
+1. Tabular Transformer: StandardScaler on continuous biometrics (age, heart_rate, systolic_bp, diastolic_bp, temperature, spo2)
+   + OneHotEncoder on categorical features (sex, severity).
+2. Text Transformer: TF-IDF on clinical narratives, symptoms, and medical history.
+3. Strict Leakage Prevention: All transformers fit EXCLUSIVELY on the training partition (train.csv N=1,750).
 """
 
 import os
@@ -17,19 +17,17 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 RANDOM_SEED = 42
 
-NUMERIC_FEATURES = ["age_years", "height", "weight", "ap_hi", "ap_lo", "bmi"]
-CATEGORICAL_FEATURES = ["cholesterol", "gluc"]
-BINARY_FEATURES = ["gender", "smoke", "alco", "active"]
+NUMERIC_FEATURES = ["age", "heart_rate", "systolic_bp", "diastolic_bp", "temperature", "spo2"]
+CATEGORICAL_FEATURES = ["sex", "severity"]
 TEXT_FEATURE = "full_clinical_text"
 
 class ClinicalFeatureEngine:
-    def __init__(self, tfidf_max_features=200):
+    def __init__(self, tfidf_max_features=300):
         self.tfidf_max_features = tfidf_max_features
         self.tabular_transformer = ColumnTransformer(
             transformers=[
                 ("num", StandardScaler(), NUMERIC_FEATURES),
-                ("cat", OneHotEncoder(handle_unknown="ignore", sparse_output=False), CATEGORICAL_FEATURES),
-                ("bin", "passthrough", BINARY_FEATURES)
+                ("cat", OneHotEncoder(handle_unknown="ignore", sparse_output=False), CATEGORICAL_FEATURES)
             ]
         )
         self.text_vectorizer = TfidfVectorizer(
@@ -42,10 +40,18 @@ class ClinicalFeatureEngine:
         self.feature_names = []
 
     def fit(self, train_df: pd.DataFrame):
-        """Fits all feature transformers EXCLUSIVELY on training partition to prevent leakage."""
-        print(f"[FEATURE ENGINE] Fitting transformers on {len(train_df):,} active training samples...")
-        self.tabular_transformer.fit(train_df[NUMERIC_FEATURES + CATEGORICAL_FEATURES + BINARY_FEATURES])
-        self.text_vectorizer.fit(train_df[TEXT_FEATURE])
+        """Fits all feature transformers EXCLUSIVELY on training partition to strictly prevent leakage."""
+        print(f"[FEATURE ENGINE] Fitting transformers on {len(train_df):,} multi-class training samples...")
+        
+        # Prepare tabular data
+        tab_df = train_df[NUMERIC_FEATURES + CATEGORICAL_FEATURES].copy()
+        for col in NUMERIC_FEATURES:
+            tab_df[col] = pd.to_numeric(tab_df[col], errors='coerce').fillna(tab_df[col].median())
+        for col in CATEGORICAL_FEATURES:
+            tab_df[col] = tab_df[col].astype(str).fillna("Unknown")
+            
+        self.tabular_transformer.fit(tab_df)
+        self.text_vectorizer.fit(train_df[TEXT_FEATURE].fillna(""))
         
         # Build feature names
         cat_encoder = self.tabular_transformer.named_transformers_["cat"]
@@ -53,7 +59,7 @@ class ClinicalFeatureEngine:
         for i, col in enumerate(CATEGORICAL_FEATURES):
             for val in cat_encoder.categories_[i]:
                 cat_names.append(f"{col}_{val}")
-        tab_names = NUMERIC_FEATURES + cat_names + BINARY_FEATURES
+        tab_names = NUMERIC_FEATURES + cat_names
         text_names = [f"tfidf_{w}" for w in self.text_vectorizer.get_feature_names_out()]
         self.feature_names = tab_names + text_names
         self.is_fitted = True
@@ -64,12 +70,32 @@ class ClinicalFeatureEngine:
         """Transforms validation or test features using previously fitted parameters."""
         if not self.is_fitted:
             raise ValueError("Feature engine must be fitted before transform.")
-        X_tab = self.tabular_transformer.transform(df[NUMERIC_FEATURES + CATEGORICAL_FEATURES + BINARY_FEATURES])
-        X_text = self.text_vectorizer.transform(df[TEXT_FEATURE]).toarray()
+        
+        tab_df = df.copy()
+        # Guarantee presence of required columns with safe defaults if missing
+        default_vals = {
+            "age": 50, "heart_rate": 78, "systolic_bp": 120, "diastolic_bp": 80,
+            "temperature": 37.0, "spo2": 98, "sex": "Male", "severity": "Moderate"
+        }
+        for col, default_v in default_vals.items():
+            if col not in tab_df.columns:
+                tab_df[col] = default_v
+            else:
+                tab_df[col] = tab_df[col].fillna(default_v)
+
+        for col in NUMERIC_FEATURES:
+            tab_df[col] = pd.to_numeric(tab_df[col], errors='coerce').fillna(default_vals[col])
+        for col in CATEGORICAL_FEATURES:
+            tab_df[col] = tab_df[col].astype(str)
+
+        text_col = tab_df[TEXT_FEATURE] if TEXT_FEATURE in tab_df.columns else pd.Series([""] * len(tab_df))
+        
+        X_tab = self.tabular_transformer.transform(tab_df[NUMERIC_FEATURES + CATEGORICAL_FEATURES])
+        X_text = self.text_vectorizer.transform(text_col.fillna("")).toarray()
         return np.hstack([X_tab, X_text])
 
     def transform_tabular_only(self, df: pd.DataFrame) -> np.ndarray:
-        return self.tabular_transformer.transform(df[NUMERIC_FEATURES + CATEGORICAL_FEATURES + BINARY_FEATURES])
+        return self.tabular_transformer.transform(df[NUMERIC_FEATURES + CATEGORICAL_FEATURES])
 
     def transform_text_only(self, df: pd.DataFrame) -> np.ndarray:
         return self.text_vectorizer.transform(df[TEXT_FEATURE]).toarray()
@@ -89,7 +115,7 @@ def build_and_fit_feature_pipeline(
     val_df = pd.read_csv(os.path.join(data_dir, "val.csv"))
     test_df = pd.read_csv(os.path.join(data_dir, "test.csv"))
 
-    engine = ClinicalFeatureEngine(tfidf_max_features=200)
+    engine = ClinicalFeatureEngine(tfidf_max_features=300)
     engine.fit(train_df)
 
     # Transform splits
@@ -111,3 +137,4 @@ def build_and_fit_feature_pipeline(
 
 if __name__ == "__main__":
     build_and_fit_feature_pipeline()
+

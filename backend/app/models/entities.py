@@ -169,3 +169,65 @@ class SafetyEvent(Base):
 
     # Relationships
     patient_case = relationship("PatientCase", back_populates="safety_events")
+
+# ===========================================================================
+# Motor & Cognitive Screening Domain Entities
+# ===========================================================================
+
+class MotorScreeningSession(Base):
+    __tablename__ = "motor_screening_sessions"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    session_reference = Column(String(64), unique=True, index=True, nullable=False)
+    start_time = Column(DateTime, default=datetime.utcnow)
+    end_time = Column(DateTime, nullable=True)
+    duration_sec = Column(Float, nullable=True)
+    device_tier = Column(String(64), nullable=True)
+    input_sensor = Column(String(64), nullable=True)
+    viewport_width = Column(Integer, nullable=True)
+    viewport_height = Column(Integer, nullable=True)
+    user_agent = Column(String(512), nullable=True)
+    overall_quality = Column(String(32), default="INSUFFICIENT DATA")
+    completion_status = Column(String(32), default="PARTIAL")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    trials = relationship("MotorScreeningTrial", back_populates="session", cascade="all, delete-orphan")
+    metrics = relationship("MotorScreeningMetric", back_populates="session", cascade="all, delete-orphan")
+
+class MotorScreeningTrial(Base):
+    __tablename__ = "motor_screening_trials"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    session_id = Column(Integer, ForeignKey("motor_screening_sessions.id"), nullable=False)
+    test_type = Column(String(64), nullable=False)  # 'reaction-time' | 'motor-stability' | 'finger-tap'
+    trial_number = Column(Integer, nullable=False)
+    is_practice = Column(Integer, default=0)
+    status = Column(String(32), default="VALID")
+    stimulus_timestamp = Column(Float, nullable=True)
+    response_timestamp = Column(Float, nullable=True)
+    reaction_time_ms = Column(Float, nullable=True)
+    inter_tap_interval_ms = Column(Float, nullable=True)
+    path_id = Column(String(64), nullable=True)
+    path_efficiency_pct = Column(Float, nullable=True)
+    mean_deviation_px = Column(Float, nullable=True)
+    coordinates_data = Column(JSON, nullable=True)
+    input_type = Column(String(32), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    session = relationship("MotorScreeningSession", back_populates="trials")
+
+class MotorScreeningMetric(Base):
+    __tablename__ = "motor_screening_metrics"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    session_id = Column(Integer, ForeignKey("motor_screening_sessions.id"), nullable=False)
+    test_type = Column(String(64), nullable=False)  # 'reaction-time' | 'motor-stability' | 'finger-tap' | 'battery-summary'
+    derived_metrics = Column(JSON, nullable=False)
+    quality_status = Column(String(32), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    session = relationship("MotorScreeningSession", back_populates="metrics")
+

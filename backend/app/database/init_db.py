@@ -15,7 +15,8 @@ from backend.app.database.session import engine, SessionLocal
 from backend.app.database.base import Base
 from backend.app.models.entities import (
     User, PatientCase, AIModel, Prediction, PredictionProbability,
-    ModelMetric, Experiment, RetrievalResult, LLMInteraction, SafetyEvent
+    ModelMetric, Experiment, RetrievalResult, LLMInteraction, SafetyEvent,
+    MotorScreeningSession, MotorScreeningTrial, MotorScreeningMetric
 )
 
 def init_database():

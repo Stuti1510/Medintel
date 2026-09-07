@@ -15,7 +15,6 @@ export const ExplainabilityPage: React.FC = () => {
   const [inputText, setInputText] = useState<string>(
     "58-year-old male with acute hypertensive crisis, severe occipital headache, blood pressure 168/105 mmHg, elevated serum cholesterol, chronic tobacco use, and exertional dyspnea."
   );
-  const [targetDisease, setTargetDisease] = useState<string>("Cardiovascular Disease (CVD)");
   const [structuredData, setStructuredData] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState<boolean>(false);
   const [explainResult, setExplainResult] = useState<ExplainabilityResult | null>(null);
@@ -28,15 +27,14 @@ export const ExplainabilityPage: React.FC = () => {
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleExplain = async (textOverride?: string, dataOverride?: Record<string, any>, diseaseOverride?: string) => {
+  const handleExplain = async (textOverride?: string, dataOverride?: Record<string, any>) => {
     setLoading(true);
     setError(null);
     try {
       const textToUse = textOverride !== undefined ? textOverride : inputText;
       const dataToUse = dataOverride !== undefined ? dataOverride : structuredData;
-      const diseaseToUse = diseaseOverride !== undefined ? diseaseOverride : targetDisease;
 
-      const data = await getExplainability(textToUse, dataToUse, diseaseToUse);
+      const data = await getExplainability(textToUse, dataToUse);
       setExplainResult(data);
     } catch (err: any) {
       console.error(err);
@@ -79,7 +77,7 @@ export const ExplainabilityPage: React.FC = () => {
       setUploadSuccessNote(`Extracted encounter biometrics from ${resp.document.filename}`);
 
       // Automatically re-run explainability with the new extracted parameters
-      await handleExplain(text, structPayload, targetDisease);
+      await handleExplain(text, structPayload);
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Failed to parse uploaded document");
@@ -133,21 +131,10 @@ export const ExplainabilityPage: React.FC = () => {
               Clinical Presentation for Dynamic Attribution Analysis
             </h2>
             <div className="flex items-center gap-2">
-              <label className="text-xs font-mono text-[#73706d]">Target Evaluation:</label>
-              <select
-                value={targetDisease}
-                onChange={(e) => {
-                  setTargetDisease(e.target.value);
-                  handleExplain(inputText, structuredData, e.target.value);
-                }}
-                className="px-2.5 py-1 rounded bg-[#fafaf8] border border-[#e8e4dd] text-xs font-mono text-[#292827] focus:outline-none focus:border-[#1b1938]"
-              >
-                <option value="Cardiovascular Disease (CVD)">Cardiovascular Disease (CVD)</option>
-                <option value="Coronary Artery Disease">Coronary Artery Disease</option>
-                <option value="Hypertension">Hypertension</option>
-                <option value="Bronchial Asthma">Bronchial Asthma</option>
-                <option value="Type 2 Diabetes Mellitus">Type 2 Diabetes Mellitus</option>
-              </select>
+              <span className="text-xs font-mono text-[#73706d]">Predicted Condition:</span>
+              <span className="px-2.5 py-1 rounded bg-[#1b1938] text-white text-xs font-mono font-medium">
+                {explainResult?.predicted_condition || "Analyzing..."}
+              </span>
             </div>
           </div>
 
@@ -223,8 +210,7 @@ export const ExplainabilityPage: React.FC = () => {
                 onClick={() => {
                   const text = "58-year-old male with acute hypertensive crisis, severe occipital headache, blood pressure 168/105 mmHg, elevated serum cholesterol, chronic tobacco use, and exertional dyspnea.";
                   setInputText(text);
-                  setTargetDisease("Cardiovascular Disease (CVD)");
-                  handleExplain(text, {}, "Cardiovascular Disease (CVD)");
+                  handleExplain(text, {});
                 }}
                 className="px-2.5 py-1 text-xs rounded bg-[#fafaf8] hover:bg-[#f5f4f0] text-[#73706d] border border-[#e8e4dd] font-mono"
               >
@@ -235,8 +221,7 @@ export const ExplainabilityPage: React.FC = () => {
                 onClick={() => {
                   const text = "64-year-old male presenting with severe substernal chest pressure radiating to left arm, diaphoresis, resting BP 155/95 mmHg, and elevated LDL.";
                   setInputText(text);
-                  setTargetDisease("Coronary Artery Disease");
-                  handleExplain(text, {}, "Coronary Artery Disease");
+                  handleExplain(text, {});
                 }}
                 className="px-2.5 py-1 text-xs rounded bg-[#fafaf8] hover:bg-[#f5f4f0] text-[#73706d] border border-[#e8e4dd] font-mono"
               >
@@ -247,8 +232,7 @@ export const ExplainabilityPage: React.FC = () => {
                 onClick={() => {
                   const text = "38-year-old female presenting with acute respiratory wheezing, nocturnal dry cough, and normal blood pressure (118/74 mmHg).";
                   setInputText(text);
-                  setTargetDisease("Bronchial Asthma");
-                  handleExplain(text, {}, "Bronchial Asthma");
+                  handleExplain(text, {});
                 }}
                 className="px-2.5 py-1 text-xs rounded bg-[#fafaf8] hover:bg-[#f5f4f0] text-[#73706d] border border-[#e8e4dd] font-mono"
               >

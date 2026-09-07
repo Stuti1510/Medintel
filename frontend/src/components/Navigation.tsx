@@ -17,6 +17,7 @@ export const Navigation: React.FC = () => {
 
   const navLinks = [
     { label: "Clinical Analysis", path: "/clinical-analysis" },
+    { label: "Motor Screening", path: "/motor-screening" },
     { label: "Research Lab", path: "/transformer-lab" },
     { label: "Model Benchmark", path: "/model-comparison" },
     { label: "Explainability", path: "/explainability" },

@@ -79,3 +79,42 @@
 .research-row-hover:hover {
   background-color: #f5f4f0;
 }
+
+/* ------------------------------------------------------------- */
+/* High-Resolution Scientific Print Styles (Section 32)          */
+/* ------------------------------------------------------------- */
+@media print {
+  header, nav, footer, button, .no-print {
+    display: none !important;
+  }
+
+  body {
+    background-color: #ffffff !important;
+    color: #111111 !important;
+    font-size: 10pt;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .rounded-card, table, tr, .break-inside-avoid {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  @page {
+    margin: 1.2cm;
+    size: A4 portrait;
+  }
+}
+
+.print-only {
+  display: none;
+}
+

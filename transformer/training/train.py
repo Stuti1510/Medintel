@@ -1,8 +1,7 @@
 """
-MEDINTEL AI - Transformer / BioBERT Training Engine (Optimized)
-Pre-tokenizes clinical narratives in batch for high performance.
-Trains the PyTorch Clinical Transformer Classifier with validation checkpointing,
-loss curves, and test evaluation metrics.
+MEDINTEL AI - Transformer / BioBERT Training Engine (Multi-Class with Real Attention Extraction)
+Batch tokenizes clinical narratives and trains the PyTorch Clinical Transformer Classifier
+across all 20 disease conditions with validation checkpointing and test evaluation metrics.
 """
 
 import os
@@ -32,10 +31,10 @@ def train_transformer(
     data_dir="data/processed",
     models_dir="models/transformer/biobert",
     eval_dir="evaluation",
-    epochs=2,
-    batch_size=64,
-    lr=1e-3,
-    max_length=48
+    epochs=4,
+    batch_size=32,
+    lr=5e-4,
+    max_length=64
 ):
     os.makedirs(models_dir, exist_ok=True)
     os.makedirs(eval_dir, exist_ok=True)
@@ -57,7 +56,7 @@ def train_transformer(
     tokenizer_service = BioBERTTokenizerService(max_length=max_length)
     tok = tokenizer_service.tokenizer
     
-    print("[TRANSFORMER TRAIN] Vectorizing and batch tokenizing datasets...")
+    print(f"[TRANSFORMER TRAIN] Vectorizing and batch tokenizing datasets for {num_classes} classes...")
     train_enc = tok(list(train_df["full_clinical_text"].values), padding="max_length", truncation=True, max_length=max_length, return_tensors="pt")
     val_enc = tok(list(val_df["full_clinical_text"].values), padding="max_length", truncation=True, max_length=max_length, return_tensors="pt")
     test_enc = tok(list(test_df["full_clinical_text"].values), padding="max_length", truncation=True, max_length=max_length, return_tensors="pt")
@@ -92,7 +91,7 @@ def train_transformer(
     best_model_state = None
     start_total_train = time.time()
     
-    print(f"[TRANSFORMER TRAIN] Training for {epochs} epochs on {len(train_df)} cases...")
+    print(f"[TRANSFORMER TRAIN] Training for {epochs} epochs on {len(train_df)} cases across {num_classes} classes...")
     for epoch in range(1, epochs + 1):
         epoch_start = time.time()
         model.train()
@@ -104,7 +103,7 @@ def train_transformer(
             input_ids, attention_mask, labels = input_ids.to(device), attention_mask.to(device), labels.to(device)
             
             optimizer.zero_grad()
-            logits, _ = model(input_ids, attention_mask=attention_mask)
+            logits, _, _ = model(input_ids, attention_mask=attention_mask)
             loss = criterion(logits, labels)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
@@ -126,7 +125,7 @@ def train_transformer(
         with torch.no_grad():
             for input_ids, attention_mask, labels in val_loader:
                 input_ids, attention_mask, labels = input_ids.to(device), attention_mask.to(device), labels.to(device)
-                logits, _ = model(input_ids, attention_mask=attention_mask)
+                logits, _, _ = model(input_ids, attention_mask=attention_mask)
                 loss = criterion(logits, labels)
                 val_loss += loss.item() * input_ids.size(0)
                 preds = torch.argmax(logits, dim=1)
@@ -163,7 +162,7 @@ def train_transformer(
     
     config_data = {
         "model_name": "BioBERT Clinical Transformer",
-        "architecture": "Transformer Encoder + Clinical Classification Head",
+        "architecture": "BioBERT Contextual Encoder + Multi-Head Self-Attention + Classification Head",
         "base_model": "dmis-lab/biobert-v1.1",
         "num_classes": num_classes,
         "vocab_size": vocab_size,
@@ -209,7 +208,7 @@ def train_transformer(
     with torch.no_grad():
         for input_ids, attention_mask, labels in test_loader:
             input_ids, attention_mask, labels = input_ids.to(device), attention_mask.to(device), labels.to(device)
-            logits, _ = model(input_ids, attention_mask=attention_mask)
+            logits, _, _ = model(input_ids, attention_mask=attention_mask)
             probs = torch.softmax(logits, dim=1)
             preds = torch.argmax(probs, dim=1)
             
@@ -236,7 +235,7 @@ def train_transformer(
     transformer_results = {
         "model_name": "BioBERT Clinical Transformer",
         "model_type": "Medical Transformer",
-        "architecture": "BioBERT Contextual Encoder + Classification Head",
+        "architecture": "BioBERT Contextual Encoder + Multi-Head Self-Attention + Classification Head",
         "accuracy": test_acc,
         "precision_macro": test_prec_macro,
         "recall_macro": test_rec_macro,
@@ -269,12 +268,13 @@ def train_transformer(
             
     existing_exp = [e for e in existing_exp if e.get("model") != "BioBERT Clinical Transformer"]
     existing_exp.append({
-        "experiment_id": "EXP-BIOBERT-001",
+        "experiment_id": "EXP-BIOBERT-V3.0-MULTICLASS",
+        "experiment_name": "MEDINTEL — Multi-Class Clinical Transformer Benchmark",
         "model": "BioBERT Clinical Transformer",
-        "model_version": "v1.1.0",
+        "model_version": "v3.0.0",
         "model_type": "Medical Transformer",
-        "dataset": "MEDINTEL Clinical Benchmark",
-        "dataset_version": "v1.0",
+        "dataset": "MEDINTEL Multi-Class Clinical Cases Benchmark",
+        "dataset_version": "v3.0-MULTICLASS",
         "train_samples": len(train_df),
         "val_samples": len(val_df),
         "test_samples": len(test_df),
@@ -297,3 +297,4 @@ def train_transformer(
 
 if __name__ == "__main__":
     train_transformer()
+

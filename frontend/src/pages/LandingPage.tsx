@@ -46,6 +46,12 @@ export const LandingPage: React.FC = () => {
       title: "Dataset Discovery & Topology",
       description: "Audit 4 real clinical datasets spanning 316,185 verified records, 821 authentic disease entities, and strict train/validation/test partitions.",
       link: "/datasets"
+    },
+    {
+      num: "08",
+      title: "Motor & Cognitive Screening",
+      description: "Perform controlled browser-based behavioral tests for reaction-time latency, mouse-tracking stability, and finger-tap rhythm consistency.",
+      link: "/motor-screening"
     }
   ];
 

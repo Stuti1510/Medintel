@@ -1,4 +1,22 @@
 {
-  "0": "No Cardiovascular Disease",
-  "1": "Cardiovascular Disease"
+  "0": "Acute Appendicitis",
+  "1": "Acute Bronchitis",
+  "2": "Atopic Dermatitis",
+  "3": "Bronchial Asthma",
+  "4": "Chronic Kidney Disease",
+  "5": "GERD",
+  "6": "Gastroenteritis",
+  "7": "Hypertension",
+  "8": "Hyperthyroidism",
+  "9": "Infectious Mononucleosis",
+  "10": "Iron Deficiency Anemia",
+  "11": "Ischemic Stroke",
+  "12": "Major Depressive Disorder",
+  "13": "Migraine with Aura",
+  "14": "Myocardial Infarction",
+  "15": "Pneumonia",
+  "16": "Pulmonary Embolism",
+  "17": "Rheumatoid Arthritis",
+  "18": "Type 2 Diabetes Mellitus",
+  "19": "Urinary Tract Infection"
 }
