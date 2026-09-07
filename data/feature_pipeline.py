@@ -97,15 +97,73 @@ class ClinicalFeatureEngine:
     def transform_tabular_only(self, df: pd.DataFrame) -> np.ndarray:
         return self.tabular_transformer.transform(df[NUMERIC_FEATURES + CATEGORICAL_FEATURES])
 
-    def transform_text_only(self, df: pd.DataFrame) -> np.ndarray:
-        return self.text_vectorizer.transform(df[TEXT_FEATURE]).toarray()
+SYNTHETIC_NUMERIC_FEATURES = ["age", "bmi", "systolic_bp", "diastolic_bp", "glucose", "cholesterol", "creatinine"]
+SYNTHETIC_CATEGORICAL_FEATURES = ["sex"]
+SYNTHETIC_BINARY_FEATURES = ["diabetes", "hypertension"]
+
+class SyntheticClinicalFeatureEngine:
+    """Leakage-safe preprocessor for the 10,000-row synthetic clinical dataset."""
+    def __init__(self):
+        self.scaler = StandardScaler()
+        self.encoder = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
+        self.numeric_cols = SYNTHETIC_NUMERIC_FEATURES
+        self.categorical_cols = SYNTHETIC_CATEGORICAL_FEATURES
+        self.binary_cols = SYNTHETIC_BINARY_FEATURES
+        self.is_fitted = False
+        self.feature_names = []
+
+    def fit(self, train_df: pd.DataFrame):
+        """Fits StandardScaler and OneHotEncoder EXCLUSIVELY on training data to prevent leakage."""
+        print(f"[SYNTHETIC FEATURE ENGINE] Fitting preprocessors on {len(train_df):,} training samples...")
+        
+        # 1. Fit numerical features
+        num_data = train_df[self.numeric_cols].copy()
+        for col in self.numeric_cols:
+            num_data[col] = pd.to_numeric(num_data[col], errors='coerce').fillna(num_data[col].median())
+        self.scaler.fit(num_data)
+
+        # 2. Fit categorical features
+        cat_data = train_df[self.categorical_cols].copy()
+        for col in self.categorical_cols:
+            cat_data[col] = cat_data[col].astype(str).fillna("Unknown")
+        self.encoder.fit(cat_data)
+
+        # 3. Assemble feature names
+        cat_names = []
+        for i, col in enumerate(self.categorical_cols):
+            for val in self.encoder.categories_[i]:
+                cat_names.append(f"{col}_{val}")
+        self.feature_names = self.numeric_cols + cat_names + self.binary_cols
+        self.is_fitted = True
+        print(f"[SYNTHETIC FEATURE ENGINE] Total feature dimensions: {len(self.feature_names)}")
+        return self
+
+    def transform(self, df: pd.DataFrame) -> np.ndarray:
+        """Transforms validation or test partition using parameters learned ONLY from train split."""
+        if not self.is_fitted:
+            raise ValueError("Preprocessor must be fitted on training data before transformation.")
+
+        num_data = df[self.numeric_cols].copy()
+        for col in self.numeric_cols:
+            num_data[col] = pd.to_numeric(num_data[col], errors='coerce').fillna(self.scaler.mean_[self.numeric_cols.index(col)])
+        X_num = self.scaler.transform(num_data)
+
+        cat_data = df[self.categorical_cols].copy()
+        for col in self.categorical_cols:
+            cat_data[col] = cat_data[col].astype(str).fillna("Unknown")
+        X_cat = self.encoder.transform(cat_data)
+
+        bin_data = df[self.binary_cols].copy()
+        for col in self.binary_cols:
+            bin_data[col] = pd.to_numeric(bin_data[col], errors='coerce').fillna(0).astype(int)
+        X_bin = bin_data.values
+
+        return np.hstack([X_num, X_cat, X_bin])
 
     def save(self, models_dir="models/classical"):
         os.makedirs(models_dir, exist_ok=True)
-        joblib.dump(self, os.path.join(models_dir, "feature_pipeline.joblib"))
-        joblib.dump(self.text_vectorizer, os.path.join(models_dir, "tfidf_vectorizer.joblib"))
-        joblib.dump(self.tabular_transformer, os.path.join(models_dir, "tabular_transformer.joblib"))
-        print(f"[FEATURE ENGINE] Saved pipeline artifacts to {models_dir}")
+        joblib.dump(self, os.path.join(models_dir, "synthetic_feature_pipeline.joblib"))
+        print(f"[SYNTHETIC FEATURE ENGINE] Saved to {models_dir}/synthetic_feature_pipeline.joblib")
 
 def build_and_fit_feature_pipeline(
     data_dir="data/processed",
@@ -135,6 +193,4 @@ def build_and_fit_feature_pipeline(
 
     return engine, X_train, y_train, X_val, y_val, X_test, y_test, train_dist
 
-if __name__ == "__main__":
-    build_and_fit_feature_pipeline()
 

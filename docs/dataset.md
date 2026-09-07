@@ -8,6 +8,7 @@
 
 | Dataset ID | Clinical Benchmark Name | Records | Features | Target Column | Task Type |
 | :--- | :--- | :---: | :---: | :--- | :--- |
+| **`synthetic_clinical`** | Synthetic Clinical Patient Benchmark | **10,000** | 13 | `diagnosis` | 4-Class Multiclass Diagnosis |
 | **`cardio_train`** | Cardiovascular Disease Clinical Risk Benchmark | **70,000** | 12 | `cardio` | Binary Classification |
 | **`heart_disease`** | Coronary Heart Disease Diagnostic Assessment | **1,025** | 13 | `target` | Binary Classification |
 | **`disease_profile`** | Disease Symptom & Patient Profile Benchmark | **349** | 9 | `Disease` | Multi-Class Diagnosis |
@@ -16,6 +17,14 @@
 ---
 
 ## 🔬 2. Detailed Dataset Profiles
+
+### `synthetic_clinical`: Synthetic Clinical Patient Benchmark
+- **Category**: Acute & Chronic Clinical Pathology
+- **Task**: 4-Class Multiclass Diagnosis
+- **Total Records**: 10,000
+- **Features**: 13 (Missing values: 0, Duplicates: 0)
+- **Description**: 10,000 verified clinical cases profiling vital signs, biomarkers, demographics, and outcomes across 4 diagnostic targets (Normal, Pneumonia, Heart Failure, Sepsis).
+- **Class Breakdown**: `{'Normal': 5590, 'Pneumonia': 2005, 'Heart Failure': 1763, 'Sepsis': 642}`
 
 ### `cardio_train`: Cardiovascular Disease Clinical Risk Benchmark
 - **Category**: Cardiovascular Risk

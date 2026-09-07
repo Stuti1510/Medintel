@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Menu, X, ArrowRight } from 'lucide-react';
 import { getSystemStatus } from '../services/api';
 import { SystemStatusResponse } from '../types/clinical';
+import { MedintelLogo } from './MedintelLogo';
 
 export const Navigation: React.FC = () => {
   const location = useLocation();
@@ -34,24 +35,13 @@ export const Navigation: React.FC = () => {
         : 'bg-white/95 backdrop-blur-md border-[#e8e4dd] text-[#292827]'
     }`}>
       <div className="max-w-content mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        {/* Left: Typographic Wordmark & Subtitle */}
-        <Link to="/" className="flex flex-col group py-1">
-          <div className="flex items-center gap-2">
-            <span className={`text-base font-semibold tracking-tight transition-colors ${
-              isDarkPage ? 'text-white' : 'text-[#292827]'
-            }`}>
-              MEDINTEL AI
-            </span>
-          </div>
-          <span className={`text-[9px] font-mono tracking-wider uppercase ${
-            isDarkPage ? 'text-[#bcbac9]' : 'text-[#73706d]'
-          }`}>
-            Clinical Intelligence Platform
-          </span>
+        {/* Left: Official Medintel Logo */}
+        <Link to="/" className="flex items-center group py-1">
+          <MedintelLogo variant="navbar" isDark={isDarkPage} enable3D={true} />
         </Link>
 
-        {/* Center: Clean Text Navigation */}
-        <nav className="hidden lg:flex items-center space-x-1 xl:space-x-2">
+        {/* Center: Clean Nav Links */}
+        <nav className="hidden lg:flex items-center space-x-1 xl:space-x-1.5">
           {navLinks.map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -74,28 +64,30 @@ export const Navigation: React.FC = () => {
           })}
         </nav>
 
-        {/* Right: Restrained Status Dot + Viva Mode CTA */}
-        <div className="flex items-center gap-4">
-          {/* Subtle Status Indicator */}
+        {/* Right: Status Indicator & Quick Action */}
+        <div className="flex items-center gap-3">
+          {/* Subtle System Status Indicator */}
           <div className="hidden sm:flex items-center gap-1.5 text-xs font-mono">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className={isDarkPage ? 'text-[#bcbac9]' : 'text-[#73706d]'}>
               System Ready
             </span>
           </div>
 
-          {/* Understated Viva Mode Link */}
-          <Link
-            to="/presentation"
-            className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border transition-all ${
-              isDarkPage
-                ? 'border-[#3f3a52] text-[#c9b4fa] hover:bg-[#232047]'
-                : 'border-[#e8e4dd] text-[#1b1938] hover:bg-[#fafaf8]'
-            }`}
-          >
-            <span>Viva Mode</span>
-            <ArrowRight className="w-3 h-3" />
-          </Link>
+          {/* Clinical Analysis Quick CTA (when not on clinical analysis page) */}
+          {location.pathname !== '/clinical-analysis' && (
+            <Link
+              to="/clinical-analysis"
+              className={`hidden md:inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                isDarkPage
+                  ? 'bg-[#c9b4fa] hover:bg-[#d8c7fd] text-[#1b1938] font-semibold shadow-sm'
+                  : 'bg-[#1b1938] hover:bg-[#232047] text-white font-medium shadow-sm'
+              }`}
+            >
+              <span>Analyze</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          )}
 
           {/* Mobile Menu Toggle */}
           <button

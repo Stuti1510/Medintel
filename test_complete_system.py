@@ -76,7 +76,6 @@ def test_dataset_discovery():
 def test_document_ocr_upload():
     print("\n[TEST 3] Testing Document Upload & Entity Extraction Pipeline...")
     
-    # Text encounter report for fast test
     sample_text = """CLINICAL ENCOUNTER REPORT
 Patient: John Doe, Age: 61, Sex: Male
 Vitals: BP 172/108 mmHg, HR: 94 bpm, SpO2: 94%
@@ -98,13 +97,11 @@ Medications: Lisinopril 20mg daily
     analysis = data.get("analysis")
     if analysis:
         print("  -> Auto-Analysis ML Pred:", analysis.get("ml_prediction", {}).get("predicted_condition"))
-        print("  -> Auto-Analysis Conf:", analysis.get("ml_prediction", {}).get("confidence_percentage"))
     print("  PASS: Document Upload & Entity Extraction OK")
 
 def test_dynamic_probabilities_distinct():
     print("\n[TEST 4] Verifying Dynamic, Input-Driven Probabilities (No Static Duplication)...")
     
-    # Case A: Severe Cardiovascular Risk
     case_a = {
         "age": 62, "sex": "Male", "height": 172, "weight": 92,
         "cholesterol": 3, "gluc": 2, "smoke": 1, "alco": 0, "active": 0,
@@ -114,7 +111,6 @@ def test_dynamic_probabilities_distinct():
         "selected_disease": "Cardiovascular Disease (CVD)"
     }
     
-    # Case B: Bronchial Asthma
     case_b = {
         "age": 28, "sex": "Female", "height": 165, "weight": 58,
         "cholesterol": 1, "gluc": 1, "smoke": 0, "alco": 0, "active": 1,
@@ -135,7 +131,6 @@ def test_dynamic_probabilities_distinct():
     
     assert abs(conf_a - conf_b) > 0.05, "Probabilities must be dynamic and differ based on inputs!"
     
-    # Check top differentials
     diffs_a = res_a["top_differentials"]
     diffs_b = res_b["top_differentials"]
     print("  -> Case A Differentials:", [f"{d['condition']} ({d['percentage']})" for d in diffs_a[:3]])
@@ -165,40 +160,17 @@ def test_explainability_service():
     assert len(data.get("lexical_token_salience", [])) > 0, "Must extract TF-IDF tokens"
     print("  PASS: Dynamic Explainability OK")
 
-def test_interactive_viva():
-    print("\n[TEST 6] Testing Interactive Viva Defense Simulator...")
+def test_motor_screening_api():
+    print("\n[TEST 6] Testing Motor Screening Sessions & Aggregate Research Stats API...")
+    status, data = http_get("/motor/stats")
+    assert status == 200, f"Motor stats status {status}"
+    print("  -> Aggregate Sessions Registered in Database:", data.get("total_sessions"))
     
-    # 1. Start Session
-    _, start_res = http_post_json("/viva/start", {"context_data": {"test": True}})
-    session_id = start_res["session_id"]
-    q1 = start_res["initial_question"]
-    print(f"  -> Started Session {session_id} with {start_res['total_questions']} dynamic questions across {len(start_res['available_categories'])} categories.")
-    print(f"  -> Initial Question [{q1['category']}]: {q1['question']}")
-    
-    # 2. Submit candidate defense answer
-    candidate_ans = "In MEDINTEL AI, we prevent data leakage by isolating the 15% held-out test split (10,296 records) before any preprocessing, fitting scalers and balancing only on the 70% training partition (48,552 balanced records). We evaluate calibration using Expected Calibration Error (ECE=0.0341) and Brier scores."
-    _, eval_res = http_post_json("/viva/evaluate", {
-        "session_id": session_id,
-        "question_id": q1["id"],
-        "candidate_answer": candidate_ans
-    })
-    
-    print(f"  -> Evaluated Grade: {eval_res['grade']} ({eval_res['score']}/100)")
-    print(f"  -> Criteria Breakdown: {eval_res['criteria']}")
-    print(f"  -> Matched Concepts: {eval_res['matched_concepts']}")
-    print(f"  -> Examiner Feedback: {eval_res['feedback'][:150]}...")
-    
-    assert eval_res["score"] >= 60, "Strong candidate answer should score well"
-    assert len(eval_res["matched_concepts"]) > 0, "Should match expected concepts"
-    
-    # 3. Retrieve Next Question from Transformer category
-    _, q2 = http_get(f"/viva/question?session_id={session_id}&category=Transformer+Architecture+%26+BioBERT+Attention")
-    print(f"  -> Follow-up Question [{q2['category']}]: {q2['question']}")
-    
-    # 4. End Session
-    _, end_res = http_post_json(f"/viva/end?session_id={session_id}", {})
-    print(f"  -> Session Summary: Grade {end_res['average_grade']} across {end_res['questions_answered']} questions.")
-    print("  PASS: Interactive Viva Mode OK")
+    # Check sessions listing endpoint
+    status_list, sessions = http_get("/motor/sessions")
+    assert status_list == 200
+    print("  -> Motor Screening Sessions Query OK, Count:", len(sessions))
+    print("  PASS: Motor Screening API Endpoints OK")
 
 if __name__ == "__main__":
     print("==================================================================")
@@ -209,7 +181,7 @@ if __name__ == "__main__":
     test_document_ocr_upload()
     test_dynamic_probabilities_distinct()
     test_explainability_service()
-    test_interactive_viva()
+    test_motor_screening_api()
     print("\n==================================================================")
     print("           ALL 6 END-TO-END VERIFICATION SUITES PASSED!           ")
     print("==================================================================")

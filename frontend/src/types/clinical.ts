@@ -235,31 +235,6 @@ export interface ExplainabilityResult {
   attention_matrix?: number[][];
 }
 
-export interface VivaQuestion {
-  id: number;
-  category: string;
-  question: string;
-  expected_concepts: string[];
-  difficulty: "Easy" | "Intermediate" | "Hard";
-}
-
-export interface VivaEvaluationResult {
-  session_id: string;
-  question_id: number;
-  score: number;
-  grade: string;
-  criteria: {
-    correctness: number;
-    relevance: number;
-    completeness: number;
-    technical_depth: number;
-  };
-  matched_concepts: string[];
-  expected_concepts: string[];
-  feedback: string;
-  grounding_evidence: EvidenceItem[];
-}
-
 export interface SystemStatusResponse {
   status: string;
   benchmark_architecture?: string;

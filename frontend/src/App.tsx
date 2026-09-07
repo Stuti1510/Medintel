@@ -12,7 +12,7 @@ import { LLMLabPage } from './pages/LLMLabPage';
 import { DatasetDashboardPage } from './pages/DatasetDashboardPage';
 import { PredictionHistoryPage } from './pages/PredictionHistoryPage';
 import { ArchitecturePage } from './pages/ArchitecturePage';
-import { VivaPresentationPage } from './pages/VivaPresentationPage';
+import { PresentationPage } from './pages/PresentationPage';
 
 export function App() {
   return (
@@ -32,7 +32,7 @@ export function App() {
             <Route path="/datasets" element={<DatasetDashboardPage />} />
             <Route path="/history" element={<PredictionHistoryPage />} />
             <Route path="/architecture" element={<ArchitecturePage />} />
-            <Route path="/presentation" element={<VivaPresentationPage />} />
+            <Route path="/presentation" element={<PresentationPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

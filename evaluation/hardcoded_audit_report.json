@@ -1,0 +1,136 @@
+{
+  "status": "AUDIT_COMPLETE",
+  "total_findings": 18,
+  "test_fixtures_preserved": 5,
+  "demo_entries_preserved": 0,
+  "placeholders_preserved": 9,
+  "hardcoded_results_replaced": 13,
+  "findings": [
+    {
+      "file": "frontend\\src\\components\\AttentionHeatmap.tsx",
+      "line": 105,
+      "pattern": "100%",
+      "snippet": "<span>100%</span>",
+      "classification": "HARDCODED_RESULT"
+    },
+    {
+      "file": "frontend\\src\\components\\motor\\FingerTapTest.tsx",
+      "line": 742,
+      "pattern": "100%",
+      "snippet": "<ResponsiveContainer width=\"100%\" height=\"100%\">",
+      "classification": "TEST_FIXTURE"
+    },
+    {
+      "file": "frontend\\src\\components\\motor\\FingerTapTest.tsx",
+      "line": 808,
+      "pattern": "100%",
+      "snippet": "<code>(Standard Deviation / Mean Interval) \u00d7 100%</code>",
+      "classification": "TEST_FIXTURE"
+    },
+    {
+      "file": "frontend\\src\\components\\motor\\FingerTapTest.tsx",
+      "line": 812,
+      "pattern": "100%",
+      "snippet": "<code>((Mean_H2 - Mean_H1) / Mean_H1) \u00d7 100%</code>",
+      "classification": "TEST_FIXTURE"
+    },
+    {
+      "file": "frontend\\src\\components\\motor\\MotorResearchDashboard.tsx",
+      "line": 258,
+      "pattern": "100%",
+      "snippet": "<ResponsiveContainer width=\"100%\" height=\"100%\">",
+      "classification": "HARDCODED_RESULT"
+    },
+    {
+      "file": "frontend\\src\\components\\motor\\MotorResearchDashboard.tsx",
+      "line": 287,
+      "pattern": "100%",
+      "snippet": "<ResponsiveContainer width=\"100%\" height=\"100%\">",
+      "classification": "HARDCODED_RESULT"
+    },
+    {
+      "file": "frontend\\src\\components\\motor\\MotorResearchDashboard.tsx",
+      "line": 316,
+      "pattern": "100%",
+      "snippet": "<ResponsiveContainer width=\"100%\" height=\"100%\">",
+      "classification": "HARDCODED_RESULT"
+    },
+    {
+      "file": "frontend\\src\\components\\motor\\ReactionTimeTest.tsx",
+      "line": 934,
+      "pattern": "100%",
+      "snippet": "<ResponsiveContainer width=\"100%\" height=\"100%\">",
+      "classification": "TEST_FIXTURE"
+    },
+    {
+      "file": "frontend\\src\\pages\\DatasetDashboardPage.tsx",
+      "line": 236,
+      "pattern": "100%",
+      "snippet": "0 (100% Clean)",
+      "classification": "HARDCODED_RESULT"
+    },
+    {
+      "file": "frontend\\src\\pages\\DatasetDashboardPage.tsx",
+      "line": 387,
+      "pattern": "100%",
+      "snippet": "<ResponsiveContainer width=\"100%\" height=\"100%\">",
+      "classification": "HARDCODED_RESULT"
+    },
+    {
+      "file": "frontend\\src\\pages\\ModelComparisonPage.tsx",
+      "line": 79,
+      "pattern": "100%",
+      "snippet": "<span className=\"text-emerald-700 font-medium\">100% Real</span>",
+      "classification": "HARDCODED_RESULT"
+    },
+    {
+      "file": "frontend\\src\\pages\\PresentationPage.tsx",
+      "line": 101,
+      "pattern": "100%",
+      "snippet": "<p className=\"text-[11px] text-[#bcbac9]\">100% untouched real data for final scientific evaluation.<",
+      "classification": "HARDCODED_RESULT"
+    },
+    {
+      "file": "llm\\safety\\safety_checker.py",
+      "line": 32,
+      "pattern": "100%",
+      "snippet": "(\"100% diagnosis\", \"statistical model prediction\"),",
+      "classification": "HARDCODED_RESULT"
+    },
+    {
+      "file": "scripts\\audit_hardcoded_values.py",
+      "line": 3,
+      "pattern": "98\\.2",
+      "snippet": "Scans the codebase for suspicious metric literals (98.2, 96.4, 0.942, etc.) and mock keywords.",
+      "classification": "HARDCODED_RESULT"
+    },
+    {
+      "file": "scripts\\audit_hardcoded_values.py",
+      "line": 3,
+      "pattern": "96\\.4",
+      "snippet": "Scans the codebase for suspicious metric literals (98.2, 96.4, 0.942, etc.) and mock keywords.",
+      "classification": "HARDCODED_RESULT"
+    },
+    {
+      "file": "scripts\\audit_hardcoded_values.py",
+      "line": 3,
+      "pattern": "0\\.942",
+      "snippet": "Scans the codebase for suspicious metric literals (98.2, 96.4, 0.942, etc.) and mock keywords.",
+      "classification": "HARDCODED_RESULT"
+    },
+    {
+      "file": "scripts\\audit_hardcoded_values.py",
+      "line": 12,
+      "pattern": "100%",
+      "snippet": "r\"98\\.2\", r\"96\\.4\", r\"0\\.942\", r\"99\\.73\", r\"99\\.9\", r\"100%\", r\"97\\.8\"",
+      "classification": "HARDCODED_RESULT"
+    },
+    {
+      "file": "tests\\test_api_endpoints.py",
+      "line": 121,
+      "pattern": "98\\.2",
+      "snippet": "\"path_efficiency_pct\": 98.2,",
+      "classification": "TEST_FIXTURE"
+    }
+  ]
+}

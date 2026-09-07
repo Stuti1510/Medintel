@@ -32,6 +32,26 @@
   }
 }
 
+/* Subtle Floating Animation for MEDINTEL Brand Hero */
+@keyframes medintel-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.animate-medintel-float {
+  animation: medintel-float 5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-medintel-float {
+    animation: none !important;
+  }
+}
+
 /* Custom Minimal Hairline Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
@@ -117,4 +137,3 @@
 .print-only {
   display: none;
 }
-

@@ -2,6 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Activity, ShieldCheck, Database, Cpu, BookOpen, Sparkles, Layers, ArrowUpRight } from 'lucide-react';
 import { TealClosingCTA } from '../components/TealClosingCTA';
+import { Footer } from '../components/Footer';
+import { MedintelLogo } from '../components/MedintelLogo';
 
 export const LandingPage: React.FC = () => {
   const capabilities = [
@@ -72,14 +74,19 @@ export const LandingPage: React.FC = () => {
       {/* ------------------------------------------------------------- */}
       {/* 1. HERO SECTION (Deep Indigo #1b1938)                         */}
       {/* ------------------------------------------------------------- */}
-      <section className="w-full bg-[#1b1938] text-white pt-16 pb-20 md:pt-24 md:pb-28 border-b border-[#3f3a52] relative overflow-hidden">
+      <section className="w-full bg-[#1b1938] text-white pt-12 pb-20 md:pt-16 md:pb-28 border-b border-[#3f3a52] relative overflow-hidden">
         {/* Subtle Ambient Background */}
         <div className="absolute inset-0 opacity-20 pointer-events-none">
           <div className="absolute -top-24 -right-24 w-96 h-96 bg-[#c9b4fa] rounded-full blur-3xl" />
           <div className="absolute bottom-0 left-1/4 w-80 h-80 bg-[#0e3030] rounded-full blur-3xl" />
         </div>
 
-        <div className="max-w-content mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="max-w-content mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-10">
+          {/* Top Hero Brand Anchor with 3D Motion */}
+          <div className="pt-2">
+            <MedintelLogo variant="hero" isDark={true} enable3D={true} animated={true} />
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
             {/* Left: Editorial Headline & Single Primary CTA */}
             <div className="lg:col-span-7 space-y-6">
@@ -88,7 +95,7 @@ export const LandingPage: React.FC = () => {
                 <span>Clinical AI Research Platform</span>
               </div>
 
-              <h1 className="text-4xl sm:text-6xl font-medium tracking-tight text-white leading-[0.98]">
+              <h1 className="text-4xl sm:text-6xl font-medium tracking-tight text-white leading-[0.98] font-editorial">
                 Clinical intelligence,<br />
                 made interpretable.
               </h1>
@@ -97,13 +104,21 @@ export const LandingPage: React.FC = () => {
                 An evidence-aware clinical AI research platform combining machine learning, biomedical transformers, explainability, retrieval, and responsible LLM synthesis.
               </p>
 
-              <div className="pt-2">
+              <div className="pt-2 flex flex-wrap items-center gap-4">
                 <Link
                   to="/clinical-analysis"
                   className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-[#c9b4fa] hover:bg-[#d8c7fd] text-[#1b1938] font-semibold text-base transition-all shadow-md hover:shadow-lg"
                 >
                   <span>Run Clinical Analysis</span>
                   <ArrowRight className="w-4 h-4 text-[#1b1938]" />
+                </Link>
+
+                <Link
+                  to="/motor-screening"
+                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-[#232047] hover:bg-[#2e2a5c] text-white border border-[#3f3a52] font-medium text-sm transition-all"
+                >
+                  <span>Motor Screening</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-[#c9b4fa]" />
                 </Link>
               </div>
             </div>
@@ -186,7 +201,7 @@ export const LandingPage: React.FC = () => {
               <span className="text-xs font-mono uppercase tracking-wider text-[#73706d] block">
                 Research Methodology
               </span>
-              <h2 className="text-3xl sm:text-5xl font-medium tracking-tight text-[#292827] leading-[1.02]">
+              <h2 className="text-3xl sm:text-5xl font-medium tracking-tight text-[#292827] leading-[1.02] font-editorial">
                 From clinical input<br />
                 to evidence-grounded insight.
               </h2>
@@ -243,7 +258,7 @@ export const LandingPage: React.FC = () => {
             <span className="text-xs font-mono uppercase tracking-wider text-[#73706d] block">
               Platform Modules
             </span>
-            <h2 className="text-3xl sm:text-4xl font-medium tracking-tight text-[#292827] mt-1">
+            <h2 className="text-3xl sm:text-4xl font-medium tracking-tight text-[#292827] mt-1 font-editorial">
               One platform.<br />
               A complete clinical AI workflow.
             </h2>
@@ -285,6 +300,11 @@ export const LandingPage: React.FC = () => {
       {/* 5. DEEP TEAL CLOSING CTA SECTION (#0e3030)                    */}
       {/* ------------------------------------------------------------- */}
       <TealClosingCTA />
+
+      {/* ------------------------------------------------------------- */}
+      {/* 6. OFFICIAL MINIMAL FOOTER                                    */}
+      {/* ------------------------------------------------------------- */}
+      <Footer />
     </div>
   );
 };

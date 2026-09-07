@@ -1,0 +1,47 @@
+{
+  "Logistic Regression": {
+    "name": "Logistic Regression",
+    "filename": "synthetic_logistic_regression.joblib",
+    "model_path": "models/classical\\synthetic_logistic_regression.joblib",
+    "hyperparameters": {
+      "C": 1.0,
+      "max_iter": 1000,
+      "class_weight": "balanced",
+      "solver": "lbfgs"
+    },
+    "training_time_sec": 0.0479,
+    "file_size_kb": 1.94,
+    "val_accuracy": 0.5593333333333333,
+    "val_macro_f1": 0.17935014963659685
+  },
+  "Random Forest": {
+    "name": "Random Forest",
+    "filename": "synthetic_random_forest.joblib",
+    "model_path": "models/classical\\synthetic_random_forest.joblib",
+    "hyperparameters": {
+      "n_estimators": 100,
+      "max_depth": 12,
+      "min_samples_split": 4,
+      "class_weight": "balanced"
+    },
+    "training_time_sec": 0.4553,
+    "file_size_kb": 9641.38,
+    "val_accuracy": 0.5593333333333333,
+    "val_macro_f1": 0.17935014963659685
+  },
+  "XGBoost": {
+    "name": "XGBoost",
+    "filename": "synthetic_xgboost.joblib",
+    "model_path": "models/classical\\synthetic_xgboost.joblib",
+    "hyperparameters": {
+      "n_estimators": 100,
+      "max_depth": 5,
+      "learning_rate": 0.08,
+      "subsample": 0.8
+    },
+    "training_time_sec": 1.005,
+    "file_size_kb": 937.14,
+    "val_accuracy": 0.5593333333333333,
+    "val_macro_f1": 0.17935014963659685
+  }
+}

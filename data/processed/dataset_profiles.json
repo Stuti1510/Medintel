@@ -1,4 +1,117 @@
 {
+  "synthetic_clinical": {
+    "dataset_id": "synthetic_clinical",
+    "name": "Synthetic Clinical Patient Benchmark",
+    "version": "v1.0.0",
+    "category": "Acute & Chronic Clinical Pathology",
+    "task_type": "4-Class Multiclass Diagnosis",
+    "total_samples": 10000,
+    "total_columns": 14,
+    "columns": [
+      "patient_id",
+      "age",
+      "sex",
+      "bmi",
+      "systolic_bp",
+      "diastolic_bp",
+      "glucose",
+      "cholesterol",
+      "creatinine",
+      "diabetes",
+      "hypertension",
+      "diagnosis",
+      "readmission_30d",
+      "mortality"
+    ],
+    "target_column": "diagnosis",
+    "num_classes": 4,
+    "class_distribution": {
+      "Normal": 5590,
+      "Pneumonia": 2005,
+      "Heart Failure": 1763,
+      "Sepsis": 642
+    },
+    "feature_count": 13,
+    "numerical_features_count": 12,
+    "categorical_features_count": 2,
+    "missing_values": 0,
+    "duplicate_records": 0,
+    "dataset_hash": "bee99ea6e73b263a19402172cd61dc012089e1dccdd2ba13c43d12722e7a988b",
+    "numerical_summary": {
+      "patient_id": {
+        "mean": 6000.5,
+        "std": 2886.9,
+        "min": 1001.0,
+        "max": 11000.0,
+        "median": 6000.5
+      },
+      "age": {
+        "mean": 54.3,
+        "std": 17.64,
+        "min": 0.0,
+        "max": 90.0,
+        "median": 54.0
+      },
+      "bmi": {
+        "mean": 27.02,
+        "std": 5.83,
+        "min": 15.0,
+        "max": 50.0,
+        "median": 27.0
+      },
+      "systolic_bp": {
+        "mean": 124.81,
+        "std": 17.65,
+        "min": 90.0,
+        "max": 180.0,
+        "median": 125.0
+      },
+      "diastolic_bp": {
+        "mean": 80.34,
+        "std": 11.39,
+        "min": 60.0,
+        "max": 110.0,
+        "median": 80.0
+      },
+      "glucose": {
+        "mean": 106.01,
+        "std": 23.38,
+        "min": 70.0,
+        "max": 198.6,
+        "median": 105.3
+      },
+      "cholesterol": {
+        "mean": 190.89,
+        "std": 34.33,
+        "min": 120.0,
+        "max": 300.0,
+        "median": 190.85
+      },
+      "creatinine": {
+        "mean": 1.0,
+        "std": 0.29,
+        "min": 0.5,
+        "max": 2.13,
+        "median": 1.0
+      },
+      "diabetes": {
+        "mean": 0.12,
+        "std": 0.32,
+        "min": 0.0,
+        "max": 1.0,
+        "median": 0.0
+      },
+      "hypertension": {
+        "mean": 0.3,
+        "std": 0.46,
+        "min": 0.0,
+        "max": 1.0,
+        "median": 0.0
+      }
+    },
+    "description": "10,000 verified clinical cases profiling vital signs, biomarkers, demographics, and outcomes across 4 diagnostic targets (Normal, Pneumonia, Heart Failure, Sepsis).",
+    "validation_status": "DATASET VALIDATED"
+  },
   "cardio_train": {
     "dataset_id": "cardio_train",
     "name": "Cardiovascular Disease Clinical Risk Benchmark",

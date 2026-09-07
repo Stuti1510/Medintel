@@ -1,7 +1,7 @@
 /**
  * MEDINTEL AI — Reaction-Time Screening Instrument
  * High-precision browser latency measurement with randomized ISI, false start detection,
- * window focus safety trapping, and editorial research visualization.
+ * input arming isolation, window focus safety trapping, and editorial research visualization.
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -53,35 +53,55 @@ const DEFAULT_CONFIG: ReactionTimeConfig = {
 
 export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config = DEFAULT_CONFIG }) => {
   const activeConfig = config;
-  // Test State Machine
+
+  // Primary Test State Machine
   const [testState, setTestState] = useState<TestState>('INTRO');
   
-  // Trial Micro-State: 'WAITING' | 'STIMULUS' | 'FEEDBACK' | 'IDLE'
+  // Trial Micro-Phase: 'IDLE' | 'WAITING' | 'STIMULUS' | 'FEEDBACK'
   const [trialPhase, setTrialPhase] = useState<'IDLE' | 'WAITING' | 'STIMULUS' | 'FEEDBACK'>('IDLE');
   
-  // Trial Collections
+  // Trial Collections & Progress
   const [trials, setTrials] = useState<ReactionTimeTrial[]>([]);
   const [currentTrialIndex, setCurrentTrialIndex] = useState<number>(0);
   const [isPracticeMode, setIsPracticeMode] = useState<boolean>(true);
   
-  // High Precision Timestamps & Feedback
+  // High-Precision Refs for Timing & Execution Isolation
   const stimulusStartRef = useRef<number | null>(null);
+  const armedAtRef = useRef<number>(0); // Guard window to prevent button clicks from bleeding into canvas
   const timerRef = useRef<number | null>(null);
   const timeoutRef = useRef<number | null>(null);
+  const isTrialActiveRef = useRef<boolean>(false);
+  const activeTrialIdxRef = useRef<number>(0);
+  const isPracticeModeRef = useRef<boolean>(true);
+  const trialPhaseRef = useRef<'IDLE' | 'WAITING' | 'STIMULUS' | 'FEEDBACK'>('IDLE');
+
+  // Synchronize ref mirrors to prevent stale closure bugs
+  useEffect(() => {
+    trialPhaseRef.current = trialPhase;
+  }, [trialPhase]);
+
+  useEffect(() => {
+    activeTrialIdxRef.current = currentTrialIndex;
+  }, [currentTrialIndex]);
+
+  useEffect(() => {
+    isPracticeModeRef.current = isPracticeMode;
+  }, [isPracticeMode]);
   
+  // Feedback Display State
   const [lastFeedback, setLastFeedback] = useState<{
     text: string;
     type: 'valid' | 'false_start' | 'missed' | 'invalid' | 'neutral';
     rt?: number;
   }>({ text: '', type: 'neutral' });
 
-  // Summary result
+  // Summary Result
   const [summary, setSummary] = useState<ReactionTimeSummary | null>(null);
 
-  // Device Info
+  // Device Environment
   const [deviceInfo] = useState(() => auditDeviceCapabilities());
 
-  // Helper to clear all pending timers
+  // Helper to safely clear all pending timers
   const clearAllTimers = useCallback(() => {
     if (timerRef.current !== null) {
       window.clearTimeout(timerRef.current);
@@ -96,18 +116,18 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
   // Window Focus & Visibility Safety Trapping
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.hidden && testState === 'RUNNING' && trialPhase !== 'IDLE') {
+      if (document.hidden && testState === 'RUNNING' && trialPhaseRef.current !== 'IDLE' && trialPhaseRef.current !== 'FEEDBACK') {
         clearAllTimers();
+        isTrialActiveRef.current = false;
         setTrialPhase('FEEDBACK');
         setLastFeedback({
           text: 'Window focus lost during trial — trial marked as compromised.',
           type: 'invalid'
         });
 
-        // Record compromised trial
         const focusTrial: ReactionTimeTrial = {
-          trialNumber: currentTrialIndex + 1,
-          isPractice: isPracticeMode,
+          trialNumber: activeTrialIdxRef.current + 1,
+          isPractice: isPracticeModeRef.current,
           isiMs: 0,
           stimulusTimestamp: performance.now(),
           responseTimestamp: null,
@@ -119,6 +139,10 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
         };
 
         setTrials((prev) => [...prev, focusTrial]);
+
+        timerRef.current = window.setTimeout(() => {
+          advanceAfterTrial(activeTrialIdxRef.current, isPracticeModeRef.current);
+        }, 1500);
       }
     };
 
@@ -130,15 +154,21 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
       window.removeEventListener('blur', handleVisibilityChange);
       clearAllTimers();
     };
-  }, [testState, trialPhase, currentTrialIndex, isPracticeMode, clearAllTimers]);
+  }, [testState, clearAllTimers]);
 
+  // Forward declarations for cyclic recursion
   const advanceRef = useRef<(completedIdx: number, isPractice: boolean) => void>(() => {});
   const launchRef = useRef<(trialIdx: number, isPractice: boolean) => void>(() => {});
 
-  // Start Next Trial Loop
+  // Launch a Single Reaction-Time Trial
   const launchTrial = useCallback((trialIdx: number, isPractice: boolean) => {
     clearAllTimers();
+    isTrialActiveRef.current = true;
     stimulusStartRef.current = null;
+    
+    // Arming guard: Discard any click/pointer event in the first 400ms to avoid UI transition click-bleed
+    armedAtRef.current = performance.now() + 400;
+
     setTrialPhase('WAITING');
     setLastFeedback({ text: 'Wait for stimulus cue...', type: 'neutral' });
 
@@ -150,13 +180,17 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
 
     // Schedule Stimulus Presentation
     timerRef.current = window.setTimeout(() => {
+      if (!isTrialActiveRef.current) return;
+
       stimulusStartRef.current = performance.now();
       setTrialPhase('STIMULUS');
       setLastFeedback({ text: 'CLICK OR TAP NOW!', type: 'neutral' });
 
-      // Set Missed Stimulus Timeout
+      // Schedule Missed Stimulus Timeout
       timeoutRef.current = window.setTimeout(() => {
-        // Participant missed the stimulus
+        if (!isTrialActiveRef.current || trialPhaseRef.current !== 'STIMULUS') return;
+
+        isTrialActiveRef.current = false;
         const missedTrial: ReactionTimeTrial = {
           trialNumber: trialIdx + 1,
           isPractice,
@@ -177,7 +211,7 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
           type: 'missed'
         });
 
-        // Advance after feedback
+        // Advance to next trial after feedback
         timerRef.current = window.setTimeout(() => {
           advanceRef.current(trialIdx, isPractice);
         }, 1200);
@@ -189,9 +223,10 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
     launchRef.current = launchTrial;
   }, [launchTrial]);
 
-  // Advance to next trial or finish phase
+  // Advance to Next Trial or Transition Phase
   const advanceAfterTrial = useCallback((completedIdx: number, isPractice: boolean) => {
     clearAllTimers();
+    isTrialActiveRef.current = false;
     const nextIdx = completedIdx + 1;
     const maxTrials = isPractice ? activeConfig.practiceTrials : activeConfig.measuredTrials;
 
@@ -217,7 +252,7 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
 
   const hasReportedRef = useRef<boolean>(false);
 
-  // When state transitions to COMPLETED, compute final statistics
+  // When state transitions to COMPLETED, compute research statistics
   useEffect(() => {
     if (testState === 'COMPLETED' && !hasReportedRef.current) {
       hasReportedRef.current = true;
@@ -229,25 +264,35 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
     }
   }, [testState, trials, onComplete]);
 
-  // Handler for clicks inside the test target area
-  const handleTargetInteraction = (e: React.MouseEvent | React.TouchEvent) => {
+  // Handler for Controlled Test Canvas Interaction
+  const handleCanvasInteraction = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
-    if (testState !== 'RUNNING') return;
+    e.stopPropagation();
 
-    const clickTimestamp = performance.now();
+    if (testState !== 'RUNNING' || !isTrialActiveRef.current) return;
+
+    const now = performance.now();
+
+    // 1. Arming Guard: Ignore clicks within the first 400ms of entering WAITING (prevents button bleed)
+    if (now < armedAtRef.current) {
+      return;
+    }
+
     const inputType: InputDeviceType = 'touches' in e ? 'touch' : 'mouse';
 
     if (trialPhase === 'WAITING') {
       // -------------------------------------------------------------
-      // 1. Premature Click / False Start
+      // Premature Click / Genuine False Start
       // -------------------------------------------------------------
+      isTrialActiveRef.current = false;
       clearAllTimers();
+
       const falseStartTrial: ReactionTimeTrial = {
         trialNumber: currentTrialIndex + 1,
         isPractice: isPracticeMode,
         isiMs: 0,
         stimulusTimestamp: 0,
-        responseTimestamp: clickTimestamp,
+        responseTimestamp: now,
         reactionTimeMs: null,
         status: 'FALSE_START',
         inputType,
@@ -268,16 +313,18 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
 
     } else if (trialPhase === 'STIMULUS') {
       // -------------------------------------------------------------
-      // 2. Valid or Invalid Stimulus Response
+      // Valid or Anticipatory Stimulus Response
       // -------------------------------------------------------------
+      isTrialActiveRef.current = false;
       clearAllTimers();
-      const stimulusTime = stimulusStartRef.current || clickTimestamp;
-      const rtMs = clickTimestamp - stimulusTime;
+
+      const stimulusTime = stimulusStartRef.current || now;
+      const rtMs = now - stimulusTime;
 
       let status: 'VALID' | 'INVALID' = 'VALID';
       let note: string | undefined = undefined;
 
-      if (rtMs < DEFAULT_CONFIG.minValidRtMs) {
+      if (rtMs < activeConfig.minValidRtMs) {
         status = 'INVALID';
         note = 'Anticipatory response below physiological threshold (< 100ms)';
       }
@@ -287,7 +334,7 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
         isPractice: isPracticeMode,
         isiMs: 0,
         stimulusTimestamp: stimulusTime,
-        responseTimestamp: clickTimestamp,
+        responseTimestamp: now,
         reactionTimeMs: Number(rtMs.toFixed(1)),
         status,
         inputType,
@@ -314,13 +361,17 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
 
       timerRef.current = window.setTimeout(() => {
         advanceRef.current(currentTrialIndex, isPracticeMode);
-      }, 800);
+      }, 900);
     }
   };
 
   // Handler for full test restart
-  const handleRestart = () => {
+  const handleRestart = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     clearAllTimers();
+    isTrialActiveRef.current = false;
+    hasReportedRef.current = false;
+    stimulusStartRef.current = null;
     setTrials([]);
     setCurrentTrialIndex(0);
     setIsPracticeMode(true);
@@ -418,7 +469,7 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
                 </li>
                 <li className="flex items-center justify-between">
                   <span>Inter-Stimulus Interval:</span>
-                  <span className="font-mono font-medium text-[#292827]">Randomized (1.5s–3.8s)</span>
+                  <span className="font-mono font-medium text-[#292827]">Randomized (1.6s–3.8s)</span>
                 </li>
               </ul>
             </div>
@@ -445,7 +496,10 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
 
           <div className="flex justify-end pt-4 border-t border-[#e8e4dd]">
             <button
-              onClick={() => setTestState('DEVICE_CHECK')}
+              onClick={(e) => {
+                e.stopPropagation();
+                setTestState('DEVICE_CHECK');
+              }}
               className="inline-flex items-center gap-2 px-6 py-3 bg-[#1b1938] hover:bg-[#232047] text-white text-xs sm:text-sm font-semibold rounded-button transition-all shadow-sm"
             >
               <span>Proceed to Device Audit</span>
@@ -484,7 +538,7 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
               <p className="font-semibold text-sm text-[#292827]">
                 {deviceInfo.hasFinePointer ? 'Fine Mouse / Trackpad (Optimal)' : deviceInfo.hasTouch ? 'Direct Touch Sensor' : 'Coarse Pointer'}
               </p>
-              <p className="text-[#73706d] text-[11px]">Sub-millisecond event polling active</p>
+              <p className="text-[#73706d] text-[11px]">Sub-millisecond monotonic timer active</p>
             </div>
 
             <div className="p-4 bg-[#fafaf8] border border-[#e8e4dd] rounded-button space-y-1">
@@ -499,19 +553,25 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
           <div className="p-4 bg-[#f5fbf8] border border-[#10b981]/30 rounded-button flex items-center gap-3 text-xs text-[#065f46]">
             <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
             <span>
-              Device environment verified. High-precision monotonic timer <code className="font-mono bg-white px-1 py-0.5 rounded">performance.now()</code> is supported and ready.
+              Device environment verified. Monotonic timer <code className="font-mono bg-white px-1 py-0.5 rounded">performance.now()</code> is supported and calibrated.
             </span>
           </div>
 
           <div className="flex items-center justify-between pt-4 border-t border-[#e8e4dd]">
             <button
-              onClick={() => setTestState('INTRO')}
+              onClick={(e) => {
+                e.stopPropagation();
+                setTestState('INTRO');
+              }}
               className="px-4 py-2.5 rounded-button text-xs font-medium border border-[#e8e4dd] text-[#73706d] hover:bg-[#fafaf8]"
             >
               Back
             </button>
             <button
-              onClick={() => setTestState('INSTRUCTIONS')}
+              onClick={(e) => {
+                e.stopPropagation();
+                setTestState('INSTRUCTIONS');
+              }}
               className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#1b1938] hover:bg-[#232047] text-white text-xs sm:text-sm font-semibold rounded-button transition-all"
             >
               <span>View Instructions</span>
@@ -543,7 +603,7 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
               <span className="font-mono font-bold text-[#155555]">Step 01</span>
               <p className="font-semibold text-[#292827]">Wait in Neutral State</p>
               <p className="text-[#73706d] leading-relaxed">
-                When the test starts, the canvas will show <span className="font-semibold text-[#292827]">"Wait for stimulus..."</span>.
+                When the test starts, the canvas will show <span className="font-semibold text-[#292827]">"Wait for stimulus cue..."</span>.
                 Do NOT click prematurely; clicking early triggers a <em>False Start</em>.
               </p>
             </div>
@@ -552,7 +612,7 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
               <span className="font-mono font-bold text-[#155555]">Step 02</span>
               <p className="font-semibold text-[#292827]">Respond Instantly to Cue</p>
               <p className="text-[#73706d] leading-relaxed">
-                At an unpredictable moment (1.5s–3.8s), the target will flash with <span className="font-semibold text-[#155555]">"CLICK OR TAP NOW!"</span>.
+                At an unpredictable moment (1.6s–3.8s), the target will flash with <span className="font-semibold text-[#155555]">"CLICK OR TAP NOW!"</span>.
                 Click anywhere inside the test area as fast as possible.
               </p>
             </div>
@@ -578,19 +638,23 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
 
           <div className="flex items-center justify-between pt-4 border-t border-[#e8e4dd]">
             <button
-              onClick={() => setTestState('DEVICE_CHECK')}
+              onClick={(e) => {
+                e.stopPropagation();
+                setTestState('DEVICE_CHECK');
+              }}
               className="px-4 py-2.5 rounded-button text-xs font-medium border border-[#e8e4dd] text-[#73706d] hover:bg-[#fafaf8]"
             >
               Back
             </button>
             <button
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 setTestState('RUNNING');
                 setIsPracticeMode(true);
                 setCurrentTrialIndex(0);
                 launchTrial(0, true);
               }}
-              className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#1b1938] hover:bg-[#232047] text-white text-xs sm:text-sm font-semibold rounded-button transition-all"
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#1b1938] hover:bg-[#232047] text-white text-xs sm:text-sm font-semibold rounded-button transition-all shadow-sm"
             >
               <span>Begin Practice Trials (5)</span>
               <ArrowRight className="w-4 h-4" />
@@ -622,14 +686,15 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
 
           <div className="p-4 bg-[#fafaf8] border border-[#e8e4dd] rounded-button text-xs text-[#73706d] text-left space-y-1">
             <span className="font-semibold text-[#292827] block">Measured Protocol Rules</span>
-            <p>• 15 consecutive trials with randomized delays (1.5–3.8 seconds).</p>
+            <p>• 15 consecutive trials with randomized delays (1.6–3.8 seconds).</p>
             <p>• React as rapidly and accurately as possible.</p>
             <p>• Avoid premature clicks to prevent false starts.</p>
           </div>
 
           <div className="flex items-center justify-center gap-3 pt-4">
             <button
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 setTestState('RUNNING');
                 setIsPracticeMode(false);
                 setCurrentTrialIndex(0);
@@ -645,7 +710,7 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
       )}
 
       {/* ------------------------------------------------------------- */}
-      {/* 6. STATE: RUNNING (Interactive Canvas Area)                   */}
+      {/* 6. STATE: RUNNING (Interactive Isolated Canvas Area)          */}
       {/* ------------------------------------------------------------- */}
       {testState === 'RUNNING' && (
         <div className="space-y-4">
@@ -671,10 +736,9 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
             </div>
           </div>
 
-          {/* Interactive Stimulus Target Canvas */}
+          {/* Interactive Stimulus Target Canvas (Isolated Pointer Capture) */}
           <div
-            onClick={handleTargetInteraction}
-            onTouchStart={handleTargetInteraction}
+            onPointerDown={handleCanvasInteraction}
             className={`w-full h-80 sm:h-96 rounded-card border-2 flex flex-col items-center justify-center select-none cursor-pointer transition-all duration-150 relative overflow-hidden shadow-inner ${
               trialPhase === 'WAITING'
                 ? 'bg-[#1b1938] border-[#3f3a52] text-white'
@@ -691,7 +755,7 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
           >
             {/* Visual Indicator Cue */}
             {trialPhase === 'WAITING' && (
-              <div className="space-y-3 text-center px-4">
+              <div className="space-y-3 text-center px-4 pointer-events-none">
                 <div className="w-12 h-12 rounded-full border-2 border-white/20 border-t-white animate-spin mx-auto" />
                 <p className="text-xl sm:text-2xl font-bold tracking-tight text-white">
                   Wait for stimulus cue...
@@ -703,7 +767,7 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
             )}
 
             {trialPhase === 'STIMULUS' && (
-              <div className="space-y-3 text-center px-4 animate-pulse">
+              <div className="space-y-3 text-center px-4 animate-pulse pointer-events-none">
                 <div className="w-20 h-20 rounded-full bg-white text-[#155555] mx-auto flex items-center justify-center font-bold text-lg shadow-lg">
                   TAP!
                 </div>
@@ -714,7 +778,7 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
             )}
 
             {trialPhase === 'FEEDBACK' && (
-              <div className="space-y-2 text-center px-4">
+              <div className="space-y-2 text-center px-4 pointer-events-none">
                 {lastFeedback.type === 'valid' && (
                   <>
                     <p className="text-4xl sm:text-5xl font-mono font-bold tracking-tight text-emerald-300">
@@ -941,7 +1005,7 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
             </div>
           </div>
 
-          {/* Standard Editorial Safety Disclaimer (Section 10) */}
+          {/* Safety Disclaimer */}
           <div className="p-4 rounded-button bg-[#fafaf8] border border-[#e8e4dd] text-xs text-[#73706d] space-y-1">
             <span className="font-semibold text-[#292827] block">
               Interpretative Boundaries & Clinical Safety Notice
@@ -973,3 +1037,5 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
     </div>
   );
 };
+
+export default ReactionTimeTest;

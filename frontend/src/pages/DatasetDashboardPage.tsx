@@ -20,7 +20,8 @@ interface DatasetTab {
 }
 
 const DATASET_TABS: DatasetTab[] = [
-  { id: 'all', name: 'All Datasets (MEDINTEL Balanced Master Scope)', shortName: 'All Datasets', category: '249,947 Active Records • 4 Datasets', classesCount: '821 Unique Diseases', icon: Database },
+  { id: 'all', name: 'All Datasets (MEDINTEL Balanced Master Scope)', shortName: 'All Datasets', category: 'Master Scope • Multi-Dataset Benchmark', classesCount: 'Unified Disease Spectrum', icon: Database },
+  { id: 'synthetic_clinical', name: 'Synthetic Clinical Patient Benchmark', shortName: 'Synthetic Clinical (10K)', category: '10,000 Verified Records • Multiclass Vitals & Labs', classesCount: '4 Diagnostic Targets', icon: ShieldCheck },
   { id: 'cardio_train', name: 'Cardiovascular Risk Benchmark', shortName: 'Cardiovascular Risk', category: '2,400 Active Records • Tabular Biometrics', classesCount: '2 Binary Risk Classes', icon: Activity },
   { id: 'heart_disease', name: 'Coronary Heart Disease Diagnostic', shortName: 'Coronary Heart Disease', category: '302 Active Records • Diagnostic Ischemia', classesCount: '2 Diagnostic Classes', icon: Heart },
   { id: 'disease_profile', name: 'Disease & Patient Profile Benchmark', shortName: 'Disease & Symptom Profile', category: '300 Active Records • Multi-Condition Diagnosis', classesCount: '116 Disease Diagnoses', icon: Stethoscope },

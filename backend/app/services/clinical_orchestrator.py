@@ -229,7 +229,7 @@ class ClinicalAnalysisOrchestrator:
         )
         timings["llm_synthesis_ms"] = round((time.time() - t0) * 1000, 2)
 
-        case_ref = f"CASE-{uuid.uuid4().hex[:8].upper()}"
+        case_ref = request_data.get("case_reference") or f"CASE-{uuid.uuid4().hex[:8].upper()}"
         timings["total_pipeline_ms"] = round((time.time() - pipeline_start) * 1000, 2)
 
         # 9. PostgreSQL / SQLite Database Persistence
@@ -307,7 +307,7 @@ class ClinicalAnalysisOrchestrator:
                         flag_type=flag.get("type", "CLINICAL_ALERT"),
                         severity=flag.get("severity", "MEDIUM"),
                         trigger_text=flag.get("trigger", ""),
-                        description=flag.get("description", "")
+                        message=flag.get("description", flag.get("message", "Clinical alert triggered."))
                     )
                     db.add(sf_db)
 

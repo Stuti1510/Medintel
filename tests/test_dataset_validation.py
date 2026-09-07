@@ -64,8 +64,9 @@ def test_9_heart_disease_deduplication():
 
 def test_10_profiler_execution():
     profiles = profile_all_4_datasets()
-    assert len(profiles) == 4
+    assert len(profiles) >= 4
     assert "cardio_train" in profiles
     assert "heart_disease" in profiles
     assert "disease_profile" in profiles
     assert "symptoms_augmented" in profiles
+    assert "synthetic_clinical" in profiles

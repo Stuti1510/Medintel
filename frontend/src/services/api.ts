@@ -7,9 +7,7 @@ import {
   SystemStatusResponse,
   EvaluationBenchmarkResponse,
   DocumentUploadResponse,
-  ExplainabilityResult,
-  VivaQuestion,
-  VivaEvaluationResult
+  ExplainabilityResult
 } from '../types/clinical';
 
 const API_BASE = "http://localhost:8000/api";
@@ -131,64 +129,6 @@ export async function explainWithLLM(payload: any): Promise<any> {
     body: JSON.stringify(payload)
   });
   if (!res.ok) throw new Error("LLM explanation failed");
-  return res.json();
-}
-
-// Viva Defense Endpoints
-export async function startVivaSession(contextData?: Record<string, any>): Promise<{
-  session_id: string;
-  total_questions: number;
-  available_categories: string[];
-  initial_question: VivaQuestion;
-  message: string;
-}> {
-  const res = await fetch(`${API_BASE}/viva/start`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ context_data: contextData || {} })
-  });
-  if (!res.ok) throw new Error("Failed to start Viva session");
-  return res.json();
-}
-
-export async function getVivaQuestion(
-  sessionId: string,
-  category?: string,
-  difficulty?: string
-): Promise<VivaQuestion> {
-  let url = `${API_BASE}/viva/question?session_id=${encodeURIComponent(sessionId)}`;
-  if (category) url += `&category=${encodeURIComponent(category)}`;
-  if (difficulty) url += `&difficulty=${encodeURIComponent(difficulty)}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Failed to get Viva question");
-  return res.json();
-}
-
-export async function evaluateVivaAnswer(
-  sessionId: string,
-  questionId: number,
-  candidateAnswer: string,
-  followUpAnswers: string[] = []
-): Promise<VivaEvaluationResult> {
-  const res = await fetch(`${API_BASE}/viva/evaluate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      session_id: sessionId,
-      question_id: questionId,
-      candidate_answer: candidateAnswer,
-      follow_up_answers: followUpAnswers
-    })
-  });
-  if (!res.ok) throw new Error("Failed to evaluate Viva answer");
-  return res.json();
-}
-
-export async function endVivaSession(sessionId: string): Promise<any> {
-  const res = await fetch(`${API_BASE}/viva/end?session_id=${encodeURIComponent(sessionId)}`, {
-    method: "POST"
-  });
-  if (!res.ok) throw new Error("Failed to end Viva session");
   return res.json();
 }
 

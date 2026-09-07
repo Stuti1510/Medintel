@@ -1,0 +1,206 @@
+{
+  "Logistic Regression": {
+    "model_name": "Logistic Regression",
+    "filename": "synthetic_logistic_regression.joblib",
+    "accuracy": 0.5587,
+    "balanced_accuracy": 0.25,
+    "precision_macro": 0.1397,
+    "recall_macro": 0.25,
+    "f1_macro": 0.1792,
+    "precision_weighted": 0.3121,
+    "recall_weighted": 0.5587,
+    "f1_weighted": 0.4005,
+    "roc_auc": 0.4973,
+    "confusion_matrix": [
+      [
+        0,
+        265,
+        0,
+        0
+      ],
+      [
+        0,
+        838,
+        0,
+        0
+      ],
+      [
+        0,
+        301,
+        0,
+        0
+      ],
+      [
+        0,
+        96,
+        0,
+        0
+      ]
+    ],
+    "per_class_metrics": {
+      "Heart Failure": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 265
+      },
+      "Normal": {
+        "precision": 0.5587,
+        "recall": 1.0,
+        "f1": 0.7169,
+        "support": 838
+      },
+      "Pneumonia": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 301
+      },
+      "Sepsis": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 96
+      }
+    },
+    "inference_latency_ms": 0.0016,
+    "model_size_kb": 1.94,
+    "test_samples": 1500
+  },
+  "Random Forest": {
+    "model_name": "Random Forest",
+    "filename": "synthetic_random_forest.joblib",
+    "accuracy": 0.5587,
+    "balanced_accuracy": 0.25,
+    "precision_macro": 0.1397,
+    "recall_macro": 0.25,
+    "f1_macro": 0.1792,
+    "precision_weighted": 0.3121,
+    "recall_weighted": 0.5587,
+    "f1_weighted": 0.4005,
+    "roc_auc": 0.5021,
+    "confusion_matrix": [
+      [
+        0,
+        265,
+        0,
+        0
+      ],
+      [
+        0,
+        838,
+        0,
+        0
+      ],
+      [
+        0,
+        301,
+        0,
+        0
+      ],
+      [
+        0,
+        96,
+        0,
+        0
+      ]
+    ],
+    "per_class_metrics": {
+      "Heart Failure": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 265
+      },
+      "Normal": {
+        "precision": 0.5587,
+        "recall": 1.0,
+        "f1": 0.7169,
+        "support": 838
+      },
+      "Pneumonia": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 301
+      },
+      "Sepsis": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 96
+      }
+    },
+    "inference_latency_ms": 0.0427,
+    "model_size_kb": 9641.38,
+    "test_samples": 1500
+  },
+  "XGBoost": {
+    "model_name": "XGBoost",
+    "filename": "synthetic_xgboost.joblib",
+    "accuracy": 0.5587,
+    "balanced_accuracy": 0.25,
+    "precision_macro": 0.1397,
+    "recall_macro": 0.25,
+    "f1_macro": 0.1792,
+    "precision_weighted": 0.3121,
+    "recall_weighted": 0.5587,
+    "f1_weighted": 0.4005,
+    "roc_auc": 0.4897,
+    "confusion_matrix": [
+      [
+        0,
+        265,
+        0,
+        0
+      ],
+      [
+        0,
+        838,
+        0,
+        0
+      ],
+      [
+        0,
+        301,
+        0,
+        0
+      ],
+      [
+        0,
+        96,
+        0,
+        0
+      ]
+    ],
+    "per_class_metrics": {
+      "Heart Failure": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 265
+      },
+      "Normal": {
+        "precision": 0.5587,
+        "recall": 1.0,
+        "f1": 0.7169,
+        "support": 838
+      },
+      "Pneumonia": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 301
+      },
+      "Sepsis": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 96
+      }
+    },
+    "inference_latency_ms": 0.0106,
+    "model_size_kb": 937.14,
+    "test_samples": 1500
+  }
+}

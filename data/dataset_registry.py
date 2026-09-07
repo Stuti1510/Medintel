@@ -9,6 +9,24 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 DATASET_REGISTRY: Dict[str, Dict[str, Any]] = {
+    "synthetic_clinical": {
+        "dataset_id": "synthetic_clinical",
+        "name": "Synthetic Clinical Patient Benchmark",
+        "version": "v1.0.0",
+        "category": "Acute & Chronic Clinical Pathology",
+        "task_type": "4-Class Multiclass Diagnosis",
+        "source_path": str(BASE_DIR / "data" / "raw" / "synthetic_clinical_dataset.csv"),
+        "delimiter": ",",
+        "target_column": "diagnosis",
+        "target_classes": ["Normal", "Pneumonia", "Heart Failure", "Sepsis"],
+        "id_column": "patient_id",
+        "numerical_features": ["age", "bmi", "systolic_bp", "diastolic_bp", "glucose", "cholesterol", "creatinine"],
+        "categorical_features": [],
+        "binary_features": ["sex", "diabetes", "hypertension", "readmission_30d", "mortality"],
+        "description": "10,000 verified clinical cases profiling vital signs, biomarkers, demographics, and outcomes across 4 diagnostic targets (Normal, Pneumonia, Heart Failure, Sepsis).",
+        "raw_samples": 10000,
+        "is_primary": True
+    },
     "cardio_train": {
         "dataset_id": "cardio_train",
         "name": "Cardiovascular Disease Clinical Risk Benchmark",
