@@ -1,6 +1,6 @@
 """
-MEDINTEL AI - Centralized 4-Dataset Registry & Clinical Benchmark Architecture
-Defines the canonical metadata, clinical tasks, feature definitions, and source paths for the 4 real clinical datasets.
+MEDINTEL AI - Centralized Dataset Registry & Clinical Benchmark Architecture
+Defines the canonical metadata, clinical tasks, feature definitions, and source paths for the Symptom2Disease benchmark.
 """
 
 from typing import Dict, Any, List
@@ -8,98 +8,67 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+DISEASE_CLASSES_24 = [
+    "Psoriasis",
+    "Varicose Veins",
+    "Typhoid",
+    "Chicken pox",
+    "Impetigo",
+    "Dengue",
+    "Fungal infection",
+    "Common Cold",
+    "Pneumonia",
+    "Dimorphic Hemorrhoids",
+    "Arthritis",
+    "Acne",
+    "Bronchial Asthma",
+    "Hypertension",
+    "Migraine",
+    "Cervical spondylosis",
+    "Jaundice",
+    "Malaria",
+    "urinary tract infection",
+    "allergy",
+    "gastroesophageal reflux disease",
+    "drug reaction",
+    "peptic ulcer disease",
+    "diabetes"
+]
+
 DATASET_REGISTRY: Dict[str, Dict[str, Any]] = {
-    "synthetic_clinical": {
-        "dataset_id": "synthetic_clinical",
-        "name": "Synthetic Clinical Patient Benchmark",
+    "symptom_to_disease": {
+        "dataset_id": "symptom_to_disease",
+        "name": "Symptom-to-Disease Clinical Benchmark (Symptom2Disease)",
         "version": "v1.0.0",
-        "category": "Acute & Chronic Clinical Pathology",
-        "task_type": "4-Class Multiclass Diagnosis",
-        "source_path": str(BASE_DIR / "data" / "raw" / "synthetic_clinical_dataset.csv"),
+        "category": "Natural Language Symptom Differential",
+        "task_type": "24-Class Multi-Disease Diagnosis",
+        "source_path": str(BASE_DIR / "datasets" / "Symptom2Disease.csv"),
+        "raw_path": str(BASE_DIR / "data" / "raw" / "Symptom2Disease.csv"),
+        "clean_path": str(BASE_DIR / "data" / "cleaned" / "symptom_to_disease_clean.csv"),
         "delimiter": ",",
-        "target_column": "diagnosis",
-        "target_classes": ["Normal", "Pneumonia", "Heart Failure", "Sepsis"],
-        "id_column": "patient_id",
-        "numerical_features": ["age", "bmi", "systolic_bp", "diastolic_bp", "glucose", "cholesterol", "creatinine"],
-        "categorical_features": [],
-        "binary_features": ["sex", "diabetes", "hypertension", "readmission_30d", "mortality"],
-        "description": "10,000 verified clinical cases profiling vital signs, biomarkers, demographics, and outcomes across 4 diagnostic targets (Normal, Pneumonia, Heart Failure, Sepsis).",
-        "raw_samples": 10000,
-        "is_primary": True
-    },
-    "cardio_train": {
-        "dataset_id": "cardio_train",
-        "name": "Cardiovascular Disease Clinical Risk Benchmark",
-        "version": "v2.2-4DATA",
-        "category": "Cardiovascular Risk",
-        "task_type": "Binary Classification",
-        "source_path": str(BASE_DIR / "datasets" / "cardio_train.csv"),
-        "delimiter": ";",
-        "target_column": "cardio",
-        "target_classes": ["No Disease (0)", "Cardiovascular Disease (1)"],
+        "target_column": "label",
+        "text_column": "text",
+        "target_classes": DISEASE_CLASSES_24,
+        "num_classes": 24,
         "id_column": "id",
-        "numerical_features": ["age_years", "height", "weight", "ap_hi", "ap_lo", "bmi"],
-        "categorical_features": ["cholesterol", "gluc"],
-        "binary_features": ["gender", "smoke", "alco", "active"],
-        "description": "70,000 patient physical examinations profiling blood pressure, serum cholesterol, glucose, and lifestyle factors.",
-        "raw_samples": 70000,
+        "numerical_features": [],
+        "categorical_features": [],
+        "binary_features": [],
+        "text_features": ["text"],
+        "description": "1,200 verified clinical cases profiling realistic patient symptom narratives across 24 distinct disease entities (50 cases per condition).",
+        "raw_samples": 1200,
+        "active_samples": 1200,
         "is_primary": True
-    },
-    "heart_disease": {
-        "dataset_id": "heart_disease",
-        "name": "Coronary Heart Disease Diagnostic Assessment",
-        "version": "v2.2-4DATA",
-        "category": "Cardiology Biometrics",
-        "task_type": "Binary Classification",
-        "source_path": str(BASE_DIR / "datasets" / "heart.csv"),
-        "delimiter": ",",
-        "target_column": "target",
-        "target_classes": ["No Disease (0)", "Heart Disease Present (1)"],
-        "id_column": None,
-        "numerical_features": ["age", "trestbps", "chol", "thalach", "oldpeak"],
-        "categorical_features": ["cp", "restecg", "slope", "ca", "thal"],
-        "binary_features": ["sex", "fbs", "exang"],
-        "description": "1,025 clinical biometrics detailing ST depression, resting blood pressure, fluoroscopy vessels, and chest pain type.",
-        "raw_samples": 1025,
-        "is_primary": False
-    },
-    "disease_profile": {
-        "dataset_id": "disease_profile",
-        "name": "Disease Symptom & Patient Profile Benchmark",
-        "version": "v2.2-4DATA",
-        "category": "Multi-Condition Diagnosis",
-        "task_type": "Multi-Class Diagnosis",
-        "source_path": str(BASE_DIR / "datasets" / "Disease_symptom_and_patient_profile_dataset.csv"),
-        "delimiter": ",",
-        "target_column": "Disease",
-        "num_classes": 116,
-        "id_column": None,
-        "numerical_features": ["Age"],
-        "categorical_features": ["Blood Pressure", "Cholesterol Level"],
-        "binary_features": ["Fever", "Cough", "Fatigue", "Difficulty Breathing", "Gender", "Outcome Variable"],
-        "description": "349 multimodal patient profiles across 116 genuine disease entities correlating demographic biometrics, symptoms, and diagnostic outcomes.",
-        "raw_samples": 349,
-        "is_primary": False
-    },
-    "symptoms_augmented": {
-        "dataset_id": "symptoms_augmented",
-        "name": "Comprehensive Multi-Symptom Disease Differential",
-        "version": "v2.2-4DATA",
-        "category": "High-Dimensional Symptom Differential",
-        "task_type": "Multi-Class Disease Classification",
-        "source_path": str(BASE_DIR / "datasets" / "Final_Augmented_dataset_Diseases_and_Symptoms.csv"),
-        "delimiter": ",",
-        "target_column": "diseases",
-        "num_classes": 773,
-        "id_column": None,
-        "description": "246,945 clinical records across 377 symptom indicator features for wide-spectrum disease differential diagnostics across 773 genuine disease classes.",
-        "raw_samples": 246945,
-        "is_primary": False
     }
 }
 
-def get_dataset_config(dataset_id: str = "cardio_train") -> Dict[str, Any]:
-    return DATASET_REGISTRY.get(dataset_id, DATASET_REGISTRY["cardio_train"])
+# Alias for backward-compatibility
+DATASET_REGISTRY["Symptom2Disease"] = DATASET_REGISTRY["symptom_to_disease"]
+DATASET_REGISTRY["all"] = DATASET_REGISTRY["symptom_to_disease"]
+
+def get_dataset_config(dataset_id: str = "symptom_to_disease") -> Dict[str, Any]:
+    return DATASET_REGISTRY.get(dataset_id, DATASET_REGISTRY["symptom_to_disease"])
 
 def list_all_datasets() -> List[Dict[str, Any]]:
-    return list(DATASET_REGISTRY.values())
+    # Return unique datasets (omit aliases)
+    return [DATASET_REGISTRY["symptom_to_disease"]]

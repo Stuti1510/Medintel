@@ -25,12 +25,14 @@ async def run_full_clinical_analysis(payload: ClinicalAnalysisRequest):
     """
     Executes the complete 10-stage Clinical Intelligence Pipeline:
     Validation -> Preprocessing -> Classical ML -> BioBERT -> Concordance
-    -> Multi-Symptom Differential -> RAG Evidence -> LLM Grounding -> Safety Audit -> PostgreSQL Storage -> Response.
+    -> Multi-Symptom Differential -> RAG Evidence -> LLM Grounding -> Safety Audit -> Database Storage -> Response.
     """
     try:
         req_data = payload.model_dump()
         result = orchestrator.analyze(req_data)
         return result
+    except ValueError as ve:
+        raise HTTPException(status_code=422, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Clinical analysis error: {str(e)}")
 

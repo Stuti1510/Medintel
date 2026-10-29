@@ -108,6 +108,7 @@ export const MotorStabilityTest: React.FC<Props> = ({
   // Replay State for Completed Trials
   const [selectedReviewTrial, setSelectedReviewTrial] = useState<number>(0);
   const [isReplaying, setIsReplaying] = useState<boolean>(false);
+  const isReplayingRef = useRef<boolean>(false);
   const replayAnimRef = useRef<number | null>(null);
   const replayIndexRef = useRef<number>(0);
 
@@ -529,17 +530,29 @@ export const MotorStabilityTest: React.FC<Props> = ({
   }, [activeReviewTrial]);
 
   // Handle Replay Animation
+  const stopReplay = useCallback(() => {
+    isReplayingRef.current = false;
+    setIsReplaying(false);
+    if (replayAnimRef.current) {
+      cancelAnimationFrame(replayAnimRef.current);
+      replayAnimRef.current = null;
+    }
+  }, []);
+
   const startReplay = () => {
-    if (!activeReviewTrial || activeReviewTrial.samples.length < 2) return;
+    if (!activeReviewTrial || !activeReviewTrial.samples || activeReviewTrial.samples.length < 2) return;
+    stopReplay();
+    isReplayingRef.current = true;
     setIsReplaying(true);
     replayIndexRef.current = 1;
 
     const animate = () => {
-      if (!isReplaying) return;
+      if (!isReplayingRef.current) return;
       replayIndexRef.current += 2; // playback speed
       if (replayIndexRef.current >= activeReviewTrial.samples.length) {
         replayIndexRef.current = activeReviewTrial.samples.length;
         drawReviewCanvas(replayIndexRef.current);
+        isReplayingRef.current = false;
         setIsReplaying(false);
         return;
       }
@@ -553,12 +566,13 @@ export const MotorStabilityTest: React.FC<Props> = ({
 
   useEffect(() => {
     if (testState === 'COMPLETED') {
+      stopReplay();
       drawReviewCanvas();
     }
     return () => {
-      if (replayAnimRef.current) cancelAnimationFrame(replayAnimRef.current);
+      stopReplay();
     };
-  }, [testState, selectedReviewTrial, drawReviewCanvas]);
+  }, [testState, selectedReviewTrial, drawReviewCanvas, stopReplay]);
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-8">

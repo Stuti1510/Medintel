@@ -1,0 +1,196 @@
+{
+  "dataset_path": "data/raw/Symptom2Disease.csv",
+  "initial_rows": 1200,
+  "initial_columns": [
+    "id",
+    "label",
+    "text"
+  ],
+  "index_columns_removed": [
+    "id"
+  ],
+  "null_counts": {
+    "text": 0,
+    "label": 0
+  },
+  "num_classes": 24,
+  "classes": [
+    "Acne",
+    "Arthritis",
+    "Bronchial Asthma",
+    "Cervical spondylosis",
+    "Chicken pox",
+    "Common Cold",
+    "Dengue",
+    "Dimorphic Hemorrhoids",
+    "Fungal infection",
+    "Hypertension",
+    "Impetigo",
+    "Jaundice",
+    "Malaria",
+    "Migraine",
+    "Pneumonia",
+    "Psoriasis",
+    "Typhoid",
+    "Varicose Veins",
+    "allergy",
+    "diabetes",
+    "drug reaction",
+    "gastroesophageal reflux disease",
+    "peptic ulcer disease",
+    "urinary tract infection"
+  ],
+  "class_distribution_raw": {
+    "Psoriasis": 50,
+    "Varicose Veins": 50,
+    "Typhoid": 50,
+    "Chicken pox": 50,
+    "Impetigo": 50,
+    "Dengue": 50,
+    "Fungal infection": 50,
+    "Common Cold": 50,
+    "Pneumonia": 50,
+    "Dimorphic Hemorrhoids": 50,
+    "Arthritis": 50,
+    "Acne": 50,
+    "Bronchial Asthma": 50,
+    "Hypertension": 50,
+    "Migraine": 50,
+    "Cervical spondylosis": 50,
+    "Jaundice": 50,
+    "Malaria": 50,
+    "urinary tract infection": 50,
+    "allergy": 50,
+    "gastroesophageal reflux disease": 50,
+    "drug reaction": 50,
+    "peptic ulcer disease": 50,
+    "diabetes": 50
+  },
+  "exact_duplicates": {
+    "total_rows_with_duplicates": 90,
+    "unique_duplicated_texts": 43,
+    "repeated_description_count": 47,
+    "conflicting_label_count": 0,
+    "conflicting_labels": {},
+    "class_duplicate_breakdown": {
+      "Acne": {
+        "total_duplicate_rows": 8,
+        "unique_symptom_descriptions": 4,
+        "redundant_rows": 4
+      },
+      "Arthritis": {
+        "total_duplicate_rows": 7,
+        "unique_symptom_descriptions": 3,
+        "redundant_rows": 4
+      },
+      "Bronchial Asthma": {
+        "total_duplicate_rows": 2,
+        "unique_symptom_descriptions": 1,
+        "redundant_rows": 1
+      },
+      "Cervical spondylosis": {
+        "total_duplicate_rows": 2,
+        "unique_symptom_descriptions": 1,
+        "redundant_rows": 1
+      },
+      "Chicken pox": {
+        "total_duplicate_rows": 2,
+        "unique_symptom_descriptions": 1,
+        "redundant_rows": 1
+      },
+      "Common Cold": {
+        "total_duplicate_rows": 2,
+        "unique_symptom_descriptions": 1,
+        "redundant_rows": 1
+      },
+      "Dimorphic Hemorrhoids": {
+        "total_duplicate_rows": 17,
+        "unique_symptom_descriptions": 8,
+        "redundant_rows": 9
+      },
+      "Jaundice": {
+        "total_duplicate_rows": 22,
+        "unique_symptom_descriptions": 10,
+        "redundant_rows": 12
+      },
+      "Malaria": {
+        "total_duplicate_rows": 12,
+        "unique_symptom_descriptions": 6,
+        "redundant_rows": 6
+      },
+      "Migraine": {
+        "total_duplicate_rows": 6,
+        "unique_symptom_descriptions": 3,
+        "redundant_rows": 3
+      },
+      "Pneumonia": {
+        "total_duplicate_rows": 6,
+        "unique_symptom_descriptions": 3,
+        "redundant_rows": 3
+      },
+      "gastroesophageal reflux disease": {
+        "total_duplicate_rows": 4,
+        "unique_symptom_descriptions": 2,
+        "redundant_rows": 2
+      }
+    }
+  },
+  "near_duplicates_sample_count": 83,
+  "near_duplicates_sample": [
+    {
+      "text_1": "I've been quite itchy recently, and I have rashy patches all over my skin. There are also certain regions that are darker in colour than the rest of my skin, and I've got some firm lumps.",
+      "text_2": "I've been rather itchy recently, and I have rashy blotches all over my skin. There are also certain regions that are more dark in color than the rest of my skin, and I've got some painful lumps.",
+      "similarity": 0.9239
+    },
+    {
+      "text_1": "I can't seem to catch my breath and I'm sweating a lot. I feel really sick and have a lot of phlegm in my throat. My chest hurts and my heart is racing. The mucus I'm coughing up is yellowish.",
+      "text_2": "I can't seem to catch my breath and I'm sweating a lot. I feel really sick and have a lot of phlegm in my throat. My chest hurts and my heart is racing. The mucus I'm coughing up is brownish and stringy.",
+      "similarity": 0.9316
+    },
+    {
+      "text_1": "I'm dripping with perspiration and can't seem to catch my breath. My throat is filled with a lot of phlegm, and I feel awful. My heart is pounding, and my chest aches. I'm coughing up brownish mucous.",
+      "text_2": "I'm dripping with perspiration and can't seem to catch my breath. My throat is filled with a lot of phlegm, and I feel awful. My heart is pounding, and my chest aches. I'm coughing up a stringy, brownish mucous.",
+      "similarity": 0.9732
+    },
+    {
+      "text_1": "I've recently been suffering with chills, lethargy, a cough, a high temperature, and difficulties breathing. I've been sweating profusely and generally feeling ill and weak. I've also had some quite thick and black phlegm.",
+      "text_2": "I've recently been suffering with chills, lethargy, a cough, a high temperature, and difficulties breathing. I've been sweating profusely and generally feeling ill and weak. I've also had some quite thick and red phlegm.",
+      "similarity": 0.9819
+    },
+    {
+      "text_1": "I've recently been suffering with chills, lethargy, a cough, a high temperature, and difficulties breathing. I've been sweating profusely and generally feeling ill and weak. I've also had some quite thick and black phlegm.",
+      "text_2": "I've had chills, lethargy, a cough, a high temperature, and difficulties breathing lately. I've been sweating profusely and generally feeling ill and weak. I've also had some quite thick and black phlegm.",
+      "similarity": 0.9108
+    },
+    {
+      "text_1": "I've recently been suffering with chills, lethargy, a cough, a high temperature, and difficulties breathing. I've been sweating profusely and generally feeling ill and weak. I've also had some quite thick and red phlegm.",
+      "text_2": "I've had chills, lethargy, a cough, a high temperature, and difficulties breathing lately. I've been sweating profusely and generally feeling ill and weak. I've also had some quite thick and black phlegm.",
+      "similarity": 0.8915
+    },
+    {
+      "text_1": "I've been suffering from severe constipation lately, and whenever I do go to the restroom, it hurts a lot. Aside from that, my anus has been really itchy, and I've observed some blood in my stool.",
+      "text_2": "I've been terribly constipated lately, and when I do go to the bathroom, it hurts a lot. Aside from that, my anus has been really itchy, and I've observed some blood in my stool.",
+      "similarity": 0.8984
+    },
+    {
+      "text_1": "I've been feeling really weak in my muscles and my neck has been really stiff. My joints have been swelling up and it's been hard to move around. Walking has been really painful.",
+      "text_2": "I've been feeling really weak in my muscles and my neck has been really stiff. My joints have been swelling up and it's hard for me to move around without feeling stiff. Walking has been really painful too.",
+      "similarity": 0.8802
+    },
+    {
+      "text_1": "I've been feeling really weak in my muscles lately and my neck has been really stiff. My joints have been swelling up and it's hard for me to move around without feeling stiff. Walking has been really painful too.",
+      "text_2": "I've been feeling really weak in my muscles and my neck has been really stiff. My joints have been swelling up and it's hard for me to move around without feeling stiff. Walking has been really painful too.",
+      "similarity": 0.9833
+    },
+    {
+      "text_1": "My muscles have been quite weak, and my neck has been really stiff. My joints have swollen, making it difficult for me to walk about without becoming stiff. Walking has also been excruciatingly uncomfortable.",
+      "text_2": "My muscles have been really weak, and my neck has been extremely stiff. My joints have swollen, making it difficult for me to walk about without feeling stiff. Walking has also been really uncomfortable.",
+      "similarity": 0.8856
+    }
+  ],
+  "findings_and_leakage_assessment": {
+    "label_agreement": "100% agreement. Zero conflicting labels observed among repeated symptom descriptions.",
+    "leakage_risk": "High if standard un-grouped train/test split is applied, because identical descriptions could appear in both train and test partitions, artificially inflating evaluation accuracy.",
+    "mitigation_strategy": "Group-aware splitting (GroupShuffleSplit or StratifiedGroupKFold on unique text hash) or deduplication to ensure no identical description crosses the train/val/test boundary."
+  }
+}

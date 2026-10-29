@@ -20,12 +20,8 @@ interface DatasetTab {
 }
 
 const DATASET_TABS: DatasetTab[] = [
-  { id: 'all', name: 'All Datasets (MEDINTEL Balanced Master Scope)', shortName: 'All Datasets', category: 'Master Scope • Multi-Dataset Benchmark', classesCount: 'Unified Disease Spectrum', icon: Database },
-  { id: 'synthetic_clinical', name: 'Synthetic Clinical Patient Benchmark', shortName: 'Synthetic Clinical (10K)', category: '10,000 Verified Records • Multiclass Vitals & Labs', classesCount: '4 Diagnostic Targets', icon: ShieldCheck },
-  { id: 'cardio_train', name: 'Cardiovascular Risk Benchmark', shortName: 'Cardiovascular Risk', category: '2,400 Active Records • Tabular Biometrics', classesCount: '2 Binary Risk Classes', icon: Activity },
-  { id: 'heart_disease', name: 'Coronary Heart Disease Diagnostic', shortName: 'Coronary Heart Disease', category: '302 Active Records • Diagnostic Ischemia', classesCount: '2 Diagnostic Classes', icon: Heart },
-  { id: 'disease_profile', name: 'Disease & Patient Profile Benchmark', shortName: 'Disease & Symptom Profile', category: '300 Active Records • Multi-Condition Diagnosis', classesCount: '116 Disease Diagnoses', icon: Stethoscope },
-  { id: 'symptoms_augmented', name: 'Multi-Symptom Differential Matrix', shortName: 'Multi-Symptom Differential', category: '246,945 Active Records • 378 Symptom Matrix', classesCount: '773 Disease Classes', icon: FileText },
+  { id: 'all', name: 'Symptom-to-Disease Clinical Benchmark (Symptom2Disease)', shortName: 'All 24 Conditions', category: '1,200 Clinical Cases • 24 Disease Classes', classesCount: '24 Diagnostic Classes', icon: Database },
+  { id: 'symptom_to_disease', name: 'Symptom-to-Disease Dataset', shortName: 'Symptom2Disease', category: '1,200 Patient Records • Free-Text Symptoms', classesCount: '50 Cases / Class', icon: Stethoscope },
 ];
 
 export const DatasetDashboardPage: React.FC = () => {
@@ -57,7 +53,7 @@ export const DatasetDashboardPage: React.FC = () => {
 
   // Fetch Dataset Preview Rows
   useEffect(() => {
-    getDatasetPreview(15, page * 15, activeTab === 'all' ? 'cardio_train' : activeTab)
+    getDatasetPreview(15, page * 15, activeTab === 'all' ? 'symptom_to_disease' : activeTab)
       .then(setPreview)
       .catch(console.error);
   }, [activeTab, page]);
@@ -156,7 +152,7 @@ export const DatasetDashboardPage: React.FC = () => {
                 Datasets
               </h1>
               <p className="text-base text-[#73706d] max-w-2xl">
-                Explore the active balanced master clinical dataset (249,947 active records across 821 diseases) with controlled pre-split majority class reduction.
+                Explore the verified Symptom2Disease benchmark dataset (1,200 records strictly balanced across 24 diseases, 50 cases each) with leakage-free group-aware train/val/test splits.
               </p>
             </div>
 
@@ -215,19 +211,19 @@ export const DatasetDashboardPage: React.FC = () => {
           <div className="p-4 rounded-xl bg-white border border-[#e8e4dd]">
             <span className="text-[10px] font-mono uppercase text-[#73706d] block">Active Records</span>
             <p className="text-lg font-mono font-medium text-[#1b1938] mt-0.5">
-              {profile?.total_samples?.toLocaleString() || "249,947"}
+              {profile?.total_samples?.toLocaleString() || "1,200"}
             </p>
           </div>
           <div className="p-4 rounded-xl bg-white border border-[#e8e4dd]">
             <span className="text-[10px] font-mono uppercase text-[#73706d] block">Raw Source Records</span>
             <p className="text-lg font-mono font-medium text-[#73706d] mt-0.5">
-              {profile?.raw_samples?.toLocaleString() || "318,319"}
+              {profile?.raw_samples?.toLocaleString() || "1,200"}
             </p>
           </div>
           <div className="p-4 rounded-xl bg-white border border-[#e8e4dd]">
             <span className="text-[10px] font-mono uppercase text-[#73706d] block">Target Classes</span>
             <p className="text-lg font-mono font-medium text-[#1b1938] mt-0.5">
-              {profile?.num_classes || "821"}
+              {profile?.num_classes || "24"}
             </p>
           </div>
           <div className="p-4 rounded-xl bg-white border border-[#e8e4dd]">
@@ -267,15 +263,15 @@ export const DatasetDashboardPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono">
             <div className="p-3 rounded-lg bg-[#fafaf8] border border-[#e8e4dd] space-y-1">
               <span className="text-[#73706d] uppercase text-[10px] block font-semibold">Balancing Architecture</span>
-              <p className="text-[#292827] font-medium">Dataset-Level Master Curation (Pre-Split)</p>
+              <p className="text-[#292827] font-medium">Uniform 24-Class Clinical Benchmark</p>
             </div>
             <div className="p-3 rounded-lg bg-[#fafaf8] border border-[#e8e4dd] space-y-1">
-              <span className="text-[#73706d] uppercase text-[10px] block font-semibold">Reduced Majority Classes</span>
-              <p className="text-[#292827] font-medium">Normative Baseline & Cardiovascular Disease (CVD)</p>
+              <span className="text-[#73706d] uppercase text-[10px] block font-semibold">Class Parity</span>
+              <p className="text-[#292827] font-medium">Exactly 50 cases / class (Zero Imbalance)</p>
             </div>
             <div className="p-3 rounded-lg bg-[#fafaf8] border border-[#e8e4dd] space-y-1">
-              <span className="text-[#73706d] uppercase text-[10px] block font-semibold">Active Record Target Range</span>
-              <p className="text-[#1b1938] font-bold">~1,200 records / class (Directly Comparable)</p>
+              <span className="text-[#73706d] uppercase text-[10px] block font-semibold">Total Verified Cohort</span>
+              <p className="text-[#1b1938] font-bold">1,200 Clinical Narrative Records</p>
             </div>
           </div>
 
@@ -442,7 +438,7 @@ export const DatasetDashboardPage: React.FC = () => {
                 Global Disease Class Registry & Harmonization Matrix
               </h2>
               <p className="text-xs text-[#73706d] mt-0.5">
-                821 authentic clinical disease entities with full raw vs active master provenance ({filteredMatrix.length} matching).
+                24 authentic clinical disease entities with full raw vs active master provenance ({filteredMatrix.length} matching).
               </p>
             </div>
 
@@ -455,7 +451,7 @@ export const DatasetDashboardPage: React.FC = () => {
                   setMatrixSearch(e.target.value);
                   setMatrixPage(0);
                 }}
-                placeholder="Search 821 diseases..."
+                placeholder="Search 24 diseases..."
                 className="pl-8 pr-3 py-1.5 rounded-lg bg-[#fafaf8] border border-[#e8e4dd] text-xs font-mono text-[#292827] focus:outline-none w-56"
               />
             </div>

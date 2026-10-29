@@ -16,7 +16,7 @@ export const LandingPage: React.FC = () => {
     {
       num: "02",
       title: "Model Benchmarking",
-      description: "Examine balanced classical ML baselines (Logistic Regression, Random Forest, XGBoost) on held-out test splits (N=10,296) with zero test leakage.",
+      description: "Examine balanced classical ML baselines (Linear SVM, Logistic Regression, Random Forest, XGBoost) on held-out test splits (N=180) across 24 classes with zero test leakage.",
       link: "/model-comparison"
     },
     {
@@ -46,7 +46,7 @@ export const LandingPage: React.FC = () => {
     {
       num: "07",
       title: "Dataset Discovery & Topology",
-      description: "Audit 4 real clinical datasets spanning 316,185 verified records, 821 authentic disease entities, and strict train/validation/test partitions.",
+      description: "Audit verified Symptom2Disease benchmark spanning 1,200 patient narratives, 24 distinct clinical entities, and strict train/validation/test partitions.",
       link: "/datasets"
     },
     {
@@ -172,7 +172,7 @@ export const LandingPage: React.FC = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 divide-x-0 md:divide-x divide-[#3f3a52]">
             <div className="space-y-0.5">
               <span className="text-[10px] uppercase text-[#5a5772] block">Classical ML Baseline</span>
-              <span className="text-white font-medium">Logistic Reg • 73.15% Acc</span>
+              <span className="text-white font-medium">Logistic Reg • 95.56% Acc</span>
             </div>
             <div className="space-y-0.5 md:pl-4">
               <span className="text-[10px] uppercase text-[#5a5772] block">Biomedical Transformer</span>
@@ -184,7 +184,7 @@ export const LandingPage: React.FC = () => {
             </div>
             <div className="space-y-0.5 md:pl-4">
               <span className="text-[10px] uppercase text-[#5a5772] block">Dataset Topology</span>
-              <span className="text-white font-medium">4 Datasets • 821 Entities</span>
+              <span className="text-white font-medium">Symptom2Disease • 24 Entities</span>
             </div>
           </div>
         </div>

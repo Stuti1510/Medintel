@@ -1,68 +1,59 @@
-# 🧴 Skin Disease Dataset 🧴
+# 🩺 Symptom-to-Disease Benchmark Dataset (Symptom2Disease)
 
-> A comprehensive dataset for automated skin disease classification and diagnostics.
+> A benchmark dataset for natural language clinical symptom understanding, differential diagnosis, and medical text classification.
 
 ## 📝 Dataset Summary
 
-This dataset is a diverse collection of images representing various skin diseases, meticulously categorized into 22 distinct classes. It provides an invaluable resource for image classification tasks, particularly in the fields of dermatology and medical diagnostics.
+The **Symptom2Disease** dataset comprises **1,200 verified clinical cases** featuring realistic, free-text patient symptom narratives balanced across **24 distinct disease entities** (50 cases per condition).
 
-### 🌐 Comprehensive Collection
+Each record captures patient-reported clinical presentations detailing symptoms, locations, severity, timelines, and sensations across common acute, chronic, and infectious conditions.
 
-The dataset comprises a diverse collection of images representing various skin diseases.
+### 📊 Dataset Overview
 
-### 📂 Categorization
-
-The images are meticulously categorized into **22 distinct classes**, each corresponding to a specific skin condition:
-
-- **Acne**
-- **Actinic Keratosis**
-- **Benign Tumors**
-- **Bullous**
-- **Candidiasis**
-- **Drug Eruption**
-- **Eczema**
-- **Infestations/Bites**
-- **Lichen**
-- **Lupus**
-- **Moles**
-- **Psoriasis**
-- **Rosacea**
-- **Seborrheic Keratoses**
-- **Skin Cancer**
-- **Sun/Sunlight Damage**
-- **Tinea**
-- **Unknown/Normal**
-- **Vascular Tumors**
-- **Vasculitis**
-- **Vitiligo**
-- **Warts**
-
-### 🎯 Intended Use
-
-This dataset is designed for the following purposes:
-
-- **Research and Development**: Supports researchers and practitioners in developing and evaluating machine learning algorithms for skin disease diagnosis and classification.
-- **Medical Advancements**: Enables advancements in the accurate and efficient identification of skin diseases, contributing to improved patient outcomes.
-- **Educational Resource**: Serves as a training tool for healthcare professionals and students in recognizing and diagnosing skin conditions through image analysis.
+| Metric | Value |
+| :--- | :--- |
+| **Total Patient Cases** | **1,200** |
+| **Unique Disease Classes** | **24** |
+| **Cases Per Condition** | **50** (Strictly balanced 1:1 distribution) |
+| **Primary Features** | `id`, `label`, `text` |
+| **Feature Modality** | Natural Language Clinical Narrative |
+| **Missing Values** | **0 (0.0%)** |
+| **Duplicate Entries** | **0 (0.0%)** |
 
 ---
 
-## 📁 Directory Structure
+## 📂 Disease Classification Hierarchy (24 Classes)
 
-The dataset is organized into the following directory structure:
+1. **Psoriasis** — Erythematous scaly plaques, skin peeling, nail pitting, and joint aches.
+2. **Varicose Veins** — Prominent calf veins, nocturnal cramping, lower extremity heaviness, and swelling.
+3. **Typhoid** — Sustained fever, abdominal cramps, constipation, step-ladder fever curve, and malaise.
+4. **Chicken Pox** — Generalized pruritic vesicular eruption, mild fever, fatigue, and lymphadenopathy.
+5. **Impetigo** — Honey-colored crusted erosions, erythematous facial and nasal sores.
+6. **Dengue** — Retro-orbital cephalalgia, high fever, severe arthralgia/myalgia ("breakbone fever"), and petechiae.
+7. **Fungal Infection** — Pruritic annular lesions, skin discoloration, and nodular scaling.
+8. **Common Cold** — Rhinorrhea, sneezing, mild pharyngitis, low-grade malaise, and non-productive cough.
+9. **Pneumonia** — Productive cough with rust-colored sputum, tachypnea, pleuritic chest discomfort, and spiking fever.
+10. **Dimorphic Hemorrhoids** — Painful defecation, hematochezia, perianal pruritus, and anal discomfort.
+11. **Arthritis** — Joint stiffness, arthralgia, localized swelling, and gait restriction.
+12. **Acne** — Comedones, pustules, inflammatory papules, and cutaneous erythema.
+13. **Bronchial Asthma** — Expiratory wheezing, episodic dyspnea, nocturnal cough, and chest tightness.
+14. **Hypertension** — Occipital morning headache, dizziness, blurry vision, and exertional palpitations.
+15. **Migraine** — Unilateral pulsating headache, photophobia, nausea, and visual aura.
+16. **Cervical Spondylosis** — Posterior neck pain, upper extremity radiculopathy, vertigo, and stiffness.
+17. **Jaundice** — Scleral icterus, dark bilirubinuria, acholic stools, and pruritus.
+18. **Malaria** — Paroxysmal rigors, high spiking fever, diaphoresis, and profound myalgias.
+19. **Urinary Tract Infection** — Dysuria, frequency, urgency, suprapubic tenderness, and cloudy urine.
+20. **Allergy** — Sneezing, itchy watery eyes, nasal mucosal edema, and urticaria.
+21. **Gastroesophageal Reflux Disease (GERD)** — Retrosternal pyrosis, regurgitation, dysphagia, and acid sensation.
+22. **Drug Reaction** — Cutaneous eruption following pharmacotherapy, metallic dysgeusia, and tremor.
+23. **Peptic Ulcer Disease** — Epigastric burning exacerbated between meals or at night, hematemesis/melena.
+24. **Diabetes** — Polyuria, polydipsia, weight loss, delayed wound healing, and paresthesias.
 
-```plaintext
-SkinDisease/
-│
-├── Train/
-│   ├── Acne/
-│   ├── Actinic_Keratosis/
-│   ├── ...
-│   └── Warts/
-│
-└── Test/
-    ├── Acne/
-    ├── Actinic_Keratosis/
-    ├── ...
-    └── Warts/
-```
+---
+
+## 🎯 Usage in MEDINTEL AI
+
+The dataset serves as the foundational multi-class diagnostic benchmark for:
+- **Classical ML Classifiers**: Logistic Regression, Random Forest, XGBoost with TF-IDF vectorization.
+- **BioBERT Transformer**: PyTorch contextual encoder fine-tuned with multi-head self-attention.
+- **Explainability & Attribution**: Attention heatmaps, token importance, and differential diagnosis scoring.

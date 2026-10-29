@@ -47,7 +47,7 @@ export const Footer: React.FC = () => {
             MEDINTEL AI — Medical Diagnostic Prediction & Decision-Support System. Research Prototype.
           </p>
           <p className="font-mono">
-            Zero-Leakage 4-Dataset Architecture
+            Zero-Leakage Symptom2Disease Architecture
           </p>
         </div>
       </div>

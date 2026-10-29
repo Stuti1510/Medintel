@@ -2,15 +2,15 @@
   "model_name": "BioBERT Clinical Transformer",
   "architecture": "BioBERT Contextual Encoder + Multi-Head Self-Attention + Classification Head",
   "base_model": "dmis-lab/biobert-v1.1",
-  "num_classes": 20,
+  "num_classes": 24,
   "vocab_size": 30522,
   "hidden_size": 256,
   "num_hidden_layers": 4,
   "num_attention_heads": 4,
   "intermediate_size": 512,
   "max_length": 64,
-  "total_parameters": 10124564,
-  "trainable_parameters": 10124564,
+  "total_parameters": 10125592,
+  "trainable_parameters": 10125592,
   "device": "cpu",
   "mode": "DEVELOPMENT MODE (CPU Optimized)"
 }

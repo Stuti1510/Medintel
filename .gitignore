@@ -31,3 +31,7 @@ frontend/.tmp/
 datasets/Final_Augmented_dataset_Diseases_and_Symptoms.csv
 *.large
 *.tar.gz
+
+# Local migration backups
+data_backup/
+models_backup/

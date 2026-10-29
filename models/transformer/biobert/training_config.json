@@ -5,6 +5,6 @@
   "optimizer": "AdamW",
   "weight_decay": 0.01,
   "loss_function": "CrossEntropyLoss",
-  "training_time_s": 5275.14,
-  "best_val_accuracy": 1.0
+  "training_time_s": 73.02,
+  "best_val_accuracy": 0.8
 }

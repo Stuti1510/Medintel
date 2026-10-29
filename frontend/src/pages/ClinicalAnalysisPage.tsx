@@ -25,13 +25,13 @@ const PRESET_CASES = [
     smoke: 1,
     alco: 0,
     active: 0,
-    symptoms: "Occipital morning headache, severe exertional dyspnea, blurred vision, epistaxis, facial flushing, elevated blood pressure (168/105 mmHg)",
+    symptoms: "Severe headache, chest tightness, palpitations, dizziness, loss of balance, trouble concentrating, and stage 2 elevated blood pressure (168/105 mmHg)",
     duration: "2 weeks",
     severity: "Critical",
     medical_history: "Essential hypertension, dyslipidemia",
     current_medications: "Amlodipine 5mg",
     vitals: { heart_rate: 96, systolic_bp: 168, diastolic_bp: 105, temperature: 36.8, spo2: 95 },
-    clinical_narrative: "58-year-old male presenting with Stage 2 hypertensive urgency, severe occipital headache, elevated BMI (29.7 kg/m²), elevated serum cholesterol, and chronic tobacco use."
+    clinical_narrative: "58-year-old male presenting with Stage 2 hypertensive urgency, severe occipital headache, palpitations, unsteadiness, elevated BMI (29.7 kg/m²), elevated serum cholesterol, and chronic tobacco use."
   },
   {
     name: "Acute Exacerbation of Bronchial Asthma",
@@ -147,19 +147,19 @@ export const ClinicalAnalysisPage: React.FC = () => {
   const [alco, setAlco] = useState<number>(0);
   const [active, setActive] = useState<number>(0);
 
-  const [symptoms, setSymptoms] = useState<string>("Occipital morning headache, severe exertional dyspnea, blurred vision, epistaxis, facial flushing, elevated blood pressure (168/105 mmHg)");
+  const [symptoms, setSymptoms] = useState<string>("Severe headache, chest tightness, palpitations, dizziness, loss of balance, trouble concentrating, and stage 2 elevated blood pressure (168/105 mmHg)");
   const [duration, setDuration] = useState<string>("2 weeks");
   const [severity, setSeverity] = useState<string>("Critical");
   const [history, setHistory] = useState<string>("Essential hypertension, dyslipidemia");
   const [medications, setMedications] = useState<string>("Amlodipine 5mg");
-  const [narrative, setNarrative] = useState<string>("58-year-old male presenting with Stage 2 hypertensive urgency, severe occipital headache, elevated BMI (29.7 kg/m²), elevated serum cholesterol, and chronic tobacco use.");
+  const [narrative, setNarrative] = useState<string>("58-year-old male presenting with Stage 2 hypertensive urgency, severe occipital headache, palpitations, unsteadiness, elevated BMI (29.7 kg/m²), elevated serum cholesterol, and chronic tobacco use.");
   
   const [heartRate, setHeartRate] = useState<number>(96);
   const [bpSys, setBpSys] = useState<number>(168);
   const [bpDia, setBpDia] = useState<number>(105);
   const [temperature, setTemperature] = useState<number>(36.8);
   const [spo2, setSpo2] = useState<number>(95);
-  const [selectedMLModel, setSelectedMLModel] = useState<string>("Logistic Regression");
+  const [selectedMLModel, setSelectedMLModel] = useState<string>("Linear SVM");
 
   // Document Upload State
   const [uploadingDoc, setUploadingDoc] = useState<boolean>(false);
@@ -228,6 +228,40 @@ export const ClinicalAnalysisPage: React.FC = () => {
   };
 
   const handleRunAnalysis = async () => {
+    // 1. Validate required clinical inputs before executing inference
+    const trimmedSymptoms = (symptoms || "").trim();
+    const trimmedNarrative = (narrative || "").trim();
+    if (trimmedSymptoms.length < 5 && trimmedNarrative.length < 5) {
+      setError("Please enter patient symptoms or a clinical narrative before running analysis (minimum 5 characters required).");
+      return;
+    }
+
+    // 2. Validate physiological domain bounds on vitals
+    if (bpSys < 60 || bpSys > 260) {
+      setError("Systolic blood pressure is out of realistic physiological range (60–260 mmHg).");
+      return;
+    }
+    if (bpDia < 30 || bpDia > 160) {
+      setError("Diastolic blood pressure is out of realistic physiological range (30–160 mmHg).");
+      return;
+    }
+    if (bpSys <= bpDia) {
+      setError("Systolic blood pressure must be strictly greater than diastolic blood pressure.");
+      return;
+    }
+    if (heartRate < 30 || heartRate > 240) {
+      setError("Heart rate is out of realistic physiological range (30–240 bpm).");
+      return;
+    }
+    if (temperature < 30.0 || temperature > 45.0) {
+      setError("Body temperature is out of realistic physiological range (30.0°C–45.0°C).");
+      return;
+    }
+    if (spo2 < 50 || spo2 > 100) {
+      setError("Oxygen saturation (SpO2) is out of realistic physiological range (50%–100%).");
+      return;
+    }
+
     setIsAnalyzing(true);
     setError(null);
     setActiveStage(1);
@@ -594,6 +628,7 @@ export const ClinicalAnalysisPage: React.FC = () => {
                   onChange={(e) => setSelectedMLModel(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg bg-[#fafaf8] border border-[#e8e4dd] text-xs text-[#292827] focus:outline-none focus:border-[#1b1938]"
                 >
+                  <option value="Linear SVM">Linear SVM (Calibrated Platt Scaling)</option>
                   <option value="Logistic Regression">Logistic Regression (Balanced L2)</option>
                   <option value="Random Forest">Random Forest (150 Trees, Balanced)</option>
                   <option value="XGBoost">XGBoost (150 Estimators, Depth 6)</option>
@@ -638,56 +673,177 @@ export const ClinicalAnalysisPage: React.FC = () => {
                   <SafetyBanner flags={result.safety_flags} />
                 )}
 
+                {/* 1.5 Clinical Source of Truth & Output Validation Layer Audit */}
+                {result.source_of_truth && (
+                  <div className="p-5 rounded-xl bg-white border border-[#e8e4dd] space-y-4 shadow-sm">
+                    <div className="flex items-center justify-between border-b border-[#e8e4dd] pb-3">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                        <h3 className="text-xs font-mono font-semibold uppercase tracking-wider text-[#292827]">
+                          Clinical Source of Truth & Validation Layer
+                        </h3>
+                      </div>
+                      <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-medium ${
+                        result.output_validation?.status === "PASSED"
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : "bg-amber-50 text-amber-700 border border-amber-200"
+                      }`}>
+                        {result.output_validation?.status === "PASSED"
+                          ? "Output Validated • 0 Discrepancies"
+                          : "Discrepancy Remediated • Safe Fallback"}
+                      </span>
+                    </div>
+
+                    {/* Preserved Source of Truth Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
+                      <div className="p-2.5 rounded-lg bg-[#fafaf8] border border-[#e8e4dd]">
+                        <span className="text-[10px] text-[#73706d] block">Blood Pressure</span>
+                        <span className="font-semibold text-[#1b1938]">
+                          {result.source_of_truth.systolic_bp && result.source_of_truth.diastolic_bp
+                            ? `${result.source_of_truth.systolic_bp}/${result.source_of_truth.diastolic_bp} mmHg`
+                            : "Unrecorded"}
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-[#fafaf8] border border-[#e8e4dd]">
+                        <span className="text-[10px] text-[#73706d] block">Heart Rate</span>
+                        <span className="font-semibold text-[#1b1938]">
+                          {result.source_of_truth.heart_rate ? `${result.source_of_truth.heart_rate} bpm` : "Unrecorded"}
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-[#fafaf8] border border-[#e8e4dd]">
+                        <span className="text-[10px] text-[#73706d] block">Core Temp</span>
+                        <span className="font-semibold text-[#1b1938]">
+                          {result.source_of_truth.temperature ? `${result.source_of_truth.temperature} °C` : "Unrecorded"}
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-[#fafaf8] border border-[#e8e4dd]">
+                        <span className="text-[10px] text-[#73706d] block">SpO2 Oxygen</span>
+                        <span className="font-semibold text-[#1b1938]">
+                          {result.source_of_truth.spo2 ? `${result.source_of_truth.spo2}%` : "Unrecorded"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Physiological Conflict / Stability Alerts */}
+                    {result.source_of_truth.physiological_alerts && result.source_of_truth.physiological_alerts.length > 0 && (
+                      <div className="space-y-1.5 pt-1">
+                        {result.source_of_truth.physiological_alerts.map((alert, idx) => (
+                          <div key={idx} className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs font-mono text-amber-900 flex items-start gap-2">
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                            <div>
+                              <strong className="font-semibold uppercase tracking-wider text-[10px] text-amber-800">
+                                {alert.type}
+                              </strong>
+                              <p className="mt-0.5">{alert.message}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Enforced Invariants */}
+                    <div className="pt-2 border-t border-[#e8e4dd] flex flex-wrap gap-x-4 gap-y-1 text-[11px] font-mono text-[#73706d]">
+                      <span className="flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        Exact biometrics preserved
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        No invented missing vitals
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        Symptoms distinguished from model output
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 {/* 2. Primary Prediction Report Section */}
                 <div className="p-6 rounded-xl bg-white border border-[#e8e4dd] space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-[#e8e4dd] pb-4">
                     <div>
                       <span className="text-[10px] font-mono uppercase text-[#73706d] tracking-wider block">
-                        Most Likely Primary Diagnosis
+                        Primary Algorithmic Classification Candidate
                       </span>
                       <h2 className="text-2xl sm:text-3xl font-medium text-[#292827] mt-1">
-                        {result.ml_prediction?.predicted_condition || "Cardiovascular Disease"}
+                        {result.ml_prediction?.predicted_condition || "Hypertension"}
                       </h2>
                       <p className="text-xs text-[#73706d] font-mono mt-1">
-                        Model: {selectedMLModel} Baseline • Test Split Evaluation (N=10,296)
+                        Model: {selectedMLModel} • Test Split Benchmark (N=180 across 24 classes)
                       </p>
                     </div>
 
                     <div className="text-left sm:text-right">
-                      <span className="text-[10px] font-mono uppercase text-[#73706d] block">Model Probability</span>
+                      <span className="text-[10px] font-mono uppercase text-[#73706d] block">Model Classification Score</span>
                       <span className="text-3xl font-mono font-medium text-[#1b1938]">
                         {((result.ml_prediction?.confidence || result.ml_prediction?.confidence_score || 0.78) * 100).toFixed(1)}%
+                      </span>
+                      <span className="text-[10px] font-mono text-[#73706d] block mt-0.5">
+                        {result.ml_prediction?.is_calibrated ? "Calibrated Platt Score" : "Statistical Match Likelihood"}
                       </span>
                     </div>
                   </div>
 
-                  {/* Dual Model Agreement */}
+                  {/* Dual Model Agreement & Calibration Verification */}
                   {result.concordance && (
-                    <div className="p-4 rounded-lg bg-[#fafaf8] border border-[#e8e4dd] flex items-center justify-between text-xs font-mono">
-                      <div className="flex items-center gap-2 text-[#292827]">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                        <span>Model Agreement: <strong>{result.concordance.concordance_level}</strong></span>
+                    <div className="p-4 rounded-lg bg-[#fafaf8] border border-[#e8e4dd] space-y-2 text-xs font-mono">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 text-[#292827]">
+                          {result.concordance.status === "CONCORDANT" ? (
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          ) : result.concordance.status === "UNCERTAIN_CONCORDANCE" ? (
+                            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                          ) : (
+                            <Info className="w-4 h-4 text-indigo-600 shrink-0" />
+                          )}
+                          <span>
+                            Agreement Status: <strong>{result.concordance.concordance_level}</strong>
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] text-[#73706d]">
+                          <span className="px-2 py-0.5 rounded bg-white border border-[#e8e4dd]">
+                            ML: {((result.ml_prediction?.confidence || 0) * 100).toFixed(1)}% ({result.ml_prediction?.is_calibrated ? "Calibrated" : "Uncalibrated"})
+                          </span>
+                          <span className="px-2 py-0.5 rounded bg-white border border-[#e8e4dd]">
+                            BioBERT: {((result.transformer_prediction?.confidence || 0) * 100).toFixed(1)}% (Uncalibrated)
+                          </span>
+                        </div>
                       </div>
-                      <span className="text-[#73706d]">
-                        Combined Confidence: {result.confidence?.combined_percentage || "78.4%"}
-                      </span>
+                      {result.concordance.details && (
+                        <p className="text-[11px] text-[#73706d] border-t border-[#f1f0ec] pt-2">
+                          {result.concordance.details}
+                        </p>
+                      )}
                     </div>
                   )}
+
+                  {/* Clinical Disclaimer on Score Meaning */}
+                  <div className="p-3 rounded-lg bg-[#fafaf8] border border-[#e8e4dd] text-[11px] text-[#73706d] leading-relaxed flex items-center gap-2">
+                    <Info className="w-4 h-4 text-[#9a9794] shrink-0" />
+                    <span>
+                      <strong>Notice on Score Interpretation:</strong> This score represents the statistical likelihood under the benchmark test distribution. It has not undergone clinical regulatory validation and must <em>never</em> be interpreted as a verified diagnostic probability of disease.
+                    </span>
+                  </div>
                 </div>
 
                 {/* 3. Dual Intelligence Differentials (Classical ML & BioBERT) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <DifferentialCard
                     differentials={result.top_differentials || []}
-                    primaryPrediction={result.ml_prediction?.predicted_condition || "Cardiovascular Risk"}
+                    primaryPrediction={result.ml_prediction?.predicted_condition || "Primary Differential"}
                     confidence={result.ml_prediction?.confidence || result.ml_prediction?.confidence_score || 0.78}
-                    modelName="Classical ML Differential"
+                    modelName={`Classical ML (${selectedMLModel})`}
+                    isCalibrated={result.ml_prediction?.is_calibrated ?? (selectedMLModel === "Linear SVM")}
+                    calibrationStatus={result.ml_prediction?.calibration_status}
                   />
                   <DifferentialCard
                     differentials={result.transformer_prediction?.top_differentials || []}
                     primaryPrediction={result.transformer_prediction?.predicted_condition || "BioBERT Differential"}
                     confidence={result.transformer_prediction?.confidence || 0.81}
                     modelName="BioBERT Transformer"
+                    isCalibrated={false}
+                    calibrationStatus="Uncalibrated Softmax (Temp=1.0)"
                   />
                 </div>
 

@@ -1,22 +1,25 @@
 """
 MEDINTEL AI - Database Initializer & Seeder
 Creates all tables via SQLAlchemy metadata and seeds default AI models, metrics, and demo cases.
+Ensures active benchmark models and datasets are synchronized with latest empirical results.
 """
 
 import os
 import sys
 import json
 from datetime import datetime
+from pathlib import Path
 
 # Add project root to sys.path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
+sys.path.insert(0, str(BASE_DIR))
 
 from backend.app.database.session import engine, SessionLocal
 from backend.app.database.base import Base
 from backend.app.models.entities import (
     User, PatientCase, AIModel, Prediction, PredictionProbability,
     ModelMetric, Experiment, RetrievalResult, LLMInteraction, SafetyEvent,
-    MotorScreeningSession, MotorScreeningTrial, MotorScreeningMetric
+    MotorScreeningSession, MotorScreeningTrial, MotorScreeningMetric, Dataset
 )
 
 def init_database():
@@ -41,71 +44,126 @@ def init_database():
 
         # 1. Classical ML models
         if os.path.exists(eval_classical_path):
-            with open(eval_classical_path, "r") as f:
+            with open(eval_classical_path, "r", encoding="utf-8") as f:
                 c_results = json.load(f)
             for m_name, m_data in c_results.items():
-                existing_m = db.query(AIModel).filter(AIModel.name == m_name).first()
-                if not existing_m:
+                filename = f"{m_name.lower().replace(' ', '_')}.joblib"
+                m_path = os.path.join("models", "classical", filename)
+                
+                ai_m = db.query(AIModel).filter(AIModel.name == m_name).first()
+                if not ai_m:
                     ai_m = AIModel(
                         name=m_name,
                         type="Classical ML",
-                        version="v1.0.0",
-                        dataset="MEDINTEL Clinical Benchmark",
-                        dataset_version="v1.0",
+                        version="v3.0.0-NLP",
+                        dataset="Symptom-to-Disease Clinical Benchmark (Symptom2Disease)",
+                        dataset_version="v1.0.0",
                         status="READY",
-                        model_path=os.path.join("models/classical", m_data.get("model_file", ""))
+                        model_path=m_path
                     )
                     db.add(ai_m)
                     db.commit()
                     db.refresh(ai_m)
-
-                    # Add metric
-                    metric = ModelMetric(
-                        model_id=ai_m.id,
-                        accuracy=m_data.get("accuracy", 0.0),
-                        precision=m_data.get("precision_macro", 0.0),
-                        recall=m_data.get("recall_macro", 0.0),
-                        f1=m_data.get("f1_macro", 0.0),
-                        macro_f1=m_data.get("f1_macro", 0.0),
-                        weighted_f1=m_data.get("f1_weighted", 0.0)
-                    )
-                    db.add(metric)
+                else:
+                    ai_m.version = "v3.0.0-NLP"
+                    ai_m.dataset = "Symptom-to-Disease Clinical Benchmark (Symptom2Disease)"
+                    ai_m.dataset_version = "v1.0.0"
+                    ai_m.status = "READY"
+                    ai_m.model_path = m_path
                     db.commit()
+
+                # Add / update metric
+                metric = db.query(ModelMetric).filter(ModelMetric.model_id == ai_m.id).first()
+                if not metric:
+                    metric = ModelMetric(model_id=ai_m.id)
+                    db.add(metric)
+                    
+                metric.accuracy = float(m_data.get("accuracy", 0.0))
+                metric.precision = float(m_data.get("precision_macro", 0.0))
+                metric.recall = float(m_data.get("recall_macro", 0.0))
+                metric.f1 = float(m_data.get("f1_macro", 0.0))
+                metric.macro_f1 = float(m_data.get("f1_macro", 0.0))
+                metric.weighted_f1 = float(m_data.get("f1_weighted", 0.0))
+                metric.evaluation_date = datetime.now()
+                db.commit()
 
         # 2. Transformer model
         if os.path.exists(eval_transformer_path):
-            with open(eval_transformer_path, "r") as f:
+            with open(eval_transformer_path, "r", encoding="utf-8") as f:
                 t_data = json.load(f)
-            existing_t = db.query(AIModel).filter(AIModel.name == t_data.get("model_name")).first()
-            if not existing_t:
+            t_name = t_data.get("model_name", "BioBERT Clinical Transformer")
+            ai_t = db.query(AIModel).filter(AIModel.name == t_name).first()
+            if not ai_t:
                 ai_t = AIModel(
-                    name=t_data.get("model_name", "BioBERT Clinical Transformer"),
+                    name=t_name,
                     type="Medical Transformer",
-                    version="v1.1.0",
-                    dataset="MEDINTEL Clinical Benchmark",
-                    dataset_version="v1.0",
+                    version="v3.0.0-NLP",
+                    dataset="Symptom-to-Disease Clinical Benchmark (Symptom2Disease)",
+                    dataset_version="v1.0.0",
                     status="READY",
                     model_path="models/transformer/biobert/model.pt"
                 )
                 db.add(ai_t)
                 db.commit()
                 db.refresh(ai_t)
-
-                metric = ModelMetric(
-                    model_id=ai_t.id,
-                    accuracy=t_data.get("accuracy", 0.0),
-                    precision=t_data.get("precision_macro", 0.0),
-                    recall=t_data.get("recall_macro", 0.0),
-                    f1=t_data.get("f1_macro", 0.0),
-                    macro_f1=t_data.get("f1_macro", 0.0),
-                    weighted_f1=t_data.get("f1_weighted", 0.0)
-                )
-                db.add(metric)
+            else:
+                ai_t.version = "v3.0.0-NLP"
+                ai_t.dataset = "Symptom-to-Disease Clinical Benchmark (Symptom2Disease)"
+                ai_t.dataset_version = "v1.0.0"
+                ai_t.status = "READY"
+                ai_t.model_path = "models/transformer/biobert/model.pt"
                 db.commit()
 
-        print("[DATABASE INIT] Database initialization and model seeding complete.")
+            metric = db.query(ModelMetric).filter(ModelMetric.model_id == ai_t.id).first()
+            if not metric:
+                metric = ModelMetric(model_id=ai_t.id)
+                db.add(metric)
+                
+            metric.accuracy = float(t_data.get("accuracy", 0.0))
+            metric.precision = float(t_data.get("precision_macro", 0.0))
+            metric.recall = float(t_data.get("recall_macro", 0.0))
+            metric.f1 = float(t_data.get("f1_macro", 0.0))
+            metric.macro_f1 = float(t_data.get("f1_macro", 0.0))
+            metric.weighted_f1 = float(t_data.get("f1_weighted", 0.0))
+            metric.evaluation_date = datetime.now()
+            db.commit()
+
+        # 3. Synchronize Dataset Registry Record
+        ds_rec = db.query(Dataset).filter(Dataset.name == "symptom_to_disease").first()
+        if not ds_rec:
+            ds_rec = Dataset(
+                name="symptom_to_disease",
+                version="v1.0.0",
+                file_type="csv",
+                file_path="datasets/Symptom2Disease.csv",
+                total_samples=1200,
+                total_features=2,
+                target_column="label",
+                num_classes=24,
+                train_samples=840,
+                validation_samples=180,
+                test_samples=180,
+                missing_values=0,
+                duplicate_records=47,
+                status="validated"
+            )
+            db.add(ds_rec)
+            db.commit()
+        else:
+            ds_rec.total_samples = 1200
+            ds_rec.total_features = 2
+            ds_rec.target_column = "label"
+            ds_rec.num_classes = 24
+            ds_rec.train_samples = 840
+            ds_rec.validation_samples = 180
+            ds_rec.test_samples = 180
+            ds_rec.duplicate_records = 47
+            ds_rec.status = "validated"
+            db.commit()
+
+        print("[DATABASE INIT] Database initialization and model synchronization complete.")
     except Exception as e:
-        print(f"[DATABASE INIT] Seeding error: {e}")
+        print(f"[DATABASE INIT ERROR] {e}")
         db.rollback()
     finally:
         db.close()

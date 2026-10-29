@@ -29,21 +29,21 @@ def test_evaluation_benchmarks():
     assert len(data["comparison"]) >= 3
 
 def test_datasets_endpoints():
-    res = client.get("/api/datasets?dataset_id=cardio_train")
+    res = client.get("/api/datasets?dataset_id=symptom_to_disease")
     assert res.status_code == 200
     data = res.json()
     assert "all_datasets" in data
-    assert len(data["all_datasets"]) >= 4
+    assert len(data["all_datasets"]) >= 1
 
     res_all = client.get("/api/datasets?dataset_id=all")
     assert res_all.status_code == 200
-    assert res_all.json()["num_classes"] >= 100
+    assert res_all.json()["num_classes"] == 24
 
     res_dis = client.get("/api/datasets/diseases")
     assert res_dis.status_code == 200
     assert "unified_disease_classes" in res_dis.json()
 
-    res_prev = client.get("/api/datasets/preview?dataset_id=cardio_train&limit=5")
+    res_prev = client.get("/api/datasets/preview?dataset_id=symptom_to_disease&limit=5")
     assert res_prev.status_code == 200
     p_data = res_prev.json()
     assert "rows" in p_data

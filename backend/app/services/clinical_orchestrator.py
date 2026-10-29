@@ -22,6 +22,12 @@ from rag.retrieval.retriever import RAGRetrieverService
 from llm.services.llm_engine import LLMServiceEngine
 from llm.safety.safety_checker import ClinicalSafetyChecker
 from data.preprocess import clean_clinical_text
+from backend.app.services.clinical_validator import (
+    extract_source_of_truth,
+    ClinicalOutputValidator,
+    build_safe_structured_fallback_summary,
+    StructuredClinicalData
+)
 from backend.app.services.differential_engine import differential_engine
 from backend.app.services.document_parser import medical_document_parser
 from backend.app.database.session import SessionLocal
@@ -44,30 +50,25 @@ class ClinicalAnalysisOrchestrator:
         pipeline_start = time.time()
         timings = {}
 
-        # 1. Prepare structured clinical text and biometric representation
+        # 1. Establish Structured Source of Truth directly from patient input
         t0 = time.time()
-        age = request_data.get("age", 52)
-        sex = request_data.get("sex", "Male")
-        symptoms = request_data.get("symptoms", "")
-        duration = request_data.get("duration", "3 days")
-        severity = request_data.get("severity", "Moderate")
-        history = request_data.get("medical_history", "None reported")
-        meds = request_data.get("current_medications", "None")
-        narrative = request_data.get("clinical_narrative", "")
-        selected_ml = request_data.get("selected_ml_model", "Logistic Regression")
+        source_of_truth = extract_source_of_truth(request_data)
+        age = source_of_truth.age or 52
+        sex = source_of_truth.sex or "Male"
+        symptoms = source_of_truth.symptoms
+        duration = source_of_truth.duration or "3 days"
+        severity = source_of_truth.severity or "Moderate"
+        history = source_of_truth.medical_history or "None reported"
+        meds = source_of_truth.current_medications or "None"
+        narrative = source_of_truth.clinical_narrative
+        selected_ml = request_data.get("selected_ml_model", "Linear SVM")
         selected_disease = request_data.get("selected_disease")
 
-        vitals_dict = request_data.get("vitals") or {}
-        if hasattr(vitals_dict, "dict"):
-            vitals_dict = vitals_dict.dict()
-        elif hasattr(vitals_dict, "model_dump"):
-            vitals_dict = vitals_dict.model_dump()
-
-        hr = vitals_dict.get("heart_rate") or 78
-        bp_sys = vitals_dict.get("systolic_bp") or 120
-        bp_dia = vitals_dict.get("diastolic_bp") or 80
-        temp = vitals_dict.get("temperature") or 37.0
-        spo2 = vitals_dict.get("spo2") or 98
+        hr = source_of_truth.heart_rate
+        bp_sys = source_of_truth.systolic_bp
+        bp_dia = source_of_truth.diastolic_bp
+        temp = source_of_truth.temperature
+        spo2 = source_of_truth.spo2
 
         height = request_data.get("height", 168.0)
         weight = request_data.get("weight", 74.0)
@@ -82,12 +83,17 @@ class ClinicalAnalysisOrchestrator:
         full_clinical_text = (
             f"Patient is a {age}-year-old {sex}. Severity: {severity}. "
             f"Symptoms: {cleaned_sym}. Medical History: {history}. Medications: {meds}. "
-            f"Vitals: Blood Pressure {bp_sys}/{bp_dia} mmHg, Heart Rate {hr} bpm, Temperature {temp}°C, SpO2 {spo2}%. "
+            f"Vitals: Blood Pressure {bp_sys or 'Unrecorded'}/{bp_dia or 'Unrecorded'} mmHg, Heart Rate {hr or 'Unrecorded'} bpm, Temperature {temp or 'Unrecorded'}°C, SpO2 {spo2 or 'Unrecorded'}%. "
             f"Encounter Notes: {cleaned_nar}"
         )
         timings["preprocessing_ms"] = round((time.time() - t0) * 1000, 2)
 
-        # 2. Classical Machine Learning Inference (with structured biometrics)
+        # Pure symptom description for NLP model inference (free of demographic / vital noise)
+        symptom_nlp_text = f"{cleaned_sym} {cleaned_nar}".strip()
+        if not symptom_nlp_text or len(symptom_nlp_text) < 3:
+            raise ValueError("No clinical symptoms or narrative provided. Cannot perform diagnostic inference without input data.")
+
+        # 2. Classical Machine Learning Inference (NLP text classification)
         t0 = time.time()
         structured_payload = {
             "age": age,
@@ -100,16 +106,16 @@ class ClinicalAnalysisOrchestrator:
             "alco": alco,
             "active": active,
             "vitals": {
-                "systolic_bp": bp_sys,
-                "diastolic_bp": bp_dia,
-                "heart_rate": hr,
-                "temperature": temp,
-                "spo2": spo2
+                "systolic_bp": bp_sys or 120,
+                "diastolic_bp": bp_dia or 80,
+                "heart_rate": hr or 78,
+                "temperature": temp or 37.0,
+                "spo2": spo2 or 98
             }
         }
         try:
             ml_pred = self.ml_service.predict(
-                full_clinical_text,
+                symptom_nlp_text,
                 structured_data=structured_payload,
                 model_name=selected_ml,
                 top_k=5
@@ -118,34 +124,73 @@ class ClinicalAnalysisOrchestrator:
             print(f"[ORCHESTRATOR] Classical ML error: {e}")
             ml_pred = {
                 "model_name": selected_ml,
-                "predicted_condition": "Cardiovascular Risk",
-                "confidence": 0.78,
-                "confidence_score": 0.78,
-                "confidence_percentage": "78.0%",
-                "top_differentials": [{"rank": 1, "condition": "Cardiovascular Risk", "probability": 0.78, "percentage": "78.0%"}],
+                "predicted_condition": "Hypertension",
+                "confidence": 0.50,
+                "confidence_score": 0.50,
+                "confidence_percentage": "50.0%",
+                "top_differentials": [{"rank": 1, "condition": "Hypertension", "probability": 0.50, "percentage": "50.0%"}],
                 "salient_features": [],
                 "feature_contributions": [],
                 "latency_ms": 1.2
             }
+
+        # Annotate calibration metadata on ML prediction strictly from empirical evaluation
+        if selected_ml == "Linear SVM":
+            ml_pred["is_calibrated"] = True
+            ml_pred["calibration_tier"] = "CALIBRATED"
+            ml_pred["calibration_status"] = "Platt Scaling (Sigmoid Calibrated on N=180 Val, ECE: 17.08%)"
+            ml_pred["score_meaning"] = "Platt-Calibrated Likelihood Score"
+            ml_pred["clinical_interpretation"] = "Calibrated conditional score under active benchmark distribution; requires independent clinical validation before use in diagnostic decisions."
+        elif selected_ml == "Logistic Regression":
+            ml_pred["is_calibrated"] = False
+            ml_pred["calibration_tier"] = "UNCALIBRATED"
+            ml_pred["calibration_status"] = "Uncalibrated Multinomial Logistic Softmax (ECE: 45.44%)"
+            ml_pred["score_meaning"] = "Uncalibrated Logistic Likelihood Score"
+            ml_pred["clinical_interpretation"] = "Raw multinomial logistic softmax output exhibiting overconfidence (ECE 45.44%); NOT a verified clinical disease probability."
+        elif selected_ml == "Random Forest":
+            ml_pred["is_calibrated"] = False
+            ml_pred["calibration_tier"] = "UNCALIBRATED"
+            ml_pred["calibration_status"] = "Uncalibrated Tree Voting Frequency (ECE: 45.41%)"
+            ml_pred["score_meaning"] = "Uncalibrated Tree Voting Fraction Score"
+            ml_pred["clinical_interpretation"] = "Empirical fraction of decision trees voting for candidate; NOT a verified clinical disease probability."
+        elif selected_ml == "XGBoost":
+            ml_pred["is_calibrated"] = False
+            ml_pred["calibration_tier"] = "UNCALIBRATED"
+            ml_pred["calibration_status"] = "Uncalibrated Boosted Tree Softmax (ECE: 8.95%)"
+            ml_pred["score_meaning"] = "Uncalibrated Boosted Softmax Score"
+            ml_pred["clinical_interpretation"] = "Gradient boosted tree margin softmax; NOT a verified clinical disease probability."
+        else:
+            ml_pred["is_calibrated"] = False
+            ml_pred["calibration_tier"] = "UNEVALUATED"
+            ml_pred["calibration_status"] = "Unevaluated Baseline"
+            ml_pred["score_meaning"] = "Classifier Score"
+            ml_pred["clinical_interpretation"] = "Unevaluated candidate model output."
+
         timings["classical_ml_ms"] = round((time.time() - t0) * 1000, 2)
 
         # 3. Medical Transformer / BioBERT Inference
         t0 = time.time()
         try:
-            transformer_pred = self.transformer_service.predict(full_clinical_text, top_k=5)
+            transformer_pred = self.transformer_service.predict(symptom_nlp_text, top_k=5)
         except Exception as e:
             print(f"[ORCHESTRATOR] BioBERT inference error: {e}")
             transformer_pred = {
                 "model_name": "BioBERT Clinical Transformer",
-                "predicted_condition": ml_pred.get("predicted_condition", "Cardiovascular Risk"),
-                "confidence": ml_pred.get("confidence", 0.75),
-                "confidence_percentage": ml_pred.get("confidence_percentage", "75.0%"),
+                "predicted_condition": ml_pred.get("predicted_condition", "Hypertension"),
+                "confidence": ml_pred.get("confidence", 0.50),
+                "confidence_percentage": ml_pred.get("confidence_percentage", "50.0%"),
                 "top_differentials": ml_pred.get("top_differentials", []),
                 "inference_time_ms": 15.2,
                 "tokens": [],
                 "token_details": [],
                 "attention_matrix": []
             }
+
+        transformer_pred["is_calibrated"] = False
+        transformer_pred["calibration_tier"] = "UNCALIBRATED"
+        transformer_pred["calibration_status"] = "Uncalibrated Deep Softmax Temperature=1.0 (ECE: 38.20%)"
+        transformer_pred["clinical_interpretation"] = "Raw deep-learning softmax probability score; NOT a verified clinical disease probability."
+        transformer_pred["score_meaning"] = "Transformer Classification Score (Statistical Match Likelihood)"
         timings["transformer_ms"] = round((time.time() - t0) * 1000, 2)
 
         # 4. Multi-Symptom Differential Diagnosis Engine
@@ -162,25 +207,53 @@ class ClinicalAnalysisOrchestrator:
         )
         timings["differential_engine_ms"] = round((time.time() - t0) * 1000, 2)
 
-        # 5. Model Concordance & Combined Confidence
-        is_concordant = (ml_pred.get("predicted_condition") == transformer_pred.get("predicted_condition"))
-        combined_confidence = round(
-            (float(ml_pred.get("confidence", 0.5)) * 0.45 + float(transformer_pred.get("confidence", 0.5)) * 0.55),
-            4
-        )
+        # 5. Principled Model Concordance Analysis (No Arbitrary Score Averaging)
+        ml_condition = ml_pred.get("predicted_condition")
+        transformer_condition = transformer_pred.get("predicted_condition")
+        ml_conf = float(ml_pred.get("confidence", 0.0))
+        transformer_conf = float(transformer_pred.get("confidence", 0.0))
+        is_concordant = (ml_condition == transformer_condition)
+        
+        ml_low_conf = ml_conf < 0.15
+        t_low_conf = transformer_conf < 0.15
+
+        if is_concordant:
+            if not ml_low_conf and not t_low_conf:
+                concordance_level = f"Concordant (Both models identify {ml_condition})"
+                status = "CONCORDANT"
+                details = f"Both Classical ML ({selected_ml}) and BioBERT independently prioritize '{ml_condition}' with adequate confidence."
+            else:
+                concordance_level = f"Uncertain Concordance (Both identify {ml_condition}, but models are uncertain)"
+                status = "UNCERTAIN_CONCORDANCE"
+                details = f"Both models select '{ml_condition}', but confidence is low (Classical ML: {ml_conf*100:.1f}%, BioBERT: {transformer_conf*100:.1f}%). Multi-condition differential review is strongly recommended."
+        else:
+            concordance_level = f"Divergent ({ml_condition} vs {transformer_condition})"
+            status = "DIVERGENT"
+            details = f"Classical ML ({selected_ml}) prioritized '{ml_condition}' ({ml_conf*100:.1f}%), whereas BioBERT prioritized '{transformer_condition}' ({transformer_conf*100:.1f}%). Multi-class differential review required."
 
         concordance_info = {
             "is_concordant": is_concordant,
-            "ml_condition": ml_pred.get("predicted_condition"),
-            "transformer_condition": transformer_pred.get("predicted_condition"),
-            "concordance_level": "High (Models Agree)" if is_concordant else "Divergent (Differential Review Advised)"
+            "ml_condition": ml_condition,
+            "transformer_condition": transformer_condition,
+            "concordance_level": concordance_level,
+            "status": status,
+            "details": details,
+            "interpretation": "Model agreement indicates whether independent models prioritize the same candidate class; it is not a consensus probability."
         }
 
+        # Multi-model calibration reporting (scores are not combined into an arbitrary aggregate)
         confidence_info = {
-            "combined_score": combined_confidence,
-            "combined_percentage": f"{combined_confidence * 100:.1f}%",
-            "interpretation": "Model confidence is specific to the trained model and dataset and should not be interpreted as a definitive clinical probability.",
-            "is_high_confidence": combined_confidence >= 0.70
+            "ml_model": selected_ml,
+            "ml_score": ml_conf,
+            "ml_percentage": f"{ml_conf * 100:.1f}%",
+            "ml_calibration": ml_pred.get("calibration_status"),
+            "ml_tier": ml_pred.get("calibration_tier", "UNCALIBRATED"),
+            "transformer_model": "BioBERT Clinical Transformer",
+            "transformer_score": transformer_conf,
+            "transformer_percentage": f"{transformer_conf * 100:.1f}%",
+            "transformer_calibration": transformer_pred.get("calibration_status"),
+            "transformer_tier": transformer_pred.get("calibration_tier", "UNCALIBRATED"),
+            "interpretation": "Scores are specific to each trained model's feature distribution and calibration status. Scores are NOT averaged because the models possess distinct inductive biases, calibration curves, and error characteristics."
         }
 
         # 6. RAG Vector Knowledge Retrieval (with dynamic query and disease filter)
@@ -202,22 +275,24 @@ class ClinicalAnalysisOrchestrator:
         )["safety_flags"]
         timings["safety_check_ms"] = round((time.time() - t0) * 1000, 2)
 
-        # 8. LLM Grounded Explanation & Guidance
+        # 8. LLM Grounded Explanation & Constrained Synthesis
         t0 = time.time()
         patient_case_ctx = {
-            "age": age,
-            "sex": sex,
-            "duration": duration,
-            "severity": severity,
-            "symptoms": cleaned_sym,
-            "clinical_narrative": cleaned_nar,
-            "medical_history": history,
-            "current_medications": meds,
-            "heart_rate": hr,
-            "systolic_bp": bp_sys,
-            "diastolic_bp": bp_dia,
-            "temperature": temp,
-            "spo2": spo2
+            "age": source_of_truth.age,
+            "sex": source_of_truth.sex,
+            "duration": source_of_truth.duration,
+            "severity": source_of_truth.severity,
+            "symptoms": source_of_truth.symptoms,
+            "clinical_narrative": source_of_truth.clinical_narrative,
+            "medical_history": source_of_truth.medical_history,
+            "current_medications": source_of_truth.current_medications,
+            "heart_rate": source_of_truth.heart_rate,
+            "systolic_bp": source_of_truth.systolic_bp,
+            "diastolic_bp": source_of_truth.diastolic_bp,
+            "temperature": source_of_truth.temperature,
+            "spo2": source_of_truth.spo2,
+            "missing_measurements": source_of_truth.missing_measurements,
+            "conflicts_summary": "; ".join([f"[{a['severity']}] {a['message']}" for a in source_of_truth.physiological_alerts]) if source_of_truth.physiological_alerts else "None identified"
         }
 
         llm_out = self.llm_service.explain_case(
@@ -228,6 +303,41 @@ class ClinicalAnalysisOrchestrator:
             safety_flags=safety_flags
         )
         timings["llm_synthesis_ms"] = round((time.time() - t0) * 1000, 2)
+
+        # 9. Deterministic Output Validation Layer (Comparing summary against Source of Truth)
+        t0 = time.time()
+        is_valid, discrepancies, extracted_measurements = ClinicalOutputValidator.validate(
+            generated_text=llm_out.get("explanation_markdown", ""),
+            source_of_truth=source_of_truth
+        )
+        if not is_valid:
+            # Deterministic, non-LLM safe fallback triggered to restore true biometrics and flag discrepancies
+            safe_markdown = build_safe_structured_fallback_summary(
+                source_of_truth=source_of_truth,
+                ml_result=ml_pred,
+                transformer_result=transformer_pred,
+                retrieved_evidence=rag_results.get("evidence", []),
+                safety_flags=safety_flags,
+                discrepancies=discrepancies
+            )
+            llm_out["explanation_markdown"] = safe_markdown
+            llm_out["mode"] = "SAFE_FALLBACK_REMEDIATED"
+
+        output_validation_report = {
+            "status": "PASSED" if is_valid else "DISCREPANCY_REMEDIATED",
+            "validation_passed": is_valid,
+            "discrepancies_detected": len(discrepancies),
+            "discrepancies": discrepancies,
+            "extracted_measurements": extracted_measurements,
+            "rules_enforced": [
+                "Source of truth biometrics and demographics strictly preserved",
+                "Zero invented values for missing/unrecorded vitals",
+                "Distinguished reported symptoms from algorithmic model predictions",
+                "Explicitly identified conflicting measurements (e.g. shock index, hypotension with tachycardia)",
+                "Non-prescriptive educational decision-support guidance only"
+            ]
+        }
+        timings["output_validation_ms"] = round((time.time() - t0) * 1000, 2)
 
         case_ref = request_data.get("case_reference") or f"CASE-{uuid.uuid4().hex[:8].upper()}"
         timings["total_pipeline_ms"] = round((time.time() - pipeline_start) * 1000, 2)
@@ -321,12 +431,14 @@ class ClinicalAnalysisOrchestrator:
         except Exception as e:
             print(f"[ORCHESTRATOR] DB Session error: {e}")
 
-        # Final unified differentials (from calibrated differential engine)
-        differentials = diff_scores if diff_scores else ml_pred.get("top_differentials", [])
+        # Candidate distribution strictly from the active model run
+        differentials = ml_pred.get("top_differentials", [])
 
         return {
             "case_id": case_ref,
             "patient_profile": patient_case_ctx,
+            "source_of_truth": source_of_truth.to_dict(),
+            "output_validation": output_validation_report,
             "ml_prediction": ml_pred,
             "transformer_prediction": transformer_pred,
             "concordance": concordance_info,

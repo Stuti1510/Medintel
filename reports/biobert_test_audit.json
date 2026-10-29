@@ -1,0 +1,7 @@
+{
+  "test_accuracy": 0.8111,
+  "macro_f1": 0.7981,
+  "weighted_f1": 0.8012,
+  "correct_count": 146,
+  "total_count": 180
+}

@@ -1,6 +1,6 @@
 """
-MEDINTEL AI - 4-Dataset Validation & Quality Test Suite
-Automates scientific data integrity checks across all 4 datasets.
+MEDINTEL AI - Symptom2Disease Validation & Quality Test Suite
+Automates scientific data integrity checks on the Symptom2Disease benchmark dataset.
 """
 
 import os
@@ -11,62 +11,59 @@ from data.dataset_registry import DATASET_REGISTRY
 from data.dataset_validator import profile_all_4_datasets
 
 @pytest.fixture
-def cardio_clean_df():
-    path = "data/cleaned/cardio_train_clean.csv"
-    assert os.path.exists(path), f"Clean dataset missing at {path}"
+def symptom_df():
+    path = "datasets/Symptom2Disease.csv"
+    assert os.path.exists(path), f"Dataset missing at {path}"
     return pd.read_csv(path)
 
-def test_1_all_4_datasets_exist():
+def test_1_dataset_exists():
     for d_id, meta in DATASET_REGISTRY.items():
         assert os.path.exists(meta["source_path"]), f"Dataset source missing: {meta['source_path']}"
 
-def test_2_cardio_clean_schema(cardio_clean_df):
-    expected_cols = [
-        "id", "age", "gender", "height", "weight", "ap_hi", "ap_lo",
-        "cholesterol", "gluc", "smoke", "alco", "active", "cardio", "age_years", "bmi"
-    ]
-    assert list(cardio_clean_df.columns) == expected_cols
+def test_2_dataset_schema(symptom_df):
+    assert "label" in symptom_df.columns
+    assert "text" in symptom_df.columns
+    assert len(symptom_df.columns) >= 2
 
-def test_3_cardio_clean_rows_and_nulls(cardio_clean_df):
-    assert len(cardio_clean_df) > 60000
-    assert cardio_clean_df.isnull().sum().sum() == 0
+def test_3_rows_and_nulls(symptom_df):
+    assert len(symptom_df) == 1200
+    assert symptom_df["label"].isnull().sum() == 0
+    assert symptom_df["text"].isnull().sum() == 0
 
-def test_4_target_valid_values(cardio_clean_df):
-    unique_targets = set(cardio_clean_df["cardio"].unique())
-    assert unique_targets == {0, 1}
+def test_4_classes_count(symptom_df):
+    unique_classes = symptom_df["label"].nunique()
+    assert unique_classes == 24, f"Expected 24 classes, got {unique_classes}"
 
-def test_5_feature_types_identified(cardio_clean_df):
-    numeric_cols = ["age_years", "height", "weight", "ap_hi", "ap_lo", "bmi"]
-    for col in numeric_cols:
-        assert pd.api.types.is_numeric_dtype(cardio_clean_df[col])
-    assert set(cardio_clean_df["gender"].unique()).issubset({1, 2})
-    assert set(cardio_clean_df["smoke"].unique()).issubset({0, 1})
-    assert set(cardio_clean_df["alco"].unique()).issubset({0, 1})
-    assert set(cardio_clean_df["active"].unique()).issubset({0, 1})
+def test_5_balanced_distribution(symptom_df):
+    counts = symptom_df["label"].value_counts()
+    assert (counts == 50).all(), "All 24 disease classes must have exactly 50 samples"
 
-def test_6_no_impossible_vital_signs(cardio_clean_df):
-    assert (cardio_clean_df["ap_hi"] >= 60).all() and (cardio_clean_df["ap_hi"] <= 240).all()
-    assert (cardio_clean_df["ap_lo"] >= 40).all() and (cardio_clean_df["ap_lo"] <= 180).all()
-    assert (cardio_clean_df["ap_hi"] > cardio_clean_df["ap_lo"]).all()
+def test_6_clean_dataset_exists():
+    path = "data/cleaned/symptom_to_disease_clean.csv"
+    assert os.path.exists(path), f"Clean dataset missing at {path}"
+    df_clean = pd.read_csv(path)
+    assert len(df_clean) > 1100
 
-def test_7_no_impossible_physicals(cardio_clean_df):
-    assert (cardio_clean_df["height"] >= 100).all() and (cardio_clean_df["height"] <= 220).all()
-    assert (cardio_clean_df["weight"] >= 30).all() and (cardio_clean_df["weight"] <= 200).all()
+def test_7_stratified_partitions():
+    train_path = "data/processed/train.csv"
+    val_path = "data/processed/val.csv"
+    test_path = "data/processed/test.csv"
+    
+    assert os.path.exists(train_path)
+    assert os.path.exists(val_path)
+    assert os.path.exists(test_path)
+    
+    train_df = pd.read_csv(train_path)
+    val_df = pd.read_csv(val_path)
+    test_df = pd.read_csv(test_path)
+    
+    assert len(train_df) == 840
+    assert len(val_df) == 180
+    assert len(test_df) == 180
+    assert train_df["label_idx"].nunique() == 24
 
-def test_8_non_constant_features(cardio_clean_df):
-    for col in cardio_clean_df.columns:
-        assert cardio_clean_df[col].nunique() > 1, f"Column {col} is constant"
-
-def test_9_heart_disease_deduplication():
-    df_clean = pd.read_csv("data/cleaned/heart_clean.csv")
-    assert df_clean.duplicated().sum() == 0
-    assert len(df_clean) == 302
-
-def test_10_profiler_execution():
+def test_8_profiler_execution():
     profiles = profile_all_4_datasets()
-    assert len(profiles) >= 4
-    assert "cardio_train" in profiles
-    assert "heart_disease" in profiles
-    assert "disease_profile" in profiles
-    assert "symptoms_augmented" in profiles
-    assert "synthetic_clinical" in profiles
+    assert "symptom_to_disease" in profiles
+    assert profiles["symptom_to_disease"]["total_samples"] == 1200
+    assert profiles["symptom_to_disease"]["num_classes"] == 24

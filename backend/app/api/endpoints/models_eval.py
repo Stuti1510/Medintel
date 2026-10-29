@@ -100,6 +100,8 @@ async def get_evaluation_benchmarks():
             "f1": m_val.get("f1_macro"),
             "roc_auc": m_val.get("roc_auc"),
             "pr_auc": m_val.get("pr_auc"),
+            "ece": m_val.get("expected_calibration_error"),
+            "is_calibrated": (m_name == "Linear SVM"),
             "latency_ms": m_val.get("inference_latency_ms"),
             "size_kb": m_val.get("model_size_kb")
         })
@@ -115,6 +117,8 @@ async def get_evaluation_benchmarks():
             "recall": t_val.get("recall_macro"),
             "f1": t_val.get("f1_macro"),
             "roc_auc": t_val.get("roc_auc"),
+            "ece": t_val.get("expected_calibration_error"),
+            "is_calibrated": False,
             "latency_ms": t_val.get("inference_latency_ms"),
             "size_kb": (t_val.get("model_size_mb", 0) * 1024)
         })
@@ -411,7 +415,7 @@ async def get_dataset_preview(
                 }
 
     if dataset_id not in DATASET_REGISTRY:
-        dataset_id = "cardio_train"
+        dataset_id = "symptom_to_disease"
         
     meta = DATASET_REGISTRY[dataset_id]
     source_path = meta["source_path"]

@@ -1,74 +1,164 @@
 {
-  "cardio_train": {
-    "dataset": "cardio_train",
-    "initial_rows": 70000,
-    "clean_rows": 68638,
-    "active_balanced_rows": 2400,
-    "removed_records": 1362,
+  "symptom_to_disease": {
+    "dataset": "symptom_to_disease",
+    "raw_source_path": "C:\\Users\\Stuti\\OneDrive\\Documents\\DMBI\\datasets\\Symptom2Disease.csv",
+    "clean_output_path": "data/cleaned\\symptom_to_disease_clean.csv",
+    "initial_rows": 1200,
+    "clean_rows": 1200,
+    "excluded_columns": [
+      "id"
+    ],
+    "excluded_rows_count": 0,
+    "exclusion_reasons": "Zero rows excluded. All 47 repeated symptom descriptions exhibit 100% label agreement; group-aware splitting is used to prevent evaluation leakage.",
+    "num_classes": 24,
+    "classes": [
+      "Acne",
+      "Arthritis",
+      "Bronchial Asthma",
+      "Cervical spondylosis",
+      "Chicken pox",
+      "Common Cold",
+      "Dengue",
+      "Dimorphic Hemorrhoids",
+      "Fungal infection",
+      "Hypertension",
+      "Impetigo",
+      "Jaundice",
+      "Malaria",
+      "Migraine",
+      "Pneumonia",
+      "Psoriasis",
+      "Typhoid",
+      "Varicose Veins",
+      "allergy",
+      "diabetes",
+      "drug reaction",
+      "gastroesophageal reflux disease",
+      "peptic ulcer disease",
+      "urinary tract infection"
+    ],
     "target_distribution_raw": {
-      "0": 35021,
-      "1": 34979
+      "Psoriasis": 50,
+      "Varicose Veins": 50,
+      "Typhoid": 50,
+      "Chicken pox": 50,
+      "Impetigo": 50,
+      "Dengue": 50,
+      "Fungal infection": 50,
+      "Common Cold": 50,
+      "Pneumonia": 50,
+      "Dimorphic Hemorrhoids": 50,
+      "Arthritis": 50,
+      "Acne": 50,
+      "Bronchial Asthma": 50,
+      "Hypertension": 50,
+      "Migraine": 50,
+      "Cervical spondylosis": 50,
+      "Jaundice": 50,
+      "Malaria": 50,
+      "urinary tract infection": 50,
+      "allergy": 50,
+      "gastroesophageal reflux disease": 50,
+      "drug reaction": 50,
+      "peptic ulcer disease": 50,
+      "diabetes": 50
     },
     "target_distribution_clean": {
-      "0": 34681,
-      "1": 33957
+      "Psoriasis": 50,
+      "Varicose Veins": 50,
+      "Typhoid": 50,
+      "Chicken pox": 50,
+      "Impetigo": 50,
+      "Dengue": 50,
+      "Fungal infection": 50,
+      "Common Cold": 50,
+      "Pneumonia": 50,
+      "Dimorphic Hemorrhoids": 50,
+      "Arthritis": 50,
+      "Acne": 50,
+      "Bronchial Asthma": 50,
+      "Hypertension": 50,
+      "Migraine": 50,
+      "Cervical spondylosis": 50,
+      "Jaundice": 50,
+      "Malaria": 50,
+      "urinary tract infection": 50,
+      "allergy": 50,
+      "gastroesophageal reflux disease": 50,
+      "drug reaction": 50,
+      "peptic ulcer disease": 50,
+      "diabetes": 50
     },
-    "target_distribution_active": {
-      "1": 1200,
-      "0": 1200
-    }
-  },
-  "heart_disease": {
-    "dataset": "heart_disease",
-    "initial_rows": 1025,
-    "clean_rows": 302,
-    "active_balanced_rows": 302,
-    "removed_records": 723,
-    "target_distribution_raw": {
-      "1": 526,
-      "0": 499
+    "exact_duplicates": {
+      "rows_with_duplicates": 90,
+      "unique_symptom_descriptions": 43,
+      "repeated_descriptions_count": 47,
+      "conflicting_label_count": 0,
+      "conflicts": {},
+      "class_breakdown": {
+        "Acne": {
+          "duplicate_rows": 8,
+          "unique_descriptions": 4,
+          "redundant_instances": 4
+        },
+        "Arthritis": {
+          "duplicate_rows": 7,
+          "unique_descriptions": 3,
+          "redundant_instances": 4
+        },
+        "Bronchial Asthma": {
+          "duplicate_rows": 2,
+          "unique_descriptions": 1,
+          "redundant_instances": 1
+        },
+        "Cervical spondylosis": {
+          "duplicate_rows": 2,
+          "unique_descriptions": 1,
+          "redundant_instances": 1
+        },
+        "Chicken pox": {
+          "duplicate_rows": 2,
+          "unique_descriptions": 1,
+          "redundant_instances": 1
+        },
+        "Common Cold": {
+          "duplicate_rows": 2,
+          "unique_descriptions": 1,
+          "redundant_instances": 1
+        },
+        "Dimorphic Hemorrhoids": {
+          "duplicate_rows": 17,
+          "unique_descriptions": 8,
+          "redundant_instances": 9
+        },
+        "Jaundice": {
+          "duplicate_rows": 22,
+          "unique_descriptions": 10,
+          "redundant_instances": 12
+        },
+        "Malaria": {
+          "duplicate_rows": 12,
+          "unique_descriptions": 6,
+          "redundant_instances": 6
+        },
+        "Migraine": {
+          "duplicate_rows": 6,
+          "unique_descriptions": 3,
+          "redundant_instances": 3
+        },
+        "Pneumonia": {
+          "duplicate_rows": 6,
+          "unique_descriptions": 3,
+          "redundant_instances": 3
+        },
+        "gastroesophageal reflux disease": {
+          "duplicate_rows": 4,
+          "unique_descriptions": 2,
+          "redundant_instances": 2
+        }
+      }
     },
-    "target_distribution_active": {
-      "1": 164,
-      "0": 138
-    }
-  },
-  "disease_profile": {
-    "dataset": "disease_profile",
-    "initial_rows": 349,
-    "clean_rows": 300,
-    "active_balanced_rows": 300,
-    "removed_records": 49,
-    "target_distribution_active": {
-      "Asthma": 16,
-      "Osteoporosis": 12,
-      "Stroke": 11,
-      "Diabetes": 10,
-      "Hypertension": 10,
-      "Migraine": 10,
-      "Influenza": 7,
-      "Bronchitis": 7,
-      "Pneumonia": 7,
-      "Common Cold": 6
-    }
-  },
-  "symptoms_augmented": {
-    "dataset": "symptoms_augmented",
-    "initial_rows": 246945,
-    "clean_rows": 246945,
-    "active_balanced_rows": 246945,
-    "removed_records": 0,
-    "target_distribution_active": {
-      "panic disorder": 909,
-      "vaginitis": 909,
-      "glaucoma": 498,
-      "eating disorder": 494,
-      "eye alignment disorder": 453,
-      "atrophic vaginitis": 329,
-      "tinnitus of unknown cause": 279,
-      "headache after lumbar puncture": 169,
-      "transient ischemic attack": 159,
-      "sick sinus syndrome": 158
-    }
+    "balance_status": "Strictly Balanced (50 records per condition across 24 classes)",
+    "data_leakage_safeguard": "Group-aware stratified splitting enforced during preprocessing to guarantee identical descriptions reside in the same partition."
   }
 }

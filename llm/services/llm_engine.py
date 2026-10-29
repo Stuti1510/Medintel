@@ -57,21 +57,54 @@ class LLMServiceEngine:
         # 3. Format safety flags text
         flags_text = "\n".join([f"- [{f.get('severity')}] {f.get('message')}" for f in safety_flags]) if safety_flags else "No emergency red flags triggered."
 
-        # 4. Construct formatted prompt
+        # 4. Format structured vitals strictly without inventing missing values
+        sbp = patient_case.get("systolic_bp")
+        dbp = patient_case.get("diastolic_bp")
+        if sbp is not None and dbp is not None:
+            bp_formatted = f"{sbp}/{dbp} mmHg"
+        elif sbp is not None:
+            bp_formatted = f"{sbp} mmHg (Diastolic unrecorded)"
+        else:
+            bp_formatted = "Unrecorded (Not provided)"
+
+        hr = patient_case.get("heart_rate")
+        hr_formatted = f"{hr} bpm" if hr is not None else "Unrecorded (Not provided)"
+
+        temp = patient_case.get("temperature")
+        temp_formatted = f"{temp} °C" if temp is not None else "Unrecorded (Not provided)"
+
+        spo2 = patient_case.get("spo2")
+        spo2_formatted = f"{spo2}%" if spo2 is not None else "Unrecorded (Not provided)"
+
+        missing_list = patient_case.get("missing_measurements")
+        if not missing_list:
+            missing_items = []
+            if hr is None: missing_items.append("Heart Rate")
+            if sbp is None or dbp is None: missing_items.append("Blood Pressure")
+            if temp is None: missing_items.append("Temperature")
+            if spo2 is None: missing_items.append("SpO2")
+            missing_str = ", ".join(missing_items) if missing_items else "None (Complete vitals recorded)"
+        else:
+            missing_str = ", ".join(missing_list)
+
+        conflicts_str = patient_case.get("conflicts_summary") or "None identified"
+
+        # 5. Construct formatted prompt strictly preserving Source of Truth
         prompt = CLINICAL_CASE_PROMPT_TEMPLATE.format(
-            age=patient_case.get("age", "Unknown"),
-            sex=patient_case.get("sex", "Unknown"),
+            age=patient_case.get("age") if patient_case.get("age") is not None else "Unrecorded",
+            sex=patient_case.get("sex") or "Unspecified",
             duration=patient_case.get("duration", "Recent"),
             severity=patient_case.get("severity", "Moderate"),
             symptoms=patient_case.get("symptoms", ""),
             narrative=patient_case.get("clinical_narrative", ""),
             history=patient_case.get("medical_history", "None reported"),
-            medications=patient_case.get("current_medications", "None"),
-            heart_rate=patient_case.get("heart_rate", "N/A"),
-            systolic_bp=patient_case.get("systolic_bp", "N/A"),
-            diastolic_bp=patient_case.get("diastolic_bp", "N/A"),
-            temperature=patient_case.get("temperature", "N/A"),
-            spo2=patient_case.get("spo2", "N/A"),
+            medications=patient_case.get("current_medications", "None reported"),
+            blood_pressure=bp_formatted,
+            heart_rate=hr_formatted,
+            temperature=temp_formatted,
+            spo2=spo2_formatted,
+            missing_parameters=missing_str,
+            conflicts_summary=conflicts_str,
             ml_model=ml_result.get("model_name", "Classical ML"),
             ml_prediction=ml_result.get("predicted_condition", "Unknown"),
             ml_confidence=ml_result.get("confidence_percentage", "N/A"),
@@ -82,10 +115,10 @@ class LLMServiceEngine:
             safety_flags_text=flags_text
         )
 
-        # 5. Invoke provider
+        # 6. Invoke provider
         raw_output = self.provider.generate(prompt, CLINICAL_SYSTEM_INSTRUCTION)
 
-        # 6. Safety Audit & Sanitization
+        # 7. Safety Audit & Sanitization
         audit_result = ClinicalSafetyChecker.audit_and_sanitize_response(
             llm_response=raw_output["text"],
             patient_text=f"{patient_case.get('symptoms', '')} {patient_case.get('clinical_narrative', '')}",

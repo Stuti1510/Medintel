@@ -93,6 +93,10 @@ export interface ClassicalMLResult {
   extracted_features?: Record<string, any>;
   inference_time_ms?: number;
   latency_ms?: number;
+  is_calibrated?: boolean;
+  calibration_status?: string;
+  clinical_interpretation?: string;
+  score_meaning?: string;
   status?: string;
 }
 
@@ -113,6 +117,10 @@ export interface TransformerResult {
   hidden_size?: number;
   num_heads?: number;
   total_parameters?: number;
+  is_calibrated?: boolean;
+  calibration_status?: string;
+  clinical_interpretation?: string;
+  score_meaning?: string;
   status?: string;
 }
 
@@ -128,10 +136,50 @@ export interface LLMExplanationResult {
   latency_ms?: number;
 }
 
+export interface SourceOfTruthRecord {
+  age?: number | null;
+  sex?: string | null;
+  symptoms: string;
+  clinical_narrative?: string;
+  duration?: string;
+  severity?: string;
+  medical_history?: string;
+  current_medications?: string;
+  heart_rate?: number | null;
+  systolic_bp?: number | null;
+  diastolic_bp?: number | null;
+  temperature?: number | null;
+  spo2?: number | null;
+  provided_measurements?: Record<string, any>;
+  missing_measurements?: string[];
+  physiological_alerts?: Array<{
+    type: string;
+    severity: string;
+    message: string;
+  }>;
+}
+
+export interface OutputValidationReport {
+  status: "PASSED" | "DISCREPANCY_REMEDIATED";
+  validation_passed: boolean;
+  discrepancies_detected: number;
+  discrepancies: Array<{
+    field: string;
+    severity: string;
+    expected: any;
+    found: any;
+    message: string;
+  }>;
+  extracted_measurements: Record<string, any>;
+  rules_enforced: string[];
+}
+
 export interface ClinicalAnalysisResponse {
   case_id?: string;
   case_reference?: string;
   patient_profile?: Record<string, any>;
+  source_of_truth?: SourceOfTruthRecord;
+  output_validation?: OutputValidationReport;
   ml_prediction: ClassicalMLResult;
   transformer_prediction: TransformerResult;
   concordance?: {
@@ -139,12 +187,25 @@ export interface ClinicalAnalysisResponse {
     ml_condition: string;
     transformer_condition: string;
     concordance_level: string;
+    status?: string;
+    details?: string;
+    interpretation?: string;
   };
   confidence?: {
-    combined_score: number;
-    combined_percentage: string;
-    interpretation: string;
-    is_high_confidence: boolean;
+    ml_model?: string;
+    ml_score?: number;
+    ml_percentage?: string;
+    ml_calibration?: string;
+    ml_tier?: string;
+    transformer_model?: string;
+    transformer_score?: number;
+    transformer_percentage?: string;
+    transformer_calibration?: string;
+    transformer_tier?: string;
+    interpretation?: string;
+    combined_score?: number;
+    combined_percentage?: string;
+    is_high_confidence?: boolean;
   };
   top_differentials: DifferentialItem[];
   retrieved_evidence: EvidenceItem[];
@@ -258,6 +319,8 @@ export interface ModelComparisonItem {
   precision: number;
   recall: number;
   f1: number;
+  ece?: number;
+  is_calibrated?: boolean;
   latency_ms: number;
   size_kb: number;
 }

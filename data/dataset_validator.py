@@ -1,15 +1,20 @@
 """
-MEDINTEL AI - Comprehensive 4-Dataset Profiler & Validator
-Profiles all 4 clinical datasets, computes SHA-256 hashes, analyzes missing/duplicate counts,
+MEDINTEL AI - Comprehensive Dataset Profiler & Validator
+Profiles the clinical benchmark dataset, computes SHA-256 hashes, analyzes missing/duplicate counts,
 evaluates class distributions, and outputs structured profile registries.
 """
 
 import os
+import sys
 import json
 import hashlib
 import pandas as pd
 import numpy as np
 from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(BASE_DIR))
+
 from data.dataset_registry import DATASET_REGISTRY, list_all_datasets
 
 def compute_file_hash(filepath: str) -> str:
@@ -30,55 +35,41 @@ def profile_all_4_datasets(
     os.makedirs(os.path.dirname(output_doc_md), exist_ok=True)
 
     all_profiles = {}
+    datasets_to_profile = list_all_datasets()
 
-    for dataset_id, meta in DATASET_REGISTRY.items():
+    for meta in datasets_to_profile:
+        dataset_id = meta["dataset_id"]
         source_path = meta["source_path"]
-        print(f"Profiling 4-Dataset component '{dataset_id}' from {source_path}...")
+        print(f"Profiling Dataset component '{dataset_id}' from {source_path}...")
 
         if not os.path.exists(source_path):
             raise FileNotFoundError(f"Dataset file missing: {source_path}")
         
         delim = meta.get("delimiter", ",")
-        # Read header + sample for fast profiling if huge
-        if dataset_id == "symptoms_augmented":
-            df_sample = pd.read_csv(source_path, nrows=100)
-            df_target = pd.read_csv(source_path, usecols=[meta["target_column"]])
-            total_samples = len(df_target)
-            total_cols = len(df_sample.columns)
-            cols = list(df_sample.columns)
-            target_col = meta["target_column"]
-            target_vc = df_target[target_col].value_counts()
-            class_counts = {str(k): int(v) for k, v in target_vc.items()}
-            total_missing = 0
-            duplicate_rows = 0
-            num_cols = list(df_sample.columns[1:])
-            cat_cols = [df_sample.columns[0]]
-            num_stats = {}
-        else:
-            df = pd.read_csv(source_path, sep=delim)
-            total_samples, total_cols = df.shape
-            cols = list(df.columns)
-            target_col = meta["target_column"]
+        df = pd.read_csv(source_path, sep=delim)
+        total_samples, total_cols = df.shape
+        cols = list(df.columns)
+        target_col = meta["target_column"]
 
-            class_counts = {str(k): int(v) for k, v in df[target_col].value_counts().items()} if target_col in df.columns else {}
-            missing_per_col = {str(col): int(df[col].isnull().sum()) for col in cols}
-            total_missing = sum(missing_per_col.values())
-            duplicate_rows = int(df.duplicated().sum())
+        class_counts = {str(k): int(v) for k, v in df[target_col].value_counts().items()} if target_col in df.columns else {}
+        missing_per_col = {str(col): int(df[col].isnull().sum()) for col in cols}
+        total_missing = sum(missing_per_col.values())
+        duplicate_rows = int(df.duplicated().sum())
 
-            num_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-            cat_cols = df.select_dtypes(exclude=[np.number]).columns.tolist()
+        num_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+        cat_cols = df.select_dtypes(exclude=[np.number]).columns.tolist()
 
-            num_stats = {}
-            for col in num_cols[:10]:
-                series = df[col].dropna()
-                if len(series) > 0:
-                    num_stats[col] = {
-                        "mean": float(round(series.mean(), 2)),
-                        "std": float(round(series.std(), 2)),
-                        "min": float(round(series.min(), 2)),
-                        "max": float(round(series.max(), 2)),
-                        "median": float(round(series.median(), 2))
-                    }
+        num_stats = {}
+        for col in num_cols[:10]:
+            series = df[col].dropna()
+            if len(series) > 0:
+                num_stats[col] = {
+                    "mean": float(round(series.mean(), 2)),
+                    "std": float(round(series.std(), 2)),
+                    "min": float(round(series.min(), 2)),
+                    "max": float(round(series.max(), 2)),
+                    "median": float(round(series.median(), 2))
+                }
 
         profile = {
             "dataset_id": dataset_id,
@@ -105,12 +96,12 @@ def profile_all_4_datasets(
 
         all_profiles[dataset_id] = profile
 
-    # Save all 4 profiles
+    # Save profiles
     with open(output_profiles_json, "w", encoding="utf-8") as f:
         json.dump(all_profiles, f, indent=2)
 
-    # Save primary profile (cardio_train) for backwards compatibility
-    primary_profile = all_profiles.get("cardio_train", list(all_profiles.values())[0])
+    # Save primary profile
+    primary_profile = all_profiles.get("symptom_to_disease", list(all_profiles.values())[0])
     primary_profile["datasetMetadata"] = {
         "name": primary_profile["name"],
         "version": primary_profile["version"],
@@ -122,7 +113,7 @@ def profile_all_4_datasets(
         "features": primary_profile["feature_count"],
         "missingValues": primary_profile["missing_values"],
         "duplicateRecords": primary_profile["duplicate_records"],
-        "targetColumn": primary_profile.get("target_column", "cardio"),
+        "targetColumn": primary_profile.get("target_column", "label"),
         "validationStatus": "DATASET VALIDATED",
         "datasetHash": primary_profile.get("dataset_hash", ""),
         "classDistribution": primary_profile.get("class_distribution", {})
@@ -132,13 +123,13 @@ def profile_all_4_datasets(
 
     # Generate Markdown documentation
     md_lines = [
-        "# MEDINTEL AI — 4-Dataset Clinical Benchmark Specification",
+        "# MEDINTEL AI — Symptom-to-Disease Benchmark Specification",
         "",
-        "> Canonical specification and structural integrity profiles for the **4 real clinical datasets**.",
+        "> Canonical specification and structural integrity profile for the **Symptom2Disease clinical benchmark dataset**.",
         "",
         "---",
         "",
-        "## 📊 1. Multi-Dataset Summary Catalog",
+        "## 📊 1. Clinical Benchmark Summary",
         "",
         "| Dataset ID | Clinical Benchmark Name | Records | Features | Target Column | Task Type |",
         "| :--- | :--- | :---: | :---: | :--- | :--- |"
@@ -146,7 +137,7 @@ def profile_all_4_datasets(
 
     for d_id, prof in all_profiles.items():
         md_lines.append(
-            f"| **`{d_id}`** | {prof['name']} | **{prof['total_samples']:,}** | {prof['feature_count']} | `{prof.get('target_column', 'target')}` | {prof['task_type']} |"
+            f"| **`{d_id}`** | {prof['name']} | **{prof['total_samples']:,}** | {prof['feature_count']} | `{prof.get('target_column', 'label')}` | {prof['task_type']} |"
         )
 
     md_lines.extend([
@@ -172,7 +163,7 @@ def profile_all_4_datasets(
     with open(output_doc_md, "w", encoding="utf-8") as f:
         f.write("\n".join(md_lines))
 
-    print(f"Successfully profiled all 4 datasets. Saved to {output_profiles_json} and {output_doc_md}.")
+    print(f"Successfully profiled datasets. Saved to {output_profiles_json} and {output_doc_md}.")
     return all_profiles
 
 if __name__ == "__main__":

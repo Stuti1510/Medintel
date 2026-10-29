@@ -45,8 +45,8 @@ interface Props {
 const DEFAULT_CONFIG: ReactionTimeConfig = {
   practiceTrials: 5,
   measuredTrials: 15,
-  minDelayMs: 1600,
-  maxDelayMs: 3800,
+  minDelayMs: 1200,
+  maxDelayMs: 2500,
   timeoutMs: 3000,
   minValidRtMs: 100
 };
@@ -68,7 +68,8 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
   // High-Precision Refs for Timing & Execution Isolation
   const stimulusStartRef = useRef<number | null>(null);
   const armedAtRef = useRef<number>(0); // Guard window to prevent button clicks from bleeding into canvas
-  const timerRef = useRef<number | null>(null);
+  const stimulusTimerRef = useRef<number | null>(null);
+  const feedbackTimerRef = useRef<number | null>(null);
   const timeoutRef = useRef<number | null>(null);
   const isTrialActiveRef = useRef<boolean>(false);
   const activeTrialIdxRef = useRef<number>(0);
@@ -103,9 +104,13 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
 
   // Helper to safely clear all pending timers
   const clearAllTimers = useCallback(() => {
-    if (timerRef.current !== null) {
-      window.clearTimeout(timerRef.current);
-      timerRef.current = null;
+    if (stimulusTimerRef.current !== null) {
+      window.clearTimeout(stimulusTimerRef.current);
+      stimulusTimerRef.current = null;
+    }
+    if (feedbackTimerRef.current !== null) {
+      window.clearTimeout(feedbackTimerRef.current);
+      feedbackTimerRef.current = null;
     }
     if (timeoutRef.current !== null) {
       window.clearTimeout(timeoutRef.current);
@@ -113,10 +118,17 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
     }
   }, []);
 
+  // Component unmount cleanup
+  useEffect(() => {
+    return () => {
+      clearAllTimers();
+    };
+  }, [clearAllTimers]);
+
   // Window Focus & Visibility Safety Trapping
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.hidden && testState === 'RUNNING' && trialPhaseRef.current !== 'IDLE' && trialPhaseRef.current !== 'FEEDBACK') {
+      if (document.hidden && isTrialActiveRef.current && trialPhaseRef.current !== 'IDLE' && trialPhaseRef.current !== 'FEEDBACK') {
         clearAllTimers();
         isTrialActiveRef.current = false;
         setTrialPhase('FEEDBACK');
@@ -140,9 +152,9 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
 
         setTrials((prev) => [...prev, focusTrial]);
 
-        timerRef.current = window.setTimeout(() => {
+        feedbackTimerRef.current = window.setTimeout(() => {
           advanceAfterTrial(activeTrialIdxRef.current, isPracticeModeRef.current);
-        }, 1500);
+        }, 1200);
       }
     };
 
@@ -152,9 +164,8 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
     return () => {
       window.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('blur', handleVisibilityChange);
-      clearAllTimers();
     };
-  }, [testState, clearAllTimers]);
+  }, [clearAllTimers]);
 
   // Forward declarations for cyclic recursion
   const advanceRef = useRef<(completedIdx: number, isPractice: boolean) => void>(() => {});
@@ -166,20 +177,20 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
     isTrialActiveRef.current = true;
     stimulusStartRef.current = null;
     
-    // Arming guard: Discard any click/pointer event in the first 400ms to avoid UI transition click-bleed
-    armedAtRef.current = performance.now() + 400;
+    // Arming guard: Discard click/pointer events in first 250ms to avoid UI transition click-bleed
+    armedAtRef.current = performance.now() + 250;
 
     setTrialPhase('WAITING');
     setLastFeedback({ text: 'Wait for stimulus cue...', type: 'neutral' });
 
-    // Generate random Inter-Stimulus Interval (ISI)
+    // Generate random Inter-Stimulus Interval (ISI) based on active config
     const isi = Math.floor(
       activeConfig.minDelayMs +
       Math.random() * (activeConfig.maxDelayMs - activeConfig.minDelayMs)
     );
 
     // Schedule Stimulus Presentation
-    timerRef.current = window.setTimeout(() => {
+    stimulusTimerRef.current = window.setTimeout(() => {
       if (!isTrialActiveRef.current) return;
 
       stimulusStartRef.current = performance.now();
@@ -212,9 +223,9 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
         });
 
         // Advance to next trial after feedback
-        timerRef.current = window.setTimeout(() => {
+        feedbackTimerRef.current = window.setTimeout(() => {
           advanceRef.current(trialIdx, isPractice);
-        }, 1200);
+        }, 1000);
       }, activeConfig.timeoutMs);
     }, isi);
   }, [clearAllTimers, activeConfig]);
@@ -307,9 +318,9 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
         type: 'false_start'
       });
 
-      timerRef.current = window.setTimeout(() => {
+      feedbackTimerRef.current = window.setTimeout(() => {
         advanceRef.current(currentTrialIndex, isPracticeMode);
-      }, 1400);
+      }, 1100);
 
     } else if (trialPhase === 'STIMULUS') {
       // -------------------------------------------------------------
@@ -359,9 +370,9 @@ export const ReactionTimeTest: React.FC<Props> = ({ onBack, onComplete, config =
         });
       }
 
-      timerRef.current = window.setTimeout(() => {
+      feedbackTimerRef.current = window.setTimeout(() => {
         advanceRef.current(currentTrialIndex, isPracticeMode);
-      }, 900);
+      }, 750);
     }
   };
 

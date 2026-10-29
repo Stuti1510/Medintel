@@ -19,7 +19,7 @@ export const PresentationPage: React.FC = () => {
       content: (
         <div className="space-y-6 text-sm text-[#bcbac9] leading-relaxed">
           <p className="text-base text-white">
-            Cardiovascular diseases and acute clinical complications require rapid, interpretable triage under high uncertainty. Clinicians must synthesize complex biometric parameters without relying on opaque, ungrounded black-box models.
+            Clinical conditions and emergent patient presentations require rapid, interpretable triage under high uncertainty. Healthcare providers must evaluate unstructured symptom narratives alongside biometric indicators without relying on opaque, ungrounded black-box models.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
             <div className="p-5 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] space-y-2">
@@ -27,8 +27,8 @@ export const PresentationPage: React.FC = () => {
               <p className="text-xs text-[#bcbac9] leading-relaxed">Uncalibrated probability vectors, lack of empirical statistical baselines, zero test-set grounding, and risk of severe hallucinations.</p>
             </div>
             <div className="p-5 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] space-y-2">
-              <span className="text-xs font-mono uppercase text-[#a3cfcf] block">The MEDINTEL 4-Dataset Architecture</span>
-              <p className="text-xs text-[#bcbac9] leading-relaxed">A 9-stage research workflow: Cleaned 4-Dataset Pipeline + Balanced Training + Classical ML Baselines + BioBERT Attention + Vector RAG (43 Guidelines) + Relational Persistence.</p>
+              <span className="text-xs font-mono uppercase text-[#a3cfcf] block">The MEDINTEL Symptom Intelligence Architecture</span>
+              <p className="text-xs text-[#bcbac9] leading-relaxed">A 9-stage research workflow: Validated Symptom2Disease NLP Pipeline + Group-Stratified Training + Classical ML Baselines (SVM/LogReg 96%) + BioBERT Attention + Vector RAG (43 Guidelines) + Relational Persistence.</p>
             </div>
           </div>
         </div>
@@ -36,69 +36,69 @@ export const PresentationPage: React.FC = () => {
     },
     {
       id: 2,
-      title: "4-Dataset Clinical Benchmark Architecture",
-      subtitle: "316,185 Verified Patient Records Across 821 Disease Entities",
+      title: "Symptom-to-Disease Clinical Benchmark Architecture",
+      subtitle: "1,200 Verified Patient Narrative Records Across 24 Diagnostic Classes",
       category: "DATASET",
       icon: Database,
       content: (
         <div className="space-y-6 text-sm text-[#bcbac9] leading-relaxed">
           <p className="text-base text-white">
-            We integrated 4 authentic clinical datasets into a multi-specialty clinical intelligence framework with zero synthetic fabrication:
+            We integrated the clinical Symptom2Disease benchmark into a natural-language symptom intelligence framework with zero synthetic fabrication:
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-xs">
             <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] text-center space-y-1">
-              <span className="text-[#bcbac9] text-[10px] block">cardio_train</span>
-              <span className="text-base font-semibold text-white">68,638 Clean</span>
-              <span className="text-[10px] text-[#5a5772] block">2 Binary Classes</span>
+              <span className="text-[#bcbac9] text-[10px] block">Total Dataset</span>
+              <span className="text-base font-semibold text-white">1,200 Records</span>
+              <span className="text-[10px] text-[#5a5772] block">Natural Language</span>
             </div>
             <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] text-center space-y-1">
-              <span className="text-[#bcbac9] text-[10px] block">heart_disease</span>
-              <span className="text-base font-semibold text-[#c9b4fa]">302 Patients</span>
-              <span className="text-[10px] text-[#5a5772] block">2 Diagnostic Classes</span>
+              <span className="text-[#bcbac9] text-[10px] block">Disease Categories</span>
+              <span className="text-base font-semibold text-[#c9b4fa]">24 Classes</span>
+              <span className="text-[10px] text-[#5a5772] block">50 Cases / Class</span>
             </div>
             <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] text-center space-y-1">
-              <span className="text-[#bcbac9] text-[10px] block">disease_profile</span>
-              <span className="text-base font-semibold text-[#a3cfcf]">300 Profiles</span>
-              <span className="text-[10px] text-[#5a5772] block">116 Diagnoses</span>
+              <span className="text-[#bcbac9] text-[10px] block">Unique Symptom Texts</span>
+              <span className="text-base font-semibold text-[#a3cfcf]">1,153 Unique</span>
+              <span className="text-[10px] text-[#5a5772] block">47 Grouped Dupes</span>
             </div>
             <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] text-center space-y-1">
-              <span className="text-[#bcbac9] text-[10px] block">symptoms_augmented</span>
-              <span className="text-base font-semibold text-emerald-400">246,945 Rows</span>
-              <span className="text-[10px] text-[#5a5772] block">773 Multi-Class</span>
+              <span className="text-[#bcbac9] text-[10px] block">Label Consistency</span>
+              <span className="text-base font-semibold text-emerald-400">100% Agreement</span>
+              <span className="text-[10px] text-[#5a5772] block">0 Label Conflicts</span>
             </div>
           </div>
           <p className="font-mono text-xs text-[#bcbac9] bg-[#0e0c1f] p-3 rounded-lg border border-[#3f3a52]">
-            Data Quality Protocol: Removed 1,362 physiological corruptions (negative BP, extreme outliers) and 723 duplicated encounters. Excluded patient IDs to prevent data leakage.
+            Data Quality Protocol: Validated text and label integrity. Audited all 47 duplicate symptom descriptions across 43 distinct groups; confirmed 100% label concordance. Group-stratified to prevent train-test contamination.
           </p>
         </div>
       )
     },
     {
       id: 3,
-      title: "Leakage-Safe Splitting & Training-Only Balancing",
-      subtitle: "48,552 Balanced Training Records vs 10,296 Untouched Test Records",
+      title: "Leakage-Safe Splitting & Group Partitioning",
+      subtitle: "840 Training Records vs 180 Validation and 180 Untouched Test Records",
       category: "METHODOLOGY",
       icon: Layers,
       content: (
         <div className="space-y-6 text-sm text-[#bcbac9] leading-relaxed">
           <p className="text-base text-white">
-            To uphold clinical research integrity, all feature scalers, categorical encoders, and class balancing operations were fitted strictly on the training partition.
+            To uphold clinical research integrity, all feature extraction (sublinear TF-IDF n-grams) and label encoders were fitted strictly on the training partition. Group-aware splitting prevents identical symptom narratives from bridging splits.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
             <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] space-y-1">
               <span className="text-white block font-medium">Training Split (70%)</span>
-              <div className="text-emerald-400 text-lg font-semibold">48,552 Balanced</div>
-              <p className="text-[11px] text-[#bcbac9]">50% Class 0 / 50% Class 1 parity via stratified oversampling.</p>
+              <div className="text-emerald-400 text-lg font-semibold">840 Records</div>
+              <p className="text-[11px] text-[#bcbac9]">35 cases/class across all 24 disease classes.</p>
             </div>
             <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] space-y-1">
               <span className="text-white block font-medium">Validation Split (15%)</span>
-              <div className="text-[#a3cfcf] text-lg font-semibold">10,296 Records</div>
-              <p className="text-[11px] text-[#bcbac9]">Untouched empirical distribution for hyperparameter tuning.</p>
+              <div className="text-[#a3cfcf] text-lg font-semibold">180 Records</div>
+              <p className="text-[11px] text-[#bcbac9]">Independent split for hyperparameter tuning & threshold calibration.</p>
             </div>
             <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] space-y-1">
               <span className="text-white block font-medium">Held-Out Test Split (15%)</span>
-              <div className="text-[#c9b4fa] text-lg font-semibold">10,296 Records</div>
-              <p className="text-[11px] text-[#bcbac9]">100% untouched real data for final scientific evaluation.</p>
+              <div className="text-[#c9b4fa] text-lg font-semibold">180 Records</div>
+              <p className="text-[11px] text-[#bcbac9]">100% untouched held-out data for unbiased final evaluation.</p>
             </div>
           </div>
         </div>
@@ -107,29 +107,29 @@ export const PresentationPage: React.FC = () => {
     {
       id: 4,
       title: "Classical Machine Learning Benchmarks",
-      subtitle: "Logistic Regression (73.15%), Random Forest (72.96%), XGBoost (72.94%)",
+      subtitle: "Linear SVM (96.11%), Logistic Regression (95.56%), Random Forest (92.78%)",
       category: "BENCHMARKS",
       icon: Cpu,
       content: (
         <div className="space-y-6 text-sm text-[#bcbac9] leading-relaxed">
           <p className="text-base text-white">
-            Empirical evaluation across 10,296 untouched test instances confirms consistent convergence across linear and tree-based architectures:
+            Empirical evaluation across 180 untouched test instances confirms superior convergence of n-gram TF-IDF representations:
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono text-xs">
             <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] space-y-1">
+              <span className="text-white block font-medium">Calibrated Linear SVM</span>
+              <div className="text-emerald-400 text-xl font-semibold">96.11% Acc</div>
+              <div className="text-[11px] text-[#bcbac9]">Macro F1: 0.9582 • Latency: 0.14 ms</div>
+            </div>
+            <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] space-y-1">
               <span className="text-white block font-medium">Logistic Regression (L2)</span>
-              <div className="text-emerald-400 text-xl font-semibold">73.15% Acc</div>
-              <div className="text-[11px] text-[#bcbac9]">Macro F1: 0.7308 • ROC-AUC: 0.7982</div>
+              <div className="text-[#c9b4fa] text-xl font-semibold">95.56% Acc</div>
+              <div className="text-[11px] text-[#bcbac9]">Macro F1: 0.9540 • Latency: 0.02 ms</div>
             </div>
             <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] space-y-1">
               <span className="text-white block font-medium">Random Forest (150 Trees)</span>
-              <div className="text-[#c9b4fa] text-xl font-semibold">72.96% Acc</div>
-              <div className="text-[11px] text-[#bcbac9]">Macro F1: 0.7289 • ROC-AUC: 0.7950</div>
-            </div>
-            <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] space-y-1">
-              <span className="text-white block font-medium">XGBoost (Depth 6)</span>
-              <div className="text-[#a3cfcf] text-xl font-semibold">72.94% Acc</div>
-              <div className="text-[11px] text-[#bcbac9]">Macro F1: 0.7286 • ROC-AUC: 0.7946</div>
+              <div className="text-[#a3cfcf] text-xl font-semibold">92.78% Acc</div>
+              <div className="text-[11px] text-[#bcbac9]">Macro F1: 0.9251 • Latency: 0.21 ms</div>
             </div>
           </div>
         </div>
@@ -232,10 +232,10 @@ export const PresentationPage: React.FC = () => {
             <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] space-y-1">
               <span className="text-emerald-400 font-semibold block">Validated Milestones</span>
               <p className="text-[#bcbac9] text-[11px] leading-relaxed">
-                • 4 datasets harmonized without target confusion.<br />
-                • Zero test leakage (N=10,296 held-out test split).<br />
-                • 73.15% test accuracy with ROC-AUC 0.7982.<br />
-                • 43 guideline vector embeddings indexed.
+                • Symptom2Disease benchmark (1,200 records, 24 classes).<br />
+                • Zero test leakage via group-stratified partitioning.<br />
+                • 96.11% test accuracy with Calibrated Linear SVM.<br />
+                • 43 guideline vector embeddings indexed for RAG.
               </p>
             </div>
             <div className="p-4 rounded-xl bg-[#0e0c1f] border border-[#3f3a52] space-y-1">

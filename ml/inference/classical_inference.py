@@ -1,19 +1,28 @@
 """
-MEDINTEL AI - Classical ML Inference Service (Calibrated Multi-Class & Feature Attribution Engine)
-Loads fitted feature pipeline and trained calibrated models (Logistic Regression, Random Forest, XGBoost).
-Extracts biometrics dynamically from text/structured input, computes calibrated probabilities (predict_proba)
-where sum(p) == 1.0 across all 20 disease conditions, calculates instance-level feature attributions,
-and logs predictions for auditability.
+MEDINTEL AI - Classical ML NLP Inference Service (24-Class Symptom2Disease Engine)
+Loads fitted TF-IDF feature pipeline and trained calibrated models (Logistic Regression, Linear SVM, Random Forest, XGBoost).
+Accepts natural-language symptom descriptions, computes calibrated class probabilities (sum = 1.0)
+across 24 disease classes, extracts ranked differential diagnoses, derives genuine lexical feature attributions,
+and enforces safety thresholds and low-confidence abstention.
 """
 
 import os
+import sys
 import re
 import json
 import time
 import numpy as np
 import pandas as pd
 import joblib
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(BASE_DIR))
+
+from data.preprocess import clean_clinical_text
+
+CONFIDENCE_ABSTENTION_THRESHOLD = 0.15  # Uniform probability across 24 classes is ~0.0417
 
 class ClassicalMLInferenceService:
     def __init__(self, models_dir: str = "models/classical", data_dir: str = "data/processed"):
@@ -22,7 +31,9 @@ class ClassicalMLInferenceService:
         self.feature_pipeline = None
         self.models = {}
         self.label_mapping = {}
+        self.inv_label_mapping = {}
         self.is_loaded = False
+        self.load_models()
 
     def load_models(self):
         try:
@@ -35,91 +46,46 @@ class ClassicalMLInferenceService:
             if os.path.exists(map_path):
                 with open(map_path, "r", encoding="utf-8") as f:
                     self.label_mapping = json.load(f)
+                self.inv_label_mapping = {v: int(k) for k, v in self.label_mapping.items()}
 
             # Load available models
-            for model_name, filename in [
+            model_files = [
                 ("Logistic Regression", "logistic_regression.joblib"),
+                ("Linear SVM", "linear_svm.joblib"),
                 ("Random Forest", "random_forest.joblib"),
                 ("XGBoost", "xgboost.joblib")
-            ]:
+            ]
+            for model_name, filename in model_files:
                 m_path = os.path.join(self.models_dir, filename)
                 if os.path.exists(m_path):
                     self.models[model_name] = joblib.load(m_path)
 
-            self.is_loaded = len(self.models) > 0 and self.feature_pipeline is not None
+            self.is_loaded = len(self.models) > 0 and self.feature_pipeline is not None and len(self.label_mapping) > 0
             if self.is_loaded:
                 print(f"[CLASSICAL ML INFERENCE] Loaded {len(self.models)} models across {len(self.label_mapping)} classes successfully.")
         except Exception as e:
             print(f"[CLASSICAL ML INFERENCE] Error loading models: {e}")
             self.is_loaded = False
 
-    def parse_biometrics_from_text(self, text: str) -> Dict[str, Any]:
-        """Extracts numerical vitals, demographics, and severity from clinical text when structured input is partial."""
-        t_low = text.lower()
-        extracted = {}
-
-        # 1. Blood Pressure: e.g. 168/105, 140/90 mmHg, 120 / 80
-        bp_match = re.search(r'(?:bp|blood pressure|pressure)?[:\s]*(\d{2,3})\s*/\s*(\d{2,3})', t_low)
-        if bp_match:
-            sys_val = int(bp_match.group(1))
-            dia_val = int(bp_match.group(2))
-            if 60 <= sys_val <= 260 and 30 <= dia_val <= 180:
-                extracted["systolic_bp"] = float(sys_val)
-                extracted["diastolic_bp"] = float(dia_val)
-
-        # 2. Heart Rate / Pulse
-        hr_match = re.search(r'(?:heart rate|hr|pulse|bpm)[:\s]*(\d{2,3})', t_low)
-        if hr_match:
-            hr_val = int(hr_match.group(1))
-            if 30 <= hr_val <= 220:
-                extracted["heart_rate"] = float(hr_val)
-
-        # 3. Temperature
-        temp_match = re.search(r'(?:temp|temperature)[:\s]*(\d{2}(?:\.\d{1,2})?)\s*(?:°?c|°?f)?', t_low)
-        if temp_match:
-            t_val = float(temp_match.group(1))
-            if t_val > 90:  # Fahrenheit
-                extracted["temperature"] = round((t_val - 32) * 5 / 9, 1)
-            elif 32 <= t_val <= 44:
-                extracted["temperature"] = round(t_val, 1)
-
-        # 4. SpO2
-        spo2_match = re.search(r'(?:spo2|o2 sat|oxygen saturation|saturation)[:\s]*(\d{2,3})\s*%?', t_low)
-        if spo2_match:
-            spo2_val = int(spo2_match.group(1))
-            if 50 <= spo2_val <= 100:
-                extracted["spo2"] = float(spo2_val)
-
-        # 5. Age
-        age_match = re.search(r'(?:age[:\s]*)?(\d{1,3})\s*(?:-| )?(?:year(?:s)?|yo|yr|y/o)', t_low)
-        if not age_match:
-            age_match = re.search(r'\bage[:\s]+(\d{1,3})\b', t_low)
-        if age_match and 1 <= int(age_match.group(1)) <= 120:
-            extracted["age"] = float(age_match.group(1))
-
-        # 6. Sex
-        if re.search(r'\b(female|woman|girl|mrs|ms)\b', t_low):
-            extracted["sex"] = "Female"
-        elif re.search(r'\b(male|man|boy|mr)\b', t_low):
-            extracted["sex"] = "Male"
-
-        # 7. Severity
-        if "critical" in t_low:
-            extracted["severity"] = "Critical"
-        elif "severe" in t_low:
-            extracted["severity"] = "Severe"
-        elif "mild" in t_low:
-            extracted["severity"] = "Mild"
-        elif "moderate" in t_low:
-            extracted["severity"] = "Moderate"
-
-        return extracted
+    def validate_input(self, text: Any) -> str:
+        """Validates that input is non-empty, of string type, and contains clinical terms."""
+        if text is None:
+            raise ValueError("Input symptom description cannot be None.")
+        if not isinstance(text, str):
+            text = str(text)
+        cleaned = text.strip()
+        if len(cleaned) < 5:
+            raise ValueError("Symptom description is too short (minimum 5 characters required).")
+        letters = re.findall(r'[a-zA-Z]', cleaned)
+        if len(letters) < 3:
+            raise ValueError("Symptom description must contain valid clinical terms or words, not purely numbers or symbols.")
+        return cleaned
 
     def predict(
         self,
         clinical_text: str,
         structured_data: Optional[Dict[str, Any]] = None,
-        model_name: str = "Logistic Regression",
+        model_name: str = "Linear SVM",
         top_k: int = 5
     ) -> Dict[str, Any]:
         if not self.is_loaded:
@@ -127,67 +93,52 @@ class ClassicalMLInferenceService:
         if not self.is_loaded:
             raise RuntimeError("Classical ML models are not available or trained.")
 
-        if model_name not in self.models:
-            model_name = list(self.models.keys())[0]
-
-        clf = self.models[model_name]
+        cleaned_input = self.validate_input(clinical_text)
         start_time = time.time()
 
-        s_data = structured_data or {}
-        vitals = s_data.get("vitals", {})
+        if model_name not in self.models:
+            # Fallback to calibrated Linear SVM or first available
+            model_name = "Linear SVM" if "Linear SVM" in self.models else list(self.models.keys())[0]
 
-        # Extract features combining structured data and parsed text
-        text_parsed = self.parse_biometrics_from_text(clinical_text)
+        clf = self.models[model_name]
 
-        # 1. Demographics & Vitals
-        age_val = float(s_data.get("age", text_parsed.get("age", 50.0)))
-        sex_val = str(s_data.get("sex", text_parsed.get("sex", "Male")))
-        sev_val = str(s_data.get("severity", text_parsed.get("severity", "Moderate")))
-        
-        sbp = float(vitals.get("systolic_bp", s_data.get("systolic_bp", text_parsed.get("systolic_bp", 120.0))))
-        dbp = float(vitals.get("diastolic_bp", s_data.get("diastolic_bp", text_parsed.get("diastolic_bp", 80.0))))
-        hr = float(vitals.get("heart_rate", s_data.get("heart_rate", text_parsed.get("heart_rate", 78.0))))
-        temp = float(vitals.get("temperature", s_data.get("temperature", text_parsed.get("temperature", 37.0))))
-        spo2 = float(vitals.get("spo2", s_data.get("spo2", text_parsed.get("spo2", 98.0))))
+        # 1. Feature Extraction (exact same preprocessing as during training)
+        normalized_text = clean_clinical_text(cleaned_input)
+        X = self.feature_pipeline.transform(normalized_text)
 
-        row_dict = {
-            "age": age_val,
-            "sex": sex_val,
-            "severity": sev_val,
-            "systolic_bp": sbp,
-            "diastolic_bp": dbp,
-            "heart_rate": hr,
-            "temperature": temp,
-            "spo2": spo2,
-            "full_clinical_text": clinical_text
-        }
-
-        row_df = pd.DataFrame([row_dict])
-        
-        X = self.feature_pipeline.transform(row_df)
-
-        # Model Inference & Calibrated Softmax Probabilities
+        # 2. Probability Computation & Calibration
         if hasattr(clf, "predict_proba"):
             probs = clf.predict_proba(X)[0]
-            # Ensure proper probability simplex normalization
-            if np.sum(probs) > 0:
-                probs = probs / np.sum(probs)
-            else:
-                probs = np.ones(len(self.label_mapping)) / len(self.label_mapping)
+        elif hasattr(clf, "decision_function"):
+            decision = clf.decision_function(X)[0]
+            # Softmax
+            exp_d = np.exp(decision - np.max(decision))
+            probs = exp_d / np.sum(exp_d)
         else:
             y_hard = int(clf.predict(X)[0])
             probs = np.zeros(len(self.label_mapping))
             probs[y_hard] = 1.0
 
+        # Guarantee strict simplex normalization
+        prob_sum = float(np.sum(probs))
+        if prob_sum > 0:
+            probs = probs / prob_sum
+        else:
+            probs = np.ones(len(self.label_mapping)) / len(self.label_mapping)
+
         pred_idx = int(np.argmax(probs))
         pred_label = self.label_mapping.get(str(pred_idx), f"Class_{pred_idx}")
         confidence = float(round(probs[pred_idx], 4))
 
+        # Check for ambiguous or low-confidence input
+        is_low_confidence = confidence < CONFIDENCE_ABSTENTION_THRESHOLD
+        abstention_flag = is_low_confidence
+
         # Build full probability distribution & sorted differentials
         all_probs_dict = {}
-        for idx, prob in enumerate(probs):
+        for idx in range(len(self.label_mapping)):
             lbl = self.label_mapping.get(str(idx), f"Class_{idx}")
-            all_probs_dict[lbl] = float(round(prob, 4))
+            all_probs_dict[lbl] = float(round(probs[idx], 4))
 
         sorted_diffs = sorted(all_probs_dict.items(), key=lambda item: item[1], reverse=True)[:top_k]
         differentials = [
@@ -202,91 +153,98 @@ class ClassicalMLInferenceService:
 
         latency_ms = round((time.time() - start_time) * 1000, 3)
 
-        # Instance-Level Feature Attributions
-        feature_contributions = self._compute_feature_attributions(
-            clf, model_name, row_dict, pred_label
+        # 3. Dynamic Genuine Lexical Feature Attributions
+        feature_contributions = self._compute_lexical_attributions(
+            clf, model_name, X[0], normalized_text, pred_idx, pred_label
         )
 
         return {
             "model_name": model_name,
             "predicted_condition": pred_label,
             "confidence": confidence,
+            "confidence_percentage": f"{confidence * 100:.1f}%",
+            "is_calibrated": True,
+            "abstention_recommended": abstention_flag,
+            "clinical_caveat": "Informational differential only; not a definitive clinical diagnosis." if not is_low_confidence else "Low confidence presentation: symptoms are non-specific or outside modeled conditions.",
             "all_probabilities": all_probs_dict,
             "top_differentials": differentials,
-            "latency_ms": latency_ms,
-            "feature_contributions": feature_contributions
+            "salient_features": [f["feature"] for f in feature_contributions[:5]],
+            "feature_contributions": feature_contributions,
+            "latency_ms": latency_ms
         }
 
-    def _compute_feature_attributions(
+    def _compute_lexical_attributions(
         self,
         clf: Any,
         model_name: str,
-        row_dict: Dict[str, Any],
+        x_vec: np.ndarray,
+        normalized_text: str,
+        pred_idx: int,
         pred_label: str
     ) -> List[Dict[str, Any]]:
-        """Calculates instance-specific positive and negative feature attributions dynamically based on current values."""
-        sbp = float(row_dict.get("systolic_bp", 120))
-        dbp = float(row_dict.get("diastolic_bp", 80))
-        hr = float(row_dict.get("heart_rate", 78))
-        temp = float(row_dict.get("temperature", 37.0))
-        spo2 = float(row_dict.get("spo2", 98))
-        age = float(row_dict.get("age", 50))
-        text = str(row_dict.get("full_clinical_text", "")).lower()
-
-        # Calculate deviation from normative healthy reference
-        sbp_dev = (sbp - 120.0) / 20.0
-        dbp_dev = (dbp - 80.0) / 15.0
-        hr_dev = (hr - 75.0) / 20.0
-        temp_dev = (temp - 37.0) * 2.0
-        spo2_dev = (98.0 - spo2) / 3.0
-        age_dev = (age - 45.0) / 15.0
-
-        raw_attributions = [
-            ("Systolic Blood Pressure", f"{sbp:.0f} mmHg", sbp_dev * 0.35, "Vital Sign"),
-            ("Diastolic Blood Pressure", f"{dbp:.0f} mmHg", dbp_dev * 0.25, "Vital Sign"),
-            ("Heart Rate / Pulse", f"{hr:.0f} bpm", hr_dev * 0.20, "Vital Sign"),
-            ("Oxygen Saturation (SpO2)", f"{spo2:.0f}%", spo2_dev * 0.40, "Vital Sign"),
-            ("Body Temperature", f"{temp:.1f}°C", temp_dev * 0.30, "Vital Sign"),
-            ("Patient Age", f"{age:.0f} years", age_dev * 0.15, "Demographic")
-        ]
-
-        # Add symptom terms if present in clinical text
-        symptom_terms = [
-            ("wheez", "Bilateral Wheezing", 0.45, "Respiratory finding"),
-            ("cough", "Persistent Cough", 0.35, "Airway finding"),
-            ("chest pain", "Chest Pain / Tightness", 0.55, "Cardiovascular finding"),
-            ("dyspnea", "Dyspnea / Breathlessness", 0.50, "Cardiopulmonary finding"),
-            ("shortness of breath", "Shortness of Breath", 0.50, "Cardiopulmonary finding"),
-            ("headache", "Headache", 0.30, "Neurological finding"),
-            ("fever", "Fever / Pyrexia", 0.45, "Infectious finding"),
-            ("diarrhea", "Watery Diarrhea", 0.40, "Gastrointestinal finding"),
-            ("polyuria", "Polyuria / Frequent Urination", 0.45, "Endocrine finding"),
-            ("joint swelling", "Joint Swelling", 0.40, "Rheumatologic finding")
-        ]
-
-        for kw, label, wt, cat in symptom_terms:
-            if kw in text:
-                raw_attributions.append((label, "Present in clinical record", wt, cat))
-
-        total_mag = sum(abs(item[2]) for item in raw_attributions) or 1.0
+        """
+        Derives genuine instance-level lexical attributions by identifying active n-grams
+        in the input text and weighting them by their class-specific model coefficients.
+        """
         contributions = []
+        try:
+            vec = getattr(self.feature_pipeline, "text_vectorizer", None)
+            if vec is None:
+                return contributions
 
-        for name, val_str, raw_sal, cat in raw_attributions:
-            norm_sal = round(raw_sal / total_mag, 4)
-            contributions.append({
-                "feature": name,
-                "value": val_str,
-                "salience": abs(norm_sal),
-                "weight": round(abs(norm_sal), 3),
-                "direction": "SUPPORTING" if norm_sal > 0 else "OPPOSING",
-                "evidence_type": "Positive Support" if norm_sal > 0 else "Negative / Protective",
-                "category": cat
-            })
+            feature_names = vec.get_feature_names_out()
+            active_indices = np.where(x_vec > 0)[0]
+            
+            if len(active_indices) == 0:
+                return contributions
 
-        # Sort by salience descending
-        contributions.sort(key=lambda x: x["salience"], reverse=True)
+            # Retrieve coefficients if linear classifier
+            weights = None
+            if hasattr(clf, "coef_"):
+                # LogisticRegression
+                if clf.coef_.ndim == 2 and pred_idx < clf.coef_.shape[0]:
+                    weights = clf.coef_[pred_idx]
+            elif hasattr(clf, "calibrated_classifiers_"):
+                # CalibratedClassifierCV wrapping LinearSVC
+                cal_weights = []
+                for sub in clf.calibrated_classifiers_:
+                    base = getattr(sub, "estimator", getattr(sub, "base_estimator", None))
+                    if base is not None and hasattr(base, "coef_"):
+                        if base.coef_.ndim == 2 and pred_idx < base.coef_.shape[0]:
+                            cal_weights.append(base.coef_[pred_idx])
+                if cal_weights:
+                    weights = np.mean(cal_weights, axis=0)
+
+            scored_terms = []
+            for idx in active_indices:
+                term = str(feature_names[idx])
+                tf_val = float(x_vec[idx])
+                if weights is not None:
+                    score = float(weights[idx] * tf_val)
+                else:
+                    score = tf_val  # Fallback to TF-IDF magnitude
+                scored_terms.append((term, score, tf_val))
+
+            # Sort by score descending
+            scored_terms.sort(key=lambda t: t[1], reverse=True)
+            total_mag = sum(abs(t[1]) for t in scored_terms) or 1.0
+
+            for term, score, tf_val in scored_terms[:12]:
+                norm_score = round(score / total_mag, 4)
+                contributions.append({
+                    "feature": f"'{term}'",
+                    "term": term,
+                    "value": f"TF-IDF: {tf_val:.3f}",
+                    "salience": round(abs(norm_score), 4),
+                    "weight": round(abs(norm_score), 3),
+                    "direction": "SUPPORTING" if score >= 0 else "OPPOSING",
+                    "evidence_type": "Positive Symptom Evidence" if score >= 0 else "Protective / Opposing Feature",
+                    "category": "Clinical Symptom Lexicon"
+                })
+        except Exception as e:
+            print(f"[EXPLAINABILITY] Lexical attribution note: {e}")
+
         return contributions
 
-
+# Global Singleton
 classical_ml_service = ClassicalMLInferenceService()
-

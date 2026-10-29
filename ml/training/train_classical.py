@@ -1,8 +1,13 @@
 """
-MEDINTEL AI - Multi-Class Classical ML Training, Probability Calibration & Evaluation Engine
-Trains Logistic Regression, Random Forest, and XGBoost on the 20-class clinical cases dataset partition (train.csv N=1,750).
-Fits Probability Calibration (Platt scaling / sigmoid) strictly on validation split (val.csv N=375).
-Evaluates on untouched test split (test.csv N=375) with zero data manipulation.
+MEDINTEL AI - Multi-Class Clinical NLP Model Training, Calibration & Evaluation Engine
+Trains and rigorously benchmarks:
+1. Baseline: Logistic Regression (C=2.0, class_weight='balanced')
+2. Comparison: Calibrated Linear SVM (LinearSVC with Platt Scaling / Sigmoid Calibration)
+3. Comparison: Random Forest (150 estimators, class_weight='balanced')
+4. Comparison: XGBoost (100 estimators, learning_rate=0.1)
+
+Evaluates on untouched, sealed held-out test split (test.csv N=180) across all 24 disease classes.
+Ensures zero data leakage and saves full confusion matrices, calibration metrics, and class performance.
 """
 
 import os
@@ -11,17 +16,21 @@ import time
 import json
 import numpy as np
 import pandas as pd
+from pathlib import Path
 from sklearn.linear_model import LogisticRegression
+from sklearn.svm import LinearSVC
 from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import (
     accuracy_score, balanced_accuracy_score, precision_score, recall_score,
-    f1_score, confusion_matrix, classification_report, log_loss, brier_score_loss
+    f1_score, confusion_matrix, classification_report, log_loss
 )
 import joblib
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(BASE_DIR))
+
 from data.feature_pipeline import build_and_fit_feature_pipeline
 
 RANDOM_SEED = 42
@@ -38,7 +47,6 @@ def compute_multiclass_ece(y_true, y_prob, n_bins=10):
     for i in range(n_bins):
         bin_lower = bin_boundaries[i]
         bin_upper = bin_boundaries[i + 1]
-        
         in_bin = (confidences > bin_lower) & (confidences <= bin_upper)
         prop_in_bin = np.mean(in_bin)
         
@@ -52,12 +60,14 @@ def compute_multiclass_ece(y_true, y_prob, n_bins=10):
 def train_and_evaluate_all_models(
     data_dir="data/processed",
     models_dir="models/classical",
-    eval_dir="evaluation"
+    eval_dir="evaluation",
+    reports_dir="reports/evaluation"
 ):
     os.makedirs(models_dir, exist_ok=True)
     os.makedirs(eval_dir, exist_ok=True)
+    os.makedirs(reports_dir, exist_ok=True)
     
-    # 1. Build and Fit Feature Engine on Training Split Only
+    # 1. Build & Fit Feature Engine on Training Split Only (Zero Leakage)
     engine, X_train, y_train, X_val, y_val, X_test, y_test, train_dist = build_and_fit_feature_pipeline(
         data_dir, models_dir
     )
@@ -67,48 +77,60 @@ def train_and_evaluate_all_models(
     classes = [label_mapping[str(i)] for i in range(len(label_mapping))]
     num_classes = len(classes)
     
-    print(f"\n[CLASSICAL ML] Multi-Class Split: Training={len(y_train):,}, Validation={len(y_val):,}, Test={len(y_test):,}")
-    print(f"[CLASSICAL ML] Feature Dimensionality: {X_train.shape[1]} features")
-    print(f"[CLASSICAL ML] Target Classes ({num_classes}): {classes[:5]} ... ({num_classes} total)")
+    print(f"\n[CLASSICAL ML] Multi-Class Partitioning: Train={len(y_train):,}, Val={len(y_val):,}, Test={len(y_test):,}")
+    print(f"[CLASSICAL ML] Vocabulary Dimensionality: {X_train.shape[1]} TF-IDF n-grams")
+    print(f"[CLASSICAL ML] Target Disease Entities ({num_classes}): {classes[:6]} ...")
     
     base_models = {
         "Logistic Regression": {
             "model": LogisticRegression(
+                C=2.0,
                 max_iter=1000,
-                C=1.0,
                 class_weight="balanced",
                 random_state=RANDOM_SEED,
                 solver="lbfgs"
             ),
+            "calibrate": False,  # Logistic regression already outputs calibrated probabilities via softmax
             "filename": "logistic_regression.joblib",
-            "hyperparameters": {"C": 1.0, "max_iter": 1000, "class_weight": "balanced", "solver": "lbfgs"}
+            "hyperparameters": {"C": 2.0, "max_iter": 1000, "class_weight": "balanced", "solver": "lbfgs"}
+        },
+        "Linear SVM": {
+            "model": CalibratedClassifierCV(
+                LinearSVC(C=1.0, random_state=RANDOM_SEED, max_iter=2000),
+                method="sigmoid",
+                cv=3
+            ),
+            "calibrate": False,
+            "filename": "linear_svm.joblib",
+            "hyperparameters": {"C": 1.0, "calibration": "sigmoid (Platt scaling)", "cv": 3}
         },
         "Random Forest": {
             "model": RandomForestClassifier(
                 n_estimators=150,
-                max_depth=16,
-                min_samples_split=4,
-                min_samples_leaf=1,
+                max_depth=20,
+                min_samples_split=2,
                 class_weight="balanced",
                 random_state=RANDOM_SEED,
                 n_jobs=-1
             ),
+            "calibrate": False,
             "filename": "random_forest.joblib",
-            "hyperparameters": {"n_estimators": 150, "max_depth": 16, "min_samples_split": 4, "class_weight": "balanced"}
+            "hyperparameters": {"n_estimators": 150, "max_depth": 20, "class_weight": "balanced"}
         },
         "XGBoost": {
             "model": XGBClassifier(
-                n_estimators=150,
-                max_depth=6,
-                learning_rate=0.08,
-                subsample=0.8,
-                colsample_bytree=0.8,
+                n_estimators=100,
+                max_depth=5,
+                learning_rate=0.1,
+                subsample=0.85,
+                colsample_bytree=0.85,
                 random_state=RANDOM_SEED,
                 eval_metric="mlogloss",
                 n_jobs=-1
             ),
+            "calibrate": False,
             "filename": "xgboost.joblib",
-            "hyperparameters": {"n_estimators": 150, "max_depth": 6, "learning_rate": 0.08, "subsample": 0.8}
+            "hyperparameters": {"n_estimators": 100, "max_depth": 5, "learning_rate": 0.1, "subsample": 0.85}
         }
     }
     
@@ -116,38 +138,28 @@ def train_and_evaluate_all_models(
     experiments = []
     
     for model_name, config in base_models.items():
-        print(f"\n--- Training {model_name} on {len(X_train):,} training samples ---")
-        base_clf = config["model"]
+        print(f"\n--- Training {model_name} on {len(X_train):,} clinical symptom training cases ---")
+        clf = config["model"]
         
         start_train = time.time()
-        base_clf.fit(X_train, y_train)
-        
-        # Fit Probability Calibrator on Validation Partition (Leakage-Safe Platt Scaling)
-        print(f"[{model_name}] Fitting probability calibrator on validation split (N={len(X_val)})...")
-        try:
-            calibrated_clf = CalibratedClassifierCV(estimator=base_clf, method="sigmoid", cv="prefit")
-            calibrated_clf.fit(X_val, y_val)
-            active_model = calibrated_clf
-        except Exception as e:
-            print(f"[{model_name}] Calibrator note: {e}. Using fitted base model.")
-            active_model = base_clf
-            
+        clf.fit(X_train, y_train)
         train_time = round(time.time() - start_train, 4)
         
         model_save_path = os.path.join(models_dir, config["filename"])
-        joblib.dump(active_model, model_save_path)
+        joblib.dump(clf, model_save_path)
         model_size_kb = round(os.path.getsize(model_save_path) / 1024, 2)
         
         # Validation Evaluation
-        y_val_pred = active_model.predict(X_val)
+        y_val_pred = clf.predict(X_val)
         val_acc = float(accuracy_score(y_val, y_val_pred))
         val_bal_acc = float(balanced_accuracy_score(y_val, y_val_pred))
+        val_macro_f1 = float(f1_score(y_val, y_val_pred, average="macro", zero_division=0))
         
-        # Test Evaluation (Real Test Set N=375)
+        # Test Evaluation on Untouched Sealed Test Split (N=180)
         start_inf = time.time()
-        y_test_pred = active_model.predict(X_test)
+        y_test_pred = clf.predict(X_test)
         inference_latency_ms = round(((time.time() - start_inf) / len(X_test)) * 1000, 3)
-        y_test_probs = active_model.predict_proba(X_test) if hasattr(active_model, "predict_proba") else None
+        y_test_probs = clf.predict_proba(X_test) if hasattr(clf, "predict_proba") else None
         
         test_acc = float(accuracy_score(y_test, y_test_pred))
         test_bal_acc = float(balanced_accuracy_score(y_test, y_test_pred))
@@ -156,20 +168,19 @@ def train_and_evaluate_all_models(
         macro_f1 = float(f1_score(y_test, y_test_pred, average="macro", zero_division=0))
         weighted_f1 = float(f1_score(y_test, y_test_pred, average="weighted", zero_division=0))
         
-        # Multi-class ECE and Log Loss
         ece = compute_multiclass_ece(y_test, y_test_probs) if y_test_probs is not None else 0.05
         test_loss = float(round(log_loss(y_test, y_test_probs), 4)) if y_test_probs is not None else None
         
         cm = confusion_matrix(y_test, y_test_pred).tolist()
         report = classification_report(y_test, y_test_pred, target_names=classes, output_dict=True, zero_division=0)
         
-        print(f"[{model_name}] Test Acc: {test_acc*100:.2f}% | Bal Acc: {test_bal_acc*100:.2f}% | Macro F1: {macro_f1:.4f} | ECE: {ece} | LogLoss: {test_loss}")
+        print(f"[{model_name}] Val Acc: {val_acc*100:.2f}% | Test Acc: {test_acc*100:.2f}% | Macro F1: {macro_f1:.4f} | ECE: {ece} | Latency: {inference_latency_ms} ms")
         
         metrics_dict = {
             "model_name": model_name,
-            "model_type": "Classical ML",
-            "dataset_name": "MEDINTEL Multi-Class Clinical Cases Benchmark",
-            "dataset_version": "v3.0-MULTICLASS",
+            "model_type": "Classical ML (NLP)",
+            "dataset_name": "Symptom-to-Disease Clinical Benchmark (Symptom2Disease)",
+            "dataset_version": "v1.0.0",
             "active_samples": len(y_train) + len(y_val) + len(y_test),
             "train_samples": len(y_train),
             "val_samples": len(y_val),
@@ -182,6 +193,7 @@ def train_and_evaluate_all_models(
             "model_size_kb": model_size_kb,
             "val_accuracy": round(val_acc, 4),
             "val_balanced_accuracy": round(val_bal_acc, 4),
+            "val_macro_f1": round(val_macro_f1, 4),
             "accuracy": round(test_acc, 4),
             "balanced_accuracy": round(test_bal_acc, 4),
             "precision_macro": round(macro_prec, 4),
@@ -205,13 +217,13 @@ def train_and_evaluate_all_models(
         results[model_name] = metrics_dict
         
         experiments.append({
-            "experiment_id": f"EXP-{model_name.upper().replace(' ', '_')}-V3.0-MULTICLASS",
-            "experiment_name": "MEDINTEL — Multi-Class Clinical Benchmark",
+            "experiment_id": f"EXP-{model_name.upper().replace(' ', '_')}-SYMPTOM2DISEASE",
+            "experiment_name": "MEDINTEL — Symptom2Disease Clinical NLP Benchmark",
             "model": model_name,
-            "model_version": "v3.0.0",
+            "model_version": "v3.0.0-NLP",
             "model_type": "Classical ML",
-            "dataset": "MEDINTEL Multi-Class Clinical Cases Benchmark",
-            "dataset_version": "v3.0-MULTICLASS",
+            "dataset": "Symptom-to-Disease Clinical Benchmark (Symptom2Disease)",
+            "dataset_version": "v1.0.0",
             "train_samples": len(y_train),
             "val_samples": len(y_val),
             "test_samples": len(y_test),
@@ -229,16 +241,62 @@ def train_and_evaluate_all_models(
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
         })
 
-    with open(os.path.join(eval_dir, "classical_ml_results.json"), "w", encoding="utf-8") as f:
-        json.dump(results, f, indent=2)
-        
+    # Save machine-readable evaluation results
+    for out_path in [
+        os.path.join(eval_dir, "classical_ml_results.json"),
+        os.path.join(reports_dir, "classical_ml_results.json")
+    ]:
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(results, f, indent=2)
+            
     with open(os.path.join(eval_dir, "experiment_registry.json"), "w", encoding="utf-8") as f:
         json.dump(experiments, f, indent=2)
 
-    print(f"\n[CLASSICAL ML] Successfully trained all 3 models across {num_classes} classes.")
-    print(f"[CLASSICAL ML] Saved results to {os.path.join(eval_dir, 'classical_ml_results.json')}")
+    # Generate Markdown Evaluation Report
+    md_report = [
+        "# MEDINTEL AI — Symptom2Disease Benchmark Evaluation Report",
+        "",
+        "> **Empirical Multi-Class Performance on Sealed Test Partition (N=180, 24 Disease Classes)**",
+        "",
+        "## 1. Executive Summary & Model Comparison",
+        "",
+        "| Model Architecture | Model Family | Test Accuracy | Macro Precision | Macro Recall | Macro F1 | Weighted F1 | ECE | Latency (ms) | Artifact Size |",
+        "| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |"
+    ]
+    for m_name, m_val in results.items():
+        md_report.append(
+            f"| **{m_name}** | {m_val['model_type']} | **{m_val['accuracy']*100:.2f}%** | "
+            f"{m_val['precision_macro']:.4f} | {m_val['recall_macro']:.4f} | **{m_val['f1_macro']:.4f}** | "
+            f"{m_val['f1_weighted']:.4f} | {m_val['expected_calibration_error']:.4f} | "
+            f"{m_val['inference_latency_ms']} ms | {m_val['model_size_kb']} KB |"
+        )
+        
+    md_report.extend([
+        "",
+        "## 2. Partition Class Distribution & Leakage Safeguards",
+        f"- **Dataset**: Symptom2Disease (1,200 verified cases, 24 balanced classes)",
+        f"- **Partitioning**: 70% Train ({len(y_train)}), 15% Val ({len(y_val)}), 15% Test ({len(y_test)})",
+        f"- **Leakage Prevention**: Group-aware stratified splitting on unique text descriptions. Zero duplicate overlap between partitions.",
+        f"- **Vocabulary**: 3,000 sublinear TF-IDF word unigrams and bigrams fitted strictly on training partition.",
+        "",
+        "## 3. Per-Class Performance Breakdown (Selected Model: Logistic Regression)",
+        "",
+        "| Disease Class | Precision | Recall | F1-Score | Support |",
+        "| :--- | :---: | :---: | :---: | :---: |"
+    ])
+    
+    best_m = results["Logistic Regression"]["per_class"]
+    for c_name, c_metrics in best_m.items():
+        md_report.append(
+            f"| **{c_name}** | {c_metrics['precision']:.4f} | {c_metrics['recall']:.4f} | {c_metrics['f1-score']:.4f} | {c_metrics['support']} |"
+        )
+        
+    with open(os.path.join(reports_dir, "model_evaluation_report.md"), "w", encoding="utf-8") as f:
+        f.write("\n".join(md_report))
+
+    print(f"\n[CLASSICAL ML] Successfully trained and benchmarked all models across {num_classes} classes.")
+    print(f"[CLASSICAL ML] Reports saved to {reports_dir}/model_evaluation_report.md")
     return results
 
 if __name__ == "__main__":
     train_and_evaluate_all_models()
-
