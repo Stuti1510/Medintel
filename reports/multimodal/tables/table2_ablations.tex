@@ -1,0 +1,16 @@
+\begin{table}[h]
+\centering
+\caption{Ablation analysis of the proposed quality-aware gated multimodal architecture (5-fold mean $\pm$ std).}
+\label{tab:ablation}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Configuration} & \textbf{Accuracy} & \textbf{Macro-F1} & \textbf{Balanced Acc.} & \textbf{Macro-AUC} \\
+\midrule
+\textbf{Full Gated Model} & 0.810 \pm 0.005 & 0.813 \pm 0.014 & 0.824 \pm 0.004 & 0.963 \pm 0.004 \\
+- q in gate & 0.788 \pm 0.009 & 0.777 \pm 0.006 & 0.787 \pm 0.009 & 0.942 \pm 0.003 \\
+- enhancement & 0.776 \pm 0.005 & 0.765 \pm 0.008 & 0.777 \pm 0.009 & 0.927 \pm 0.005 \\
+- modality dropout & 0.787 \pm 0.006 & 0.785 \pm 0.006 & 0.793 \pm 0.007 & 0.946 \pm 0.007 \\
+- degradation augmentation & 0.761 \pm 0.004 & 0.752 \pm 0.010 & 0.760 \pm 0.005 & 0.921 \pm 0.005 \\
+\bottomrule
+\end{tabular}
+\end{table}

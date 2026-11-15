@@ -1,0 +1,17 @@
+model:
+  in_channels: 3
+  out_channels: 3
+  features: [32, 64, 128, 256, 512]
+  residual: true
+
+training:
+  seed: 42
+  batch_size: 16
+  crop_size: 256
+  epochs: 60
+  lr: 0.0002
+  weight_decay: 0.0001
+  amp: true
+  ssim_weight: 0.1
+  patience: 10
+  save_dir: "models/restore"

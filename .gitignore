@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+frontend/node_modules/
+frontend/dist/
+*.pt
+*.joblib
+*.parquet
+medintel.db
+reports/multimodal/cache/
+data/raw/pad_ufes_20/imgs_part_*.zip
+data/raw/pad_ufes_20/images/
+data/raw/pad_ufes_20/zr7vgbcyr2-1/
+data/multimodal/images/
+.env
+.cache/

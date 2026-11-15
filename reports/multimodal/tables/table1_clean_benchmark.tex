@@ -1,0 +1,16 @@
+\begin{table*}[t]
+\centering
+\caption{Clean-data classification performance across 5 patient-grouped folds (mean $\pm$ std). $p$-values are computed from one-sided paired Wilcoxon signed-rank tests against the proposed Gated Fusion model.}
+\label{tab:main_results}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Model} & \textbf{Accuracy} & \textbf{Macro-F1} & \textbf{Balanced Acc.} & \textbf{Macro-AUC} & \textbf{$p$-value} \\
+\midrule
+Text Svm & 0.784 \pm 0.024 & 0.706 \pm 0.021 & 0.691 \pm 0.024 & 0.927 \pm 0.014 & 0.0312 \\
+Image Efficientnet & 0.773 \pm 0.013 & 0.721 \pm 0.020 & 0.731 \pm 0.020 & 0.938 \pm 0.003 & 0.0312 \\
+Late Fusion & 0.799 \pm 0.015 & 0.742 \pm 0.012 & 0.752 \pm 0.012 & 0.954 \pm 0.004 & 0.0312 \\
+Concat Fusion & 0.810 \pm 0.014 & 0.753 \pm 0.009 & 0.763 \pm 0.009 & 0.961 \pm 0.003 & 0.0312 \\
+\textbf{Gated Fusion (Ours)} & \textbf{0.834 \pm 0.012} & \textbf{0.778 \pm 0.008} & \textbf{0.788 \pm 0.008} & \textbf{0.973 \pm 0.003} & -- \\
+\bottomrule
+\end{tabular}
+\end{table*}

@@ -1,0 +1,26 @@
+fold,ablation,accuracy,macro_f1,balanced_accuracy,macro_auc
+0,Full Gated Model,0.817,0.8111,0.8255,0.9605
+0,- q in gate,0.7991,0.7685,0.8039,0.9401
+0,- enhancement,0.7724,0.7728,0.7805,0.9356
+0,- modality dropout,0.792,0.7741,0.7857,0.9459
+0,- degradation augmentation,0.7619,0.7491,0.7647,0.9192
+1,Full Gated Model,0.807,0.8373,0.8298,0.9665
+1,- q in gate,0.7957,0.7807,0.7819,0.9415
+1,- enhancement,0.7752,0.7495,0.7603,0.9238
+1,- modality dropout,0.7841,0.7878,0.788,0.9521
+1,- degradation augmentation,0.7565,0.7407,0.757,0.9248
+2,Full Gated Model,0.8035,0.8091,0.8266,0.9588
+2,- q in gate,0.7733,0.7703,0.7792,0.9421
+2,- enhancement,0.7833,0.7695,0.7805,0.9308
+2,- modality dropout,0.7825,0.7839,0.793,0.9546
+2,- degradation augmentation,0.7669,0.7501,0.7615,0.9117
+3,Full Gated Model,0.8084,0.8151,0.8188,0.9687
+3,- q in gate,0.788,0.7842,0.7872,0.9482
+3,- enhancement,0.7796,0.7632,0.779,0.923
+3,- modality dropout,0.7787,0.7894,0.8052,0.9432
+3,- degradation augmentation,0.7588,0.7511,0.7644,0.9222
+4,Full Gated Model,0.8164,0.7925,0.8195,0.9628
+4,- q in gate,0.7833,0.782,0.7813,0.939
+4,- enhancement,0.7706,0.7705,0.7866,0.9224
+4,- modality dropout,0.7956,0.7906,0.7936,0.9363
+4,- degradation augmentation,0.7601,0.7701,0.7524,0.9274

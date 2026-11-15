@@ -1,0 +1,7 @@
+{
+  "BioBERT": {
+    "test_accuracy": 0.8278,
+    "test_macro_f1": 0.8028,
+    "val_accuracy": 0.8000
+  }
+}

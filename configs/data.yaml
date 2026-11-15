@@ -1,0 +1,35 @@
+seed: 42
+classes:
+  - BCC
+  - ACK
+  - NEV
+  - SEK
+num_classes: 4
+label_mapping:
+  BCC: 0
+  ACK: 1
+  NEV: 2
+  SEK: 3
+raw_dir: "data/raw/pad_ufes_20"
+manifest_path: "data/multimodal/manifest.csv"
+images_dir: "data/multimodal/images"
+cache_dir: "reports/multimodal/cache"
+reports_dir: "reports/multimodal"
+num_folds: 5
+image_resize: 384
+input_size: 224
+
+degradations:
+  levels: [1, 2, 3]
+  gaussian_blur:
+    sigma: [1.5, 3.0, 5.0]
+  motion_blur:
+    length: [7, 15, 25]
+  low_light:
+    gamma: [1.5, 2.2, 3.0]
+  gaussian_noise:
+    sigma: [10.0, 20.0, 35.0]
+  jpeg:
+    quality: [50, 25, 10]
+  downscale:
+    factor: [2, 3, 4]

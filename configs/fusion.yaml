@@ -1,0 +1,23 @@
+deployed_fusion: "gated"
+
+architecture:
+  img_dim: 1280
+  txt_dim: 4
+  proj_dim: 64
+  num_classes: 4
+  dropout: 0.3
+
+training:
+  seed: 42
+  batch_size: 32
+  stage1:
+    epochs: 10
+    lr: 0.001
+  stage2:
+    epochs: 10
+    lr_encoder: 0.00002
+    lr_head: 0.0001
+  modality_dropout_text: 0.15
+  modality_dropout_img: 0.15
+  degrade_prob: 0.5
+  save_dir: "models/fusion"

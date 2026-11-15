@@ -1,0 +1,23 @@
+classifier:
+  c_candidates:
+  - 0.1
+  - 0.3
+  - 1.0
+  - 3.0
+  - 10.0
+  calibration_cv: 3
+  calibration_method: sigmoid
+  class_weight: balanced
+  save_dir: models/text_svm
+tuned_c:
+  fold0: 1.0
+  fold1: 10.0
+  fold2: 10.0
+  fold3: 1.0
+  fold4: 1.0
+vectorizer:
+  min_df: 1
+  ngram_range:
+  - 1
+  - 2
+  sublinear_tf: true
