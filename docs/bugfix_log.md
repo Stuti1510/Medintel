@@ -145,3 +145,26 @@ Detailed audit of engineering issues encountered and resolved during the migrati
   - Verified no cloud deployment URLs or config files remain (`vercel`, `netlify`, `render`, `heroku`, `docker`).
   - `python -m pytest tests -q` passed (25 passed in 14.31s).
   - `npm --prefix frontend run build` succeeded with zero errors (built in 10.86s).
+
+### Bug / Change 13: Remove Viva Mode and Consolidate Presentation Slide Deck
+- **Issue:** Redundant duplicate entry points existed for "Viva Mode" and "Presentation" leading to the same 12-slide presentation deck.
+- **Cause Found:**
+  1. Header navigation in `Navigation.tsx` featured a dedicated "Viva Mode ↗" pill on both desktop and mobile viewports alongside the standard Presentation link.
+  2. Footer linked to "Viva Presentation".
+  3. Presentation deck headers referenced "Viva Deck".
+  4. Slide controls lacked a direct jump-to-slide menu and an explicit Fullscreen toggle button.
+- **Files Changed:**
+  - `frontend/src/components/Navigation.tsx`
+  - `frontend/src/components/Footer.tsx`
+  - `frontend/src/pages/PresentationPage.tsx`
+  - `frontend/src/App.tsx`
+- **How It Was Verified:**
+  - Removed "Viva Mode ↗" pill from desktop and mobile navigation in `Navigation.tsx`.
+  - Added redirect `<Route path="/viva" element={<Navigate to="/presentation" replace />} />` in `App.tsx`.
+  - Updated footer link to "Research Presentation" and slide deck header to "MEDINTEL Clinical Research Presentation Deck".
+  - Implemented Fullscreen toggle button with `document.requestFullscreen()` and `document.exitFullscreen()` handling.
+  - Added jump-to-slide select menu allowing immediate navigation to any of the 12 slides.
+  - Added keyboard arrow navigation (← / → and Space bar) and slide counter indicator ("Slide 01 / 12").
+  - Verified regex `git grep -n -i "viva" frontend/src` returns exactly 1 occurrence: only the `<Route path="/viva" .../>` redirect in `App.tsx`.
+  - `python -m pytest tests -q` passed (25 passed in 17.95s).
+  - `npm --prefix frontend run build` succeeded with zero errors (built in 15.38s).

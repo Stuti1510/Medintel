@@ -23,6 +23,25 @@ interface Slide {
 
 export const PresentationPage: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState<number>(0);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen().catch(() => {});
+      setIsFullscreen(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, []);
 
   const slides: Slide[] = [
     {
@@ -359,12 +378,45 @@ export const PresentationPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <span className="font-mono font-bold tracking-wider">{slide.topic}</span>
           <span>•</span>
-          <span className="font-body">MEDINTEL Research Defense & Viva Deck</span>
+          <span className="font-body hidden md:inline">MEDINTEL Clinical Research Presentation Deck</span>
         </div>
-        <div className="flex items-center gap-2 font-mono">
-          <span>{String(slide.id).padStart(2, '0')}</span>
-          <span>/</span>
-          <span>{String(slides.length).padStart(2, '0')}</span>
+        <div className="flex items-center gap-3">
+          {/* Jump to Slide Menu */}
+          <select
+            value={currentSlide}
+            onChange={(e) => setCurrentSlide(Number(e.target.value))}
+            aria-label="Jump to Slide"
+            className={`font-micro text-xs px-2.5 py-1 rounded border outline-none cursor-pointer max-w-[180px] sm:max-w-[260px] truncate ${
+              slide.theme === 'dark'
+                ? 'bg-indigo border-hairline-dark text-white'
+                : 'bg-paper border-hairline text-ink'
+            }`}
+          >
+            {slides.map((s, idx) => (
+              <option key={s.id} value={idx} className="text-ink bg-white">
+                Slide {String(s.id).padStart(2, '0')}: {s.title}
+              </option>
+            ))}
+          </select>
+
+          {/* Slide Counter */}
+          <div className="font-mono text-xs tabular-nums text-ink-muted whitespace-nowrap">
+            Slide {String(slide.id).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}
+          </div>
+
+          {/* Fullscreen Toggle */}
+          <button
+            onClick={toggleFullscreen}
+            className={`p-1.5 rounded border transition-colors ${
+              slide.theme === 'dark'
+                ? 'border-hairline-dark hover:bg-indigo text-white'
+                : 'border-hairline hover:bg-paper text-ink'
+            }`}
+            title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+            aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+          >
+            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+          </button>
         </div>
       </div>
 

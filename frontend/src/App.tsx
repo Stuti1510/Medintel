@@ -37,6 +37,7 @@ export const App: React.FC = () => {
             <Route path="/datasets" element={<DatasetDashboardPage />} />
             <Route path="/history" element={<HistoryPage />} />
             <Route path="/presentation" element={<PresentationPage />} />
+            <Route path="/viva" element={<Navigate to="/presentation" replace />} />
             {/* Fallback to Home */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

@@ -95,24 +95,13 @@ export const Navigation: React.FC<NavigationProps> = ({ isDarkHero = false }) =>
             })}
           </div>
 
-          {/* Right: Status & Viva Mode */}
+          {/* Right: Status */}
           <div className="hidden md:flex items-center gap-4">
             <div className={`px-2.5 py-1 rounded border text-[11px] ${
               isLight ? 'border-hairline bg-paper' : 'border-hairline-dark bg-indigo-deep'
             }`}>
               <StatusDot status={systemStatus} />
             </div>
-
-            <Link
-              to="/presentation"
-              className={`font-micro text-[11px] px-2.5 py-1 rounded transition-colors ${
-                isLight
-                  ? 'bg-paper text-ink-muted hover:text-ink hover:bg-hairline'
-                  : 'bg-indigo-deep text-white-muted hover:text-white'
-              }`}
-            >
-              Viva Mode ↗
-            </Link>
           </div>
 
           {/* Mobile hamburger button */}
@@ -162,13 +151,6 @@ export const Navigation: React.FC<NavigationProps> = ({ isDarkHero = false }) =>
 
           <div className="pt-3 border-t border-hairline flex items-center justify-between text-xs">
             <StatusDot status={systemStatus} />
-            <Link
-              to="/presentation"
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-xs text-ink-muted underline"
-            >
-              Open Viva Mode ↗
-            </Link>
           </div>
         </div>
       )}

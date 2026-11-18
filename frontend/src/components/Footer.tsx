@@ -60,7 +60,7 @@ export const Footer: React.FC = () => {
               </li>
               <li>
                 <Link to="/presentation" className="text-ink-muted hover:text-ink transition-colors">
-                  Viva Presentation
+                  Research Presentation
                 </Link>
               </li>
               <li>
