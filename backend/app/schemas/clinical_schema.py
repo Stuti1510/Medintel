@@ -1,6 +1,6 @@
 """
 Pydantic schemas for clinical multimodal analysis.
-No model selection or algorithm parameters are exposed.
+Matches frontend/src/types/clinical.ts field-for-field.
 """
 
 from pydantic import BaseModel, Field
@@ -41,6 +41,12 @@ class TextAttribution(BaseModel):
     start: int
     end: int
 
+class EvidenceItem(BaseModel):
+    source: str
+    title: str
+    excerpt: str
+    similarity: Optional[float] = None
+
 class MultimodalAnalysisResponse(BaseModel):
     prediction: str
     confidence: float
@@ -54,4 +60,9 @@ class MultimodalAnalysisResponse(BaseModel):
     enhanced_image_base64: Optional[str] = None
     narrative_used: str
     safety_alert: Optional[str] = None
+    clinical_summary: Optional[str] = None
+    summary: Optional[str] = None
+    summary_status: Optional[str] = "available"
+    evidence: Optional[List[EvidenceItem]] = None
+    timings_ms: Optional[Dict[str, float]] = None
     model_info: str = "EfficientNet-B0 + TF-IDF Linear SVM, quality-aware gated fusion"

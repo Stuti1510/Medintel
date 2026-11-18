@@ -43,3 +43,28 @@ Detailed audit of engineering issues encountered and resolved during the migrati
 - **Symptom:** Recharts charts rendered completely blank inside flexbox parent containers.
 - **Cause:** `ResponsiveContainer` computed height as 0px when placed inside unbounded flex items.
 - **Fix:** Built `frontend/src/components/charts/ChartCard.tsx` with explicit container heights (`min-h-[260px]`, `h-72`, `h-80`) and tri-state lifecycle handling (loading skeleton, failed URL error card, `not_run` empty state).
+
+---
+
+### Bug 9: Clinical Analysis Page Stays on Loading and Never Predicts
+- **Bug:** Clinical Analysis page never returned a prediction; stayed spinning on loading indefinitely.
+- **Cause Found:**
+  1. Models and RAG pipeline were loaded lazily on the first request rather than during FastAPI startup lifespan, causing initial cold-start latency.
+  2. Frontend fetch lacked an AbortController timeout mechanism, meaning network disconnects or delays caused infinite loading states.
+  3. Missing model checkpoint files were swallowed or resulted in unhandled exceptions rather than an explicit 503 response.
+  4. Response schema lacked per-stage execution timings (`timings_ms`), causing frontend pipeline progress to remain static.
+- **Files Changed:**
+  - `backend/app/main.py`
+  - `backend/app/services/multimodal_service.py`
+  - `backend/app/services/clinical_orchestrator.py`
+  - `backend/app/api/endpoints/clinical.py`
+  - `backend/app/schemas/clinical_schema.py`
+  - `frontend/src/types/clinical.ts`
+  - `frontend/src/types/index.ts`
+  - `frontend/src/services/api.ts`
+  - `frontend/src/pages/ClinicalAnalysisPage.tsx`
+  - `tests/test_multimodal_endpoint.py`
+- **How It Was Verified:**
+  - `python -m pytest tests/test_multimodal_endpoint.py -v` passed all 4 test cases (success with timings, text-only, 400 format error, 503 missing model).
+  - Executed POST `/api/analyze/multimodal` with authentic sample image, returning full diagnostic prediction and Grad-CAM in 0.94 seconds on CPU.
+  - Verified frontend `npm run build` succeeds with zero errors.

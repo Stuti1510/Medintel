@@ -92,12 +92,25 @@ export const ClinicalAnalysisPage: React.FC = () => {
     { id: 'summary', name: 'Grounded Clinical Summary', status: 'offline' },
   ]);
 
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const cancelAnalysis = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setLoading(false);
+  };
+
   const runAnalysis = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!hasAnyInput) return;
 
     setError(null);
     setLoading(true);
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     // Update pipeline trace to loading
     setPipelineSteps((prev) =>
@@ -108,38 +121,39 @@ export const ClinicalAnalysisPage: React.FC = () => {
     if (selectedFile) formData.append('image', selectedFile);
     if (narrativeText.trim()) formData.append('narrative', narrativeText.trim());
 
-    // Append symptom values
+    // Append symptom values: yes -> true, no -> false, not_sure -> omitted
     Object.entries(symptoms).forEach(([k, v]) => {
       if (v === 'yes') formData.append(k, 'true');
-      if (v === 'no') formData.append(k, 'false');
+      else if (v === 'no') formData.append(k, 'false');
     });
 
-    formData.append('age', age);
-    formData.append('region', region);
-    formData.append('diameter_1', diameter1);
-    formData.append('diameter_2', diameter2);
+    if (age.trim()) formData.append('age', age.trim());
+    if (region.trim()) formData.append('region', region.trim());
+    if (diameter1.trim()) formData.append('diameter_1', diameter1.trim());
+    if (diameter2.trim()) formData.append('diameter_2', diameter2.trim());
 
     try {
-      const resp = await analyzeMultimodal(formData);
+      const resp = await analyzeMultimodal(formData, controller.signal);
       setResult(resp);
 
-      // Update pipeline trace with actual execution outcomes
+      // Update pipeline trace with actual execution outcomes and timings
       setPipelineSteps([
-        { id: 'input', name: 'Input Acquisition', status: 'ready', detail: selectedFile ? 'Image + Symptoms' : 'Text-only' },
-        { id: 'quality', name: 'Quality Assessment', status: 'ready', detail: `q = ${resp.quality.q.toFixed(2)}` },
+        { id: 'input', name: 'Input Acquisition', status: 'ready', detail: selectedFile ? 'Image + Symptoms' : 'Text-only', durationMs: 0 },
+        { id: 'quality', name: 'Quality Assessment', status: 'ready', detail: `q = ${resp.quality.q.toFixed(2)}`, durationMs: resp.timings_ms?.quality },
         {
           id: 'restore',
           name: 'U-Net Restoration',
           status: 'ready',
           detail: resp.enhancement_applied ? 'U-Net restored' : 'skipped — quality sufficient',
+          durationMs: resp.timings_ms?.restoration
         },
-        { id: 'img_model', name: 'EfficientNet-B0', status: 'ready', detail: '1280-d features' },
-        { id: 'txt_model', name: 'TF-IDF Linear SVM', status: 'ready', detail: '4-d logits' },
-        { id: 'fusion', name: 'Quality-Aware Gated Fusion', status: 'ready', detail: `Image weight: ${(resp.modality_weights.image * 100).toFixed(0)}%` },
-        { id: 'xai', name: 'Grad-CAM++ & Text Attributions', status: 'ready', detail: 'Generated' },
-        { id: 'evidence', name: 'Evidence Retrieval', status: 'ready', detail: `${resp.prediction} Guideline` },
-        { id: 'safety', name: 'Safety Rule Audit', status: resp.safety_alert ? 'degraded' : 'ready', detail: resp.safety_alert ? 'Alert flagged' : 'Clean' },
-        { id: 'summary', name: 'Grounded Clinical Summary', status: 'ready', detail: 'Synthesized' },
+        { id: 'img_model', name: 'EfficientNet-B0', status: 'ready', detail: '1280-d features', durationMs: resp.timings_ms?.image },
+        { id: 'txt_model', name: 'TF-IDF Linear SVM', status: 'ready', detail: '4-d logits', durationMs: resp.timings_ms?.text },
+        { id: 'fusion', name: 'Quality-Aware Gated Fusion', status: 'ready', detail: `Image weight: ${(resp.modality_weights.image * 100).toFixed(0)}%`, durationMs: resp.timings_ms?.fusion },
+        { id: 'xai', name: 'Grad-CAM++ & Text Attributions', status: 'ready', detail: 'Generated', durationMs: resp.timings_ms?.xai },
+        { id: 'evidence', name: 'Evidence Retrieval', status: 'ready', detail: `${resp.prediction} Guideline`, durationMs: resp.timings_ms?.evidence },
+        { id: 'safety', name: 'Safety Rule Audit', status: resp.safety_alert ? 'degraded' : 'ready', detail: resp.safety_alert ? 'Alert flagged' : 'Clean', durationMs: resp.timings_ms?.safety },
+        { id: 'summary', name: 'Grounded Clinical Summary', status: resp.summary_status === 'unavailable' ? 'degraded' : 'ready', detail: resp.summary_status === 'unavailable' ? 'Unavailable' : 'Synthesized', durationMs: resp.timings_ms?.summary },
       ]);
     } catch (err: any) {
       setError(err?.message || 'Multimodal analysis failed.');
@@ -147,6 +161,7 @@ export const ClinicalAnalysisPage: React.FC = () => {
         prev.map((s) => (s.status === 'loading' ? { ...s, status: 'error', detail: 'Failed' } : s))
       );
     } finally {
+      abortControllerRef.current = null;
       setLoading(false);
     }
   };
@@ -345,13 +360,24 @@ export const ClinicalAnalysisPage: React.FC = () => {
 
               {/* Submit CTA */}
               <div className="pt-2 flex items-center justify-between">
-                <button
-                  type="submit"
-                  disabled={loading || !hasAnyInput}
-                  className="inline-flex items-center gap-2 bg-indigo text-white font-button px-6 py-3.5 rounded-[8px] hover:opacity-90 disabled:opacity-40 transition-opacity focus:outline-none focus:ring-2 focus:ring-violet focus:ring-offset-2"
-                >
-                  {loading ? 'Evaluating Multimodal Inputs...' : 'Run Clinical Analysis →'}
-                </button>
+                <div className="flex items-center gap-4">
+                  <button
+                    type="submit"
+                    disabled={loading || !hasAnyInput}
+                    className="inline-flex items-center gap-2 bg-indigo text-white font-button px-6 py-3.5 rounded-[8px] hover:opacity-90 disabled:opacity-40 transition-opacity focus:outline-none focus:ring-2 focus:ring-violet focus:ring-offset-2"
+                  >
+                    {loading ? 'Evaluating Multimodal Inputs...' : 'Run Clinical Analysis →'}
+                  </button>
+                  {loading && (
+                    <button
+                      type="button"
+                      onClick={cancelAnalysis}
+                      className="font-button text-xs text-status-error hover:underline px-2 py-1"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
 
                 {!selectedFile && hasAnyInput && (
                   <span className="font-caption text-xs text-ink-muted italic">
@@ -398,7 +424,7 @@ export const ClinicalAnalysisPage: React.FC = () => {
               </div>
 
               <div className="pt-4 border-t border-hairline flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-ink-muted">
-                <span>Model: EfficientNet-B0 + TF-IDF Linear SVM, quality-aware gated fusion</span>
+                <span>Model: quality-aware gated fusion (EfficientNet-B0 image encoder + TF-IDF Linear SVM)</span>
                 <span className="font-semibold text-ink">Research decision-support prototype. Not a diagnostic device.</span>
               </div>
             </div>

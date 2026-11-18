@@ -9,6 +9,7 @@ import json
 
 from backend.app.schemas.clinical_schema import MultimodalAnalysisResponse
 from backend.app.services.clinical_orchestrator import orchestrator
+from backend.app.services.multimodal_service import ModelUnavailableError
 
 router = APIRouter()
 
@@ -95,5 +96,9 @@ def analyze_multimodal(
             structured_data=structured_data
         )
         return result
+    except ModelUnavailableError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Multimodal analysis failed: {str(e)}")

@@ -20,23 +20,10 @@ class ClinicalOrchestrator:
     def orchestrate_analysis(self, image_bytes: Optional[bytes] = None,
                              narrative: Optional[str] = None,
                              structured_data: Optional[dict] = None) -> Dict[str, Any]:
-        # 1. Run core multimodal analysis pipeline
-        result = self.multimodal_service.analyze(
+        return self.multimodal_service.analyze(
             image_bytes=image_bytes,
             narrative=narrative,
             structured_data=structured_data
         )
-        
-        # 2. Add clinical guidance summary from knowledge base
-        pred = result["prediction"]
-        guidance = {
-            "BCC": "Basal Cell Carcinoma typically presents as pearly papules or non-healing sores in sun-exposed areas. Early excision or Mohs surgery offers >95% cure rates.",
-            "ACK": "Actinic Keratosis is a UV-induced pre-cancerous lesion. Clinical evaluation and topical therapy (e.g., 5-FU) or cryosurgery are recommended to prevent malignant transformation.",
-            "NEV": "Melanocytic Nevus is a benign melanocytic proliferation. Regular ABCDE monitoring is recommended; biopsy if dynamic changes in size, border, or pigmentation occur.",
-            "SEK": "Seborrheic Keratosis is a benign epidermal lesion with a 'stuck-on' appearance. Treatment is typically required only for symptomatic irritation or diagnostic certainty."
-        }
-        result["clinical_summary"] = guidance.get(pred, "")
-        
-        return result
 
 orchestrator = ClinicalOrchestrator()
