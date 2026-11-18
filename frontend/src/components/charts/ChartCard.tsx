@@ -1,9 +1,10 @@
-import React from 'react';
-import { AlertCircle, FileQuestion, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { EmptyState } from '../EmptyState';
 
 interface ChartCardProps {
   title: string;
   subtitle?: string;
+  microLabel?: string;
   loading?: boolean;
   error?: string | null;
   errorUrl?: string | null;
@@ -11,62 +12,86 @@ interface ChartCardProps {
   notRunMessage?: string;
   heightClass?: string;
   headerAction?: React.ReactNode;
+  tableAlternative?: React.ReactNode;
   children: React.ReactNode;
 }
 
 export const ChartCard: React.FC<ChartCardProps> = ({
   title,
   subtitle,
+  microLabel,
   loading = false,
   error = null,
   errorUrl = null,
   isNotRun = false,
   notRunMessage = 'No results yet — run the experiments',
-  heightClass = 'h-80',
+  heightClass = 'h-72',
   headerAction,
+  tableAlternative,
   children,
 }) => {
+  const [showTable, setShowTable] = useState(false);
+
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-col">
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <h3 className="text-base font-semibold text-slate-100">{title}</h3>
-          {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
+    <div className="bg-white border border-hairline rounded-[12px] p-6 flex flex-col justify-between">
+      {/* Header */}
+      <div className="flex items-start justify-between mb-4 pb-3 border-b border-hairline">
+        <div className="space-y-1">
+          {microLabel && (
+            <span className="font-micro text-ink-faint block">{microLabel}</span>
+          )}
+          <h3 className="font-card text-ink">{title}</h3>
+          {subtitle && <p className="font-caption text-ink-muted">{subtitle}</p>}
         </div>
         {headerAction && <div className="ml-4">{headerAction}</div>}
       </div>
 
-      <div className={`w-full min-h-[260px] ${heightClass} relative flex items-center justify-center`}>
+      {/* Main Content Area */}
+      <div className={`w-full min-h-[240px] ${heightClass} relative flex items-center justify-center`}>
         {loading ? (
-          <div className="flex flex-col items-center justify-center text-slate-400 space-y-3">
-            <Loader2 className="w-8 h-8 animate-spin text-sky-400" />
-            <p className="text-xs">Loading benchmark data...</p>
+          <div className="w-full space-y-3 p-4">
+            <div className="h-4 bg-hairline/60 rounded animate-pulse w-3/4" />
+            <div className="h-4 bg-hairline/50 rounded animate-pulse w-5/6" />
+            <div className="h-4 bg-hairline/40 rounded animate-pulse w-2/3" />
+            <div className="h-4 bg-hairline/30 rounded animate-pulse w-4/5" />
           </div>
         ) : error ? (
-          <div className="flex flex-col items-center justify-center p-6 text-center max-w-md bg-rose-950/20 border border-rose-900/50 rounded-lg">
-            <AlertCircle className="w-8 h-8 text-rose-400 mb-2" />
-            <p className="text-sm font-medium text-rose-300">Data Fetch Error</p>
-            <p className="text-xs text-rose-400/80 mt-1">{error}</p>
+          <div className="w-full p-6 text-center bg-paper border border-hairline rounded-[8px]">
+            <span className="font-micro text-status-error block mb-1">DATA FETCH ERROR</span>
+            <p className="font-body text-sm text-ink mb-2">{error}</p>
             {errorUrl && (
-              <p className="text-[11px] font-mono text-slate-400 mt-2 bg-slate-950 px-2 py-1 rounded border border-slate-800 break-all">
-                URL: {errorUrl}
+              <p className="font-mono text-xs text-ink-faint bg-white px-2.5 py-1 rounded border border-hairline inline-block break-all">
+                {errorUrl}
               </p>
             )}
           </div>
         ) : isNotRun ? (
-          <div className="flex flex-col items-center justify-center p-6 text-center max-w-md bg-slate-950/40 border border-dashed border-slate-800 rounded-lg">
-            <FileQuestion className="w-8 h-8 text-slate-500 mb-2" />
-            <p className="text-sm font-medium text-slate-300">{notRunMessage}</p>
-            <p className="text-xs text-slate-500 mt-1">
-              Run <code className="text-sky-400 font-mono">python scripts/run_experiments.py</code> to generate benchmark CSVs.
-            </p>
+          <EmptyState
+            label="EXPERIMENT NOT RUN"
+            message={notRunMessage}
+          />
+        ) : showTable && tableAlternative ? (
+          <div className="w-full h-full overflow-auto">
+            {tableAlternative}
           </div>
         ) : (
-          <div className="w-full h-full">
+          <div className="w-full h-full" role="img" aria-label={title}>
             {children}
           </div>
         )}
       </div>
+
+      {/* Footer / Accessibility link */}
+      {tableAlternative && !loading && !error && !isNotRun && (
+        <div className="pt-3 mt-2 border-t border-hairline text-right">
+          <button
+            onClick={() => setShowTable(!showTable)}
+            className="font-caption text-xs text-ink-muted hover:text-ink underline transition-colors"
+          >
+            {showTable ? 'View as chart' : 'View as table'}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

@@ -39,10 +39,11 @@ def compute_gradcam(model, input_tensor: torch.Tensor, target_class_idx: int,
         # grayscale_cam shape: (1, H, W)
         return grayscale_cam[0]
 
-def overlay_cam(img_rgb: np.ndarray, cam_mask: np.ndarray, alpha: float = 0.5,
-                colormap: int = cv2.COLORMAP_JET) -> np.ndarray:
+def overlay_cam(img_rgb: np.ndarray, cam_mask: np.ndarray, alpha: float = 0.6) -> np.ndarray:
     """
-    Overlays a grayscale CAM mask onto an RGB image.
+    Overlays a grayscale CAM mask onto an RGB image using a single-hue
+    palette (transparent -> violet #c9b4fa -> indigo #1b1938).
+    Avoids rainbow / jet colormaps for clinical interpretability.
     img_rgb: uint8 array (H, W, 3)
     cam_mask: float array in [0, 1] (H_cam, W_cam)
     Returns: uint8 RGB array (H, W, 3)
@@ -52,9 +53,17 @@ def overlay_cam(img_rgb: np.ndarray, cam_mask: np.ndarray, alpha: float = 0.5,
     cam_resized = cv2.resize(cam_mask, (w, h), interpolation=cv2.INTER_LINEAR)
     cam_resized = np.clip(cam_resized, 0.0, 1.0)
     
-    heatmap = (cam_resized * 255.0).astype(np.uint8)
-    heatmap_color = cv2.applyColorMap(heatmap, colormap)
-    heatmap_color = cv2.cvtColor(heatmap_color, cv2.COLOR_BGR2RGB)
+    # Weight per pixel: cam_weight in [0, 1]
+    weight = cam_resized[..., None].astype(np.float32)
     
-    blended = (1.0 - alpha) * img_rgb.astype(np.float32) + alpha * heatmap_color.astype(np.float32)
+    # Single-hue endpoints in RGB: violet (#c9b4fa) to indigo (#1b1938)
+    violet_rgb = np.array([201.0, 180.0, 250.0], dtype=np.float32)
+    indigo_rgb = np.array([27.0, 25.0, 56.0], dtype=np.float32)
+    
+    # Linear interpolation between violet and indigo based on activation
+    heat_color = (1.0 - weight) * violet_rgb + weight * indigo_rgb
+    
+    # Soft blend: where activation is zero, show 100% original image
+    effective_alpha = alpha * weight
+    blended = (1.0 - effective_alpha) * img_rgb.astype(np.float32) + effective_alpha * heat_color
     return np.clip(blended, 0, 255).astype(np.uint8)

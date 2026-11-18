@@ -7,18 +7,44 @@ export default {
   theme: {
     extend: {
       colors: {
-        medical: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
+        indigo: {
+          DEFAULT: 'var(--color-indigo)',
+          deep: 'var(--color-indigo-deep)',
+        },
+        paper: 'var(--color-paper)',
+        ink: {
+          DEFAULT: 'var(--color-ink)',
+          muted: 'var(--color-ink-muted)',
+          faint: 'var(--color-ink-faint)',
+        },
+        violet: {
+          DEFAULT: 'var(--color-violet)',
+        },
+        teal: {
+          deep: 'var(--color-teal-deep)',
+          mid: 'var(--color-teal-mid)',
+        },
+        hairline: {
+          DEFAULT: 'var(--color-hairline)',
+          dark: 'var(--color-hairline-dark)',
+        },
+        'white-muted': 'var(--color-white-muted)',
+        'white-faint': 'var(--color-white-faint)',
+        status: {
+          ready: 'var(--color-status-ready)',
+          degraded: 'var(--color-status-degraded)',
+          loading: 'var(--color-status-loading)',
+          offline: 'var(--color-status-offline)',
+          unavailable: 'var(--color-status-offline)',
+          error: 'var(--color-status-error)',
         }
+      },
+      fontFamily: {
+        sans: ['"Inter Variable"', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'monospace'],
+      },
+      maxWidth: {
+        content: '1160px',
       }
     },
   },

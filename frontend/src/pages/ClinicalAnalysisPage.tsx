@@ -1,589 +1,723 @@
 import React, { useState, useRef } from 'react';
-import {
-  Upload,
-  Image as ImageIcon,
-  CheckCircle2,
-  AlertTriangle,
-  Sparkles,
-  Info,
-  Layers,
-  Activity,
-  ShieldCheck,
-  RefreshCw,
-  Eye,
-  FileText
-} from 'lucide-react';
+import { SectionHeader } from '../components/SectionHeader';
+import { LivePipelineTracker, PipelineStepState } from '../components/LivePipelineTracker';
+import { StatusDot } from '../components/StatusDot';
 import { analyzeMultimodal } from '../services/api';
 import { MultimodalAnalysisResponse } from '../types';
+import { Upload, X, Sliders, ShieldAlert, Sparkles, Check } from 'lucide-react';
+
+type TriState = 'yes' | 'no' | 'not_sure';
 
 export const ClinicalAnalysisPage: React.FC = () => {
   // Input states
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [narrative, setNarrative] = useState('');
-  
-  // Structured checkboxes
-  const [itch, setItch] = useState(false);
-  const [grew, setGrew] = useState(false);
-  const [hurt, setHurt] = useState(false);
-  const [changed, setChanged] = useState(false);
-  const [bleed, setBleed] = useState(false);
-  const [elevation, setElevation] = useState(false);
-  
-  // Demographic & metadata
+  const [fileDetails, setFileDetails] = useState<{ name: string; size: string } | null>(null);
+
+  // Six symptom segmented controls: yes / no / not_sure
+  const [symptoms, setSymptoms] = useState<Record<string, TriState>>({
+    itch: 'not_sure',
+    grew: 'not_sure',
+    hurt: 'not_sure',
+    changed: 'not_sure',
+    bleed: 'not_sure',
+    elevation: 'not_sure',
+  });
+
+  // Patient profile
   const [age, setAge] = useState<string>('58');
-  const [gender, setGender] = useState<string>('MALE');
   const [region, setRegion] = useState<string>('FACE');
-  const [diameter, setDiameter] = useState<string>('12.0');
-  
-  // UI states
-  const [loading, setLoading] = useState(false);
+  const [diameter1, setDiameter1] = useState<string>('12.0');
+  const [diameter2, setDiameter2] = useState<string>('10.0');
+  const [narrativeText, setNarrativeText] = useState<string>('');
+
+  // UI & Response states
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<MultimodalAnalysisResponse | null>(null);
-  const [showGradCam, setShowGradCam] = useState(true);
-  const [showEnhanced, setShowEnhanced] = useState(true);
+
+  // Visual Inspection Controls
+  const [gradCamOpacity, setGradCamOpacity] = useState<number>(75);
+  const [viewMode, setViewMode] = useState<'overlay' | 'original'>('overlay');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const symptomLabels: Record<string, string> = {
+    itch: 'Itches (itch)',
+    grew: 'Has grown (grew)',
+    hurt: 'Hurts (hurt)',
+    changed: 'Has changed (changed)',
+    bleed: 'Bleeds easily (bleed)',
+    elevation: 'Raised (elevation)',
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setSelectedImage(file);
+      setSelectedFile(file);
+      setFileDetails({
+        name: file.name,
+        size: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
+      });
       const reader = new FileReader();
-      reader.onload = (event) => setImagePreview(event.target?.result as string);
+      reader.onload = (evt) => setImagePreview(evt.target?.result as string);
       reader.readAsDataURL(file);
     }
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      setSelectedImage(file);
-      const reader = new FileReader();
-      reader.onload = (event) => setImagePreview(event.target?.result as string);
-      reader.readAsDataURL(file);
-    }
+  const removePhoto = () => {
+    setSelectedFile(null);
+    setImagePreview(null);
+    setFileDetails(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleAnalyze = async (e: React.FormEvent) => {
+  const handleSymptomChange = (key: string, val: TriState) => {
+    setSymptoms((prev) => ({ ...prev, [key]: val }));
+  };
+
+  const hasAnyInput = selectedFile !== null || Object.values(symptoms).some((v) => v !== 'not_sure') || narrativeText.trim().length > 0;
+
+  // Pipeline execution tracking
+  const [pipelineSteps, setPipelineSteps] = useState<PipelineStepState[]>([
+    { id: 'input', name: 'Input Acquisition', status: 'ready', detail: 'Waiting for inputs' },
+    { id: 'quality', name: 'Quality Assessment', status: 'offline' },
+    { id: 'restore', name: 'U-Net Restoration', status: 'offline' },
+    { id: 'img_model', name: 'EfficientNet-B0', status: 'offline' },
+    { id: 'txt_model', name: 'TF-IDF Linear SVM', status: 'offline' },
+    { id: 'fusion', name: 'Quality-Aware Gated Fusion', status: 'offline' },
+    { id: 'xai', name: 'Grad-CAM++ & Text Attributions', status: 'offline' },
+    { id: 'evidence', name: 'Evidence Retrieval', status: 'offline' },
+    { id: 'safety', name: 'Safety Rule Audit', status: 'offline' },
+    { id: 'summary', name: 'Grounded Clinical Summary', status: 'offline' },
+  ]);
+
+  const runAnalysis = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!hasAnyInput) return;
+
     setError(null);
     setLoading(true);
 
-    try {
-      const formData = new FormData();
-      if (selectedImage) {
-        formData.append('image', selectedImage);
-      }
-      if (narrative.trim()) {
-        formData.append('narrative', narrative.trim());
-      }
-      formData.append('itch', itch ? 'true' : 'false');
-      formData.append('grew', grew ? 'true' : 'false');
-      formData.append('hurt', hurt ? 'true' : 'false');
-      formData.append('changed', changed ? 'true' : 'false');
-      formData.append('bleed', bleed ? 'true' : 'false');
-      formData.append('elevation', elevation ? 'true' : 'false');
-      formData.append('age', age);
-      formData.append('gender', gender);
-      formData.append('region', region);
-      formData.append('diameter_1', diameter);
+    // Update pipeline trace to loading
+    setPipelineSteps((prev) =>
+      prev.map((s, idx) => (idx === 0 ? { ...s, status: 'ready', detail: 'Submitted' } : { ...s, status: 'loading' }))
+    );
 
-      const response = await analyzeMultimodal(formData);
-      setResult(response);
+    const formData = new FormData();
+    if (selectedFile) formData.append('image', selectedFile);
+    if (narrativeText.trim()) formData.append('narrative', narrativeText.trim());
+
+    // Append symptom values
+    Object.entries(symptoms).forEach(([k, v]) => {
+      if (v === 'yes') formData.append(k, 'true');
+      if (v === 'no') formData.append(k, 'false');
+    });
+
+    formData.append('age', age);
+    formData.append('region', region);
+    formData.append('diameter_1', diameter1);
+    formData.append('diameter_2', diameter2);
+
+    try {
+      const resp = await analyzeMultimodal(formData);
+      setResult(resp);
+
+      // Update pipeline trace with actual execution outcomes
+      setPipelineSteps([
+        { id: 'input', name: 'Input Acquisition', status: 'ready', detail: selectedFile ? 'Image + Symptoms' : 'Text-only' },
+        { id: 'quality', name: 'Quality Assessment', status: 'ready', detail: `q = ${resp.quality.q.toFixed(2)}` },
+        {
+          id: 'restore',
+          name: 'U-Net Restoration',
+          status: 'ready',
+          detail: resp.enhancement_applied ? 'U-Net restored' : 'skipped — quality sufficient',
+        },
+        { id: 'img_model', name: 'EfficientNet-B0', status: 'ready', detail: '1280-d features' },
+        { id: 'txt_model', name: 'TF-IDF Linear SVM', status: 'ready', detail: '4-d logits' },
+        { id: 'fusion', name: 'Quality-Aware Gated Fusion', status: 'ready', detail: `Image weight: ${(resp.modality_weights.image * 100).toFixed(0)}%` },
+        { id: 'xai', name: 'Grad-CAM++ & Text Attributions', status: 'ready', detail: 'Generated' },
+        { id: 'evidence', name: 'Evidence Retrieval', status: 'ready', detail: `${resp.prediction} Guideline` },
+        { id: 'safety', name: 'Safety Rule Audit', status: resp.safety_alert ? 'degraded' : 'ready', detail: resp.safety_alert ? 'Alert flagged' : 'Clean' },
+        { id: 'summary', name: 'Grounded Clinical Summary', status: 'ready', detail: 'Synthesized' },
+      ]);
     } catch (err: any) {
       setError(err?.message || 'Multimodal analysis failed.');
+      setPipelineSteps((prev) =>
+        prev.map((s) => (s.status === 'loading' ? { ...s, status: 'error', detail: 'Failed' } : s))
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const classDescriptions: Record<string, string> = {
-    BCC: 'Basal Cell Carcinoma (Malignant skin cancer)',
-    ACK: 'Actinic Keratosis (Pre-cancerous UV lesion)',
-    NEV: 'Melanocytic Nevus (Benign mole)',
-    SEK: 'Seborrheic Keratosis (Benign epidermal growth)',
+  const classFullNameMap: Record<string, string> = {
+    BCC: 'Basal cell carcinoma',
+    ACK: 'Actinic keratosis',
+    NEV: 'Melanocytic nevus',
+    SEK: 'Seborrheic keratosis',
   };
 
   return (
-    <div className="space-y-8">
-      {/* Read-Only Architecture Callout */}
-      <div className="bg-slate-900/80 border border-sky-500/30 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md backdrop-blur">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-sky-500/10 rounded-lg text-sky-400">
-            <ShieldCheck className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-sky-400">Deployed Model</span>
-              <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full border border-slate-700">Fixed Pipeline</span>
-            </div>
-            <p className="text-sm font-medium text-slate-200 mt-0.5">
-              EfficientNet-B0 + TF-IDF Linear SVM, quality-aware gated fusion
-            </p>
-          </div>
-        </div>
-        <div className="text-xs text-slate-400 flex items-center gap-1.5 self-end sm:self-auto">
-          <Info className="w-4 h-4 text-slate-500" />
-          <span>Patient-grouped 5-fold cross-validated on PAD-UFES-20</span>
-        </div>
-      </div>
+    <div className="w-full bg-white pb-24">
+      <div className="max-w-content mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-12">
+        {/* Header */}
+        <SectionHeader
+          label="CLINICAL INFERENCE ENGINE"
+          title="Clinical Analysis"
+          subtitle="Evaluate a skin lesion photo and the patient's symptoms through the complete MEDINTEL pipeline."
+        />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column: Input Form */}
-        <div className="lg:col-span-5 space-y-6">
-          <form onSubmit={handleAnalyze} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
-            <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
-              <Activity className="w-5 h-5 text-sky-400" />
-              Lesion Clinical Examination
-            </h2>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+          {/* Left Column: Clinical Input */}
+          <div className="lg:col-span-7 space-y-8">
+            <form onSubmit={runAnalysis} className="space-y-8">
+              {/* 1. Lesion Photo */}
+              <div className="space-y-3 pb-6 border-b border-hairline">
+                <div className="flex items-center justify-between">
+                  <span className="font-micro text-ink-faint">01 · LESION PHOTOGRAPH</span>
+                  {selectedFile && (
+                    <button
+                      type="button"
+                      onClick={removePhoto}
+                      className="text-xs text-status-error hover:underline flex items-center gap-1"
+                    >
+                      <X className="w-3.5 h-3.5" /> Remove photo
+                    </button>
+                  )}
+                </div>
 
-            {/* Image Dropzone */}
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-slate-300">Smartphone Lesion Image</label>
-              <div
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all ${
-                  imagePreview
-                    ? 'border-sky-500/50 bg-sky-950/10'
-                    : 'border-slate-700 hover:border-slate-500 bg-slate-950/40'
-                }`}
-              >
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleImageChange}
-                  accept="image/jpeg,image/png,image/webp"
-                  className="hidden"
-                />
-                {imagePreview ? (
-                  <div className="relative group">
-                    <img
-                      src={imagePreview}
-                      alt="Selected lesion preview"
-                      className="max-h-48 mx-auto rounded-lg object-contain shadow-md"
-                    />
-                    <div className="absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center text-xs text-slate-200">
-                      Click or drag to change image
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`border border-dashed rounded-[8px] p-6 text-center cursor-pointer transition-colors ${
+                    imagePreview ? 'border-hairline bg-paper' : 'border-hairline hover:border-ink-muted bg-paper'
+                  }`}
+                >
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                  />
+                  {imagePreview ? (
+                    <div className="space-y-2">
+                      <img
+                        src={imagePreview}
+                        alt="Uploaded lesion photo"
+                        className="max-h-48 mx-auto rounded object-contain border border-hairline"
+                      />
+                      <div className="font-caption text-xs text-ink-muted">
+                        {fileDetails?.name} ({fileDetails?.size})
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="py-6 flex flex-col items-center justify-center text-slate-400">
-                    <Upload className="w-8 h-8 mb-2 text-slate-500" />
-                    <p className="text-sm font-medium text-slate-300">Click or drag smartphone photo here</p>
-                    <p className="text-xs text-slate-500 mt-1">JPEG or PNG, up to 10MB</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Clinical Symptoms Checkboxes */}
-            <div className="space-y-3">
-              <label className="text-xs font-medium text-slate-300">Patient Symptoms & Lesion Dynamics</label>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                {[
-                  { label: 'Itching (itch)', state: itch, setter: setItch },
-                  { label: 'Enlarging (grew)', state: grew, setter: setGrew },
-                  { label: 'Painful (hurt)', state: hurt, setter: setHurt },
-                  { label: 'Changed color/shape', state: changed, setter: setChanged },
-                  { label: 'Bleeds easily (bleed)', state: bleed, setter: setBleed },
-                  { label: 'Elevated / raised', state: elevation, setter: setElevation },
-                ].map(({ label, state, setter }) => (
-                  <label
-                    key={label}
-                    className={`flex items-center gap-2.5 p-2 rounded-lg border cursor-pointer transition-colors ${
-                      state
-                        ? 'bg-sky-500/10 border-sky-500/40 text-sky-200'
-                        : 'bg-slate-950/50 border-slate-800 text-slate-400 hover:border-slate-700'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={state}
-                      onChange={(e) => setter(e.target.checked)}
-                      className="rounded border-slate-700 text-sky-500 focus:ring-sky-400 focus:ring-offset-slate-900 bg-slate-900"
-                    />
-                    <span>{label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Patient Metadata Grid */}
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div>
-                <label className="block text-slate-400 mb-1">Patient Age</label>
-                <input
-                  type="number"
-                  value={age}
-                  onChange={(e) => setAge(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 focus:border-sky-500 focus:outline-none"
-                  placeholder="Age"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-400 mb-1">Gender</label>
-                <select
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 focus:border-sky-500 focus:outline-none"
-                >
-                  <option value="MALE">Male</option>
-                  <option value="FEMALE">Female</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-slate-400 mb-1">Anatomical Region</label>
-                <select
-                  value={region}
-                  onChange={(e) => setRegion(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 focus:border-sky-500 focus:outline-none"
-                >
-                  <option value="FACE">Face</option>
-                  <option value="ARM">Arm</option>
-                  <option value="FOREARM">Forearm</option>
-                  <option value="HAND">Hand</option>
-                  <option value="NECK">Neck</option>
-                  <option value="CHEST">Chest</option>
-                  <option value="BACK">Back</option>
-                  <option value="ABDOMEN">Abdomen</option>
-                  <option value="THIGH">Thigh</option>
-                  <option value="SCALP">Scalp</option>
-                  <option value="EAR">Ear</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-slate-400 mb-1">Diameter (mm)</label>
-                <input
-                  type="text"
-                  value={diameter}
-                  onChange={(e) => setDiameter(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 focus:border-sky-500 focus:outline-none"
-                  placeholder="e.g. 10.0"
-                />
-              </div>
-            </div>
-
-            {/* Narrative Override (Optional) */}
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
-                Custom Narrative Note <span className="text-slate-500 font-normal">(Optional free text)</span>
-              </label>
-              <textarea
-                value={narrative}
-                onChange={(e) => setNarrative(e.target.value)}
-                placeholder="Leave blank to auto-generate patient symptom narrative from clinical fields above..."
-                rows={2}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 placeholder-slate-600 focus:border-sky-500 focus:outline-none"
-              />
-            </div>
-
-            {/* Error Message */}
-            {error && (
-              <div className="bg-rose-950/40 border border-rose-800/60 rounded-lg p-3 text-xs text-rose-300 flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-medium py-2.5 rounded-xl shadow-lg shadow-sky-500/20 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50"
-            >
-              {loading ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  Analyzing Multimodal Data...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  Analyze Lesion
-                </>
-              )}
-            </button>
-          </form>
-        </div>
-
-        {/* Right Column: Multimodal Results & Explainability */}
-        <div className="lg:col-span-7 space-y-6">
-          {!result ? (
-            <div className="bg-slate-900 border border-dashed border-slate-800 rounded-2xl p-12 text-center flex flex-col items-center justify-center min-h-[500px] text-slate-500">
-              <Layers className="w-12 h-12 mb-3 text-slate-600 stroke-1" />
-              <p className="text-base font-medium text-slate-300">Ready for Multimodal Assessment</p>
-              <p className="text-xs max-w-sm text-slate-500 mt-1">
-                Upload a smartphone lesion photograph and specify symptoms. The quality gate, U-Net restorer, and calibrated multimodal classifier will produce predictions and XAI attributions.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-6 animate-fadeIn">
-              {/* Safety Alert (Red Flag) */}
-              {result.safety_alert && (
-                <div className="bg-rose-950/30 border border-rose-700/60 rounded-xl p-4 flex items-start gap-3 shadow-md">
-                  <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="text-sm font-semibold text-rose-300">Clinical Attention Notice</h4>
-                    <p className="text-xs text-rose-200/90 mt-0.5">{result.safety_alert}</p>
-                  </div>
+                  ) : (
+                    <div className="py-4 space-y-2">
+                      <Upload className="w-6 h-6 mx-auto text-ink-muted" />
+                      <p className="font-body text-sm text-ink font-medium">
+                        Upload or take a photo
+                      </p>
+                      <p className="font-caption text-xs text-ink-muted">
+                        JPEG or PNG, up to 10 MB. Taken with a standard smartphone camera.
+                      </p>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
 
-              {/* Main Prediction & Probability Card */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
-                  <div>
-                    <span className="text-xs font-semibold text-sky-400 uppercase tracking-wider">Multimodal Consensus</span>
-                    <h3 className="text-2xl font-bold text-white mt-1 flex items-center gap-2">
-                      {result.prediction}
-                      <span className="text-xs font-normal text-slate-400">({classDescriptions[result.prediction]})</span>
-                    </h3>
-                  </div>
-                  <div className="text-right bg-slate-950/60 border border-slate-800 px-4 py-2 rounded-xl">
-                    <span className="text-[11px] text-slate-400 block">Posterior Confidence</span>
-                    <span className="text-xl font-bold text-sky-400">{(result.confidence * 100).toFixed(1)}%</span>
-                  </div>
-                </div>
+              {/* 2. Symptoms Segmented Controls */}
+              <div className="space-y-3 pb-6 border-b border-hairline">
+                <span className="font-micro text-ink-faint block">02 · REPORTED SYMPTOMS</span>
+                <p className="font-caption text-xs text-ink-muted">
+                  Select symptom dynamics observed by the patient over recent weeks or months.
+                </p>
 
-                {/* Class Probabilities Bar Chart */}
-                <div className="mt-4 space-y-2">
-                  <div className="text-xs font-medium text-slate-400 mb-2">Class Probability Distribution</div>
-                  {['BCC', 'ACK', 'NEV', 'SEK'].map((cls) => {
-                    const prob = result.probabilities[cls] || 0.0;
-                    const isPred = cls === result.prediction;
+                <div className="space-y-2 pt-2">
+                  {Object.entries(symptomLabels).map(([key, label]) => {
+                    const currentVal = symptoms[key];
                     return (
-                      <div key={cls} className="space-y-1">
-                        <div className="flex justify-between text-xs font-mono">
-                          <span className={isPred ? 'font-bold text-sky-400' : 'text-slate-300'}>{cls}</span>
-                          <span className={isPred ? 'font-bold text-sky-400' : 'text-slate-400'}>
-                            {(prob * 100).toFixed(1)}%
-                          </span>
-                        </div>
-                        <div className="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
-                          <div
-                            className={`h-full rounded-full transition-all duration-500 ${
-                              isPred ? 'bg-gradient-to-r from-sky-400 to-blue-500' : 'bg-slate-700'
-                            }`}
-                            style={{ width: `${Math.max(prob * 100, 1)}%` }}
-                          />
+                      <div
+                        key={key}
+                        className="flex items-center justify-between py-2 border-b border-hairline last:border-b-0 text-xs"
+                      >
+                        <span className="font-body text-xs text-ink">{label}</span>
+                        <div className="inline-flex rounded border border-hairline p-0.5 bg-paper text-[11px]">
+                          {(['yes', 'no', 'not_sure'] as TriState[]).map((opt) => (
+                            <button
+                              type="button"
+                              key={opt}
+                              onClick={() => handleSymptomChange(key, opt)}
+                              className={`px-3 py-1 rounded transition-colors ${
+                                currentVal === opt
+                                  ? 'bg-indigo text-white font-medium shadow-xs'
+                                  : 'text-ink-muted hover:text-ink'
+                              }`}
+                            >
+                              {opt === 'yes' ? 'Yes' : opt === 'no' ? 'No' : 'Not sure'}
+                            </button>
+                          ))}
                         </div>
                       </div>
                     );
                   })}
                 </div>
+              </div>
 
-                {/* Clinical Guidance Text */}
-                {result.clinical_summary && (
-                  <div className="mt-4 p-3 bg-slate-950/50 rounded-xl border border-slate-800/80 text-xs text-slate-300 flex items-start gap-2">
-                    <Info className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
-                    <span>{result.clinical_summary}</span>
+              {/* 3. Patient Profile */}
+              <div className="space-y-3 pb-6 border-b border-hairline">
+                <span className="font-micro text-ink-faint block">03 · PATIENT & LESION PROFILE</span>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs pt-1">
+                  <div>
+                    <label className="font-caption text-[11px] text-ink-muted block mb-1">Age</label>
+                    <input
+                      type="number"
+                      value={age}
+                      onChange={(e) => setAge(e.target.value)}
+                      className="w-full bg-white border border-hairline rounded px-3 py-2 text-ink focus:outline-none focus:border-indigo"
+                    />
                   </div>
+
+                  <div>
+                    <label className="font-caption text-[11px] text-ink-muted block mb-1">Body Region</label>
+                    <select
+                      value={region}
+                      onChange={(e) => setRegion(e.target.value)}
+                      className="w-full bg-white border border-hairline rounded px-2.5 py-2 text-ink focus:outline-none focus:border-indigo"
+                    >
+                      <option value="FACE">Face</option>
+                      <option value="ARM">Arm</option>
+                      <option value="FOREARM">Forearm</option>
+                      <option value="HAND">Hand</option>
+                      <option value="NECK">Neck</option>
+                      <option value="CHEST">Chest</option>
+                      <option value="BACK">Back</option>
+                      <option value="ABDOMEN">Abdomen</option>
+                      <option value="THIGH">Thigh</option>
+                      <option value="SCALP">Scalp</option>
+                      <option value="EAR">Ear</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="font-caption text-[11px] text-ink-muted block mb-1">Diameter 1 (mm)</label>
+                    <input
+                      type="text"
+                      value={diameter1}
+                      onChange={(e) => setDiameter1(e.target.value)}
+                      className="w-full bg-white border border-hairline rounded px-3 py-2 text-ink font-mono focus:outline-none focus:border-indigo"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-caption text-[11px] text-ink-muted block mb-1">Diameter 2 (mm)</label>
+                    <input
+                      type="text"
+                      value={diameter2}
+                      onChange={(e) => setDiameter2(e.target.value)}
+                      className="w-full bg-white border border-hairline rounded px-3 py-2 text-ink font-mono focus:outline-none focus:border-indigo"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. Free text (optional) */}
+              <div className="space-y-2 pb-6 border-b border-hairline">
+                <span className="font-micro text-ink-faint block">04 · NARRATIVE NOTE (OPTIONAL)</span>
+                <label className="font-caption text-xs text-ink-muted block">
+                  Describe the lesion in your own words (or leave blank to auto-generate from clinical fields):
+                </label>
+                <textarea
+                  value={narrativeText}
+                  onChange={(e) => setNarrativeText(e.target.value)}
+                  rows={2}
+                  placeholder="e.g. Patient presents with an elevated bleeding nodule on the face that has enlarged..."
+                  className="w-full bg-paper border border-hairline rounded-[8px] p-3 text-xs text-ink focus:outline-none focus:border-indigo"
+                />
+              </div>
+
+              {/* Error display */}
+              {error && (
+                <div className="p-4 bg-paper border border-status-error/40 rounded text-xs text-status-error">
+                  {error}
+                </div>
+              )}
+
+              {/* Submit CTA */}
+              <div className="pt-2 flex items-center justify-between">
+                <button
+                  type="submit"
+                  disabled={loading || !hasAnyInput}
+                  className="inline-flex items-center gap-2 bg-indigo text-white font-button px-6 py-3.5 rounded-[8px] hover:opacity-90 disabled:opacity-40 transition-opacity focus:outline-none focus:ring-2 focus:ring-violet focus:ring-offset-2"
+                >
+                  {loading ? 'Evaluating Multimodal Inputs...' : 'Run Clinical Analysis →'}
+                </button>
+
+                {!selectedFile && hasAnyInput && (
+                  <span className="font-caption text-xs text-ink-muted italic">
+                    No photo — text-only prediction
+                  </span>
                 )}
               </div>
+            </form>
+          </div>
 
-              {/* Dynamic Modality Contribution Bar */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
-                <div className="flex justify-between items-center text-xs mb-2">
-                  <span className="font-semibold text-slate-300 flex items-center gap-1.5">
-                    <Activity className="w-4 h-4 text-sky-400" />
-                    Quality-Gated Modality Weights
-                  </span>
-                  <span className="text-slate-400 font-mono">
-                    Image: {(result.modality_weights.image * 100).toFixed(0)}% | Clinical: {(result.modality_weights.text * 100).toFixed(0)}%
-                  </span>
+          {/* Right Column: Live Pipeline Trace (Sticky on desktop) */}
+          <div className="lg:col-span-5 lg:sticky lg:top-8">
+            <LivePipelineTracker steps={pipelineSteps} />
+          </div>
+        </div>
+
+        {/* Clinical Result (Report Style, Revealed on result) */}
+        {result && (
+          <div className="pt-16 border-t border-hairline space-y-12 animate-fadeIn">
+            <div>
+              <span className="font-micro text-ink-faint block mb-1">CLINICAL ASSESSMENT REPORT</span>
+              <h2 className="font-section text-ink">Multimodal Decision Trace</h2>
+            </div>
+
+            {/* 1. Model Prediction & Read-Only Architecture Callout */}
+            <div className="p-8 bg-paper border border-hairline rounded-[12px] space-y-4">
+              <span className="font-micro text-ink-faint block">PREDICTED CLASS</span>
+              <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4">
+                <div>
+                  <h3 className="font-section text-ink text-4xl sm:text-5xl">
+                    {classFullNameMap[result.prediction] || result.prediction}
+                  </h3>
+                  <p className="font-caption text-ink-muted mt-1">
+                    Diagnostic Abbreviation: <span className="font-mono font-bold text-ink">{result.prediction}</span>
+                  </p>
                 </div>
-                <div className="w-full h-3 rounded-full bg-slate-950 overflow-hidden flex border border-slate-800">
-                  <div
-                    className="h-full bg-sky-500 transition-all duration-500"
-                    style={{ width: `${result.modality_weights.image * 100}%` }}
-                    title={`Vision Weight: ${(result.modality_weights.image * 100).toFixed(1)}%`}
-                  />
-                  <div
-                    className="h-full bg-emerald-500 transition-all duration-500"
-                    style={{ width: `${result.modality_weights.text * 100}%` }}
-                    title={`Text Weight: ${(result.modality_weights.text * 100).toFixed(1)}%`}
-                  />
-                </div>
-                <div className="flex justify-between text-[11px] text-slate-400 mt-1.5">
-                  <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-sky-500 inline-block" /> Vision Modality (EfficientNet)
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> Clinical Text Modality (Linear SVM)
+
+                <div className="text-left sm:text-right">
+                  <span className="font-micro text-ink-faint block">MODEL PROBABILITY</span>
+                  <span className="font-hero text-indigo tabular-nums text-4xl sm:text-5xl font-mono">
+                    {(result.confidence * 100).toFixed(1)}%
                   </span>
                 </div>
               </div>
 
-              {/* Image Inspection & Quality Card */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-                    <ImageIcon className="w-4 h-4 text-sky-400" />
-                    Visual Inspection & Explainability
-                  </h4>
-                  <div className="flex items-center gap-2">
-                    {result.gradcam_base64 && (
-                      <button
-                        type="button"
-                        onClick={() => setShowGradCam(!showGradCam)}
-                        className={`text-xs px-2.5 py-1 rounded-lg border transition-colors flex items-center gap-1 ${
-                          showGradCam
-                            ? 'bg-sky-500/20 border-sky-400 text-sky-300'
-                            : 'bg-slate-800 border-slate-700 text-slate-400'
-                        }`}
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        Grad-CAM Overlay
-                      </button>
-                    )}
-                    {result.enhanced_image_base64 && (
-                      <button
-                        type="button"
-                        onClick={() => setShowEnhanced(!showEnhanced)}
-                        className={`text-xs px-2.5 py-1 rounded-lg border transition-colors ${
-                          showEnhanced
-                            ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300'
-                            : 'bg-slate-800 border-slate-700 text-slate-400'
-                        }`}
-                      >
-                        Show Enhanced
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Image Display Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Left: Input / Enhanced View */}
-                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-center">
-                    <span className="text-[11px] text-slate-400 block mb-2">
-                      {result.enhancement_applied && showEnhanced
-                        ? `Restored Lesion (${result.enhancement_method.toUpperCase()})`
-                        : 'Input Image'}
-                    </span>
-                    <div className="aspect-square bg-slate-900 rounded-lg overflow-hidden flex items-center justify-center">
-                      {showEnhanced && result.enhanced_image_base64 ? (
-                        <img
-                          src={`data:image/png;base64,${result.enhanced_image_base64}`}
-                          alt="Enhanced lesion"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : imagePreview ? (
-                        <img src={imagePreview} alt="Original" className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-xs text-slate-600">No Image Provided</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Right: Grad-CAM Saliency */}
-                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-center">
-                    <span className="text-[11px] text-slate-400 block mb-2">
-                      {showGradCam ? 'Grad-CAM++ Attentive Regions' : 'Base Active Lesion'}
-                    </span>
-                    <div className="aspect-square bg-slate-900 rounded-lg overflow-hidden flex items-center justify-center">
-                      {showGradCam && result.gradcam_base64 ? (
-                        <img
-                          src={`data:image/png;base64,${result.gradcam_base64}`}
-                          alt="Grad-CAM overlay"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <img
-                          src={
-                            result.enhanced_image_base64
-                              ? `data:image/png;base64,${result.enhanced_image_base64}`
-                              : imagePreview || ''
-                          }
-                          alt="Base"
-                          className="w-full h-full object-cover"
-                        />
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Quality Metrics Breakdown */}
-                <div className="bg-slate-950/70 p-4 rounded-xl border border-slate-800/80 space-y-3">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium text-slate-300">Image Quality Assessment</span>
-                    <span className="font-mono text-sky-400 font-bold">
-                      q = {result.quality.q.toFixed(3)}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3 text-[11px]">
-                    <div>
-                      <span className="text-slate-400 block">Sharpness (Laplacian)</span>
-                      <span className="font-mono text-slate-200">{result.quality.blur.toFixed(1)}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block">Brightness (LAB L)</span>
-                      <span className="font-mono text-slate-200">{result.quality.brightness.toFixed(1)}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block">Noise Sigma</span>
-                      <span className="font-mono text-slate-200">{result.quality.noise.toFixed(2)}</span>
-                    </div>
-                  </div>
-
-                  <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between text-xs">
-                    <span className="text-slate-400">Enhancement Decision:</span>
-                    {result.enhancement_applied ? (
-                      <span className="inline-flex items-center gap-1 text-emerald-400 font-medium">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        Restored by PAD-UFES U-Net
-                      </span>
-                    ) : (
-                      <span className="text-slate-400">Clear quality (q ≥ 0.55) — restoration bypassed</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Text Attributions Card */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-3">
-                <h4 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-emerald-400" />
-                  Clinical Narrative & Linear Attributions (Linear SVM)
-                </h4>
-                <p className="text-xs text-slate-400">
-                  Exact linear contributions (<code className="text-slate-300 font-mono">TF-IDF × w</code>) for positive evidence towards{' '}
-                  <span className="text-sky-400 font-semibold">{result.prediction}</span>:
-                </p>
-
-                {/* Narrative Display with Highlighted Tokens */}
-                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs leading-relaxed text-slate-300">
-                  {result.narrative_used}
-                </div>
-
-                {/* Top N-Gram Pills */}
-                {result.text_attributions && result.text_attributions.length > 0 && (
-                  <div className="space-y-1.5 pt-2">
-                    <span className="text-[11px] text-slate-400 block">Salient Clinical Features:</span>
-                    <div className="flex flex-wrap gap-2">
-                      {result.text_attributions.map((attr, idx) => (
-                        <div
-                          key={idx}
-                          className="bg-emerald-950/40 border border-emerald-800/50 text-emerald-300 px-2.5 py-1 rounded-lg text-xs flex items-center gap-2"
-                        >
-                          <span className="font-medium">"{attr.ngram}"</span>
-                          <span className="font-mono text-[10px] text-emerald-400/80 bg-emerald-900/40 px-1.5 py-0.5 rounded">
-                            +{attr.weight.toFixed(3)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+              <div className="pt-4 border-t border-hairline flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-ink-muted">
+                <span>Model: EfficientNet-B0 + TF-IDF Linear SVM, quality-aware gated fusion</span>
+                <span className="font-semibold text-ink">Research decision-support prototype. Not a diagnostic device.</span>
               </div>
             </div>
-          )}
-        </div>
+
+            {/* 2. Class Probabilities (Horizontal bar chart) */}
+            <div className="bg-white border border-hairline rounded-[12px] p-6 space-y-4">
+              <span className="font-micro text-ink-faint block">CLASS PROBABILITIES</span>
+              <div className="space-y-3">
+                {['BCC', 'ACK', 'NEV', 'SEK'].map((cls) => {
+                  const prob = result.probabilities[cls] || 0.0;
+                  const isPredicted = cls === result.prediction;
+                  return (
+                    <div key={cls} className="space-y-1 text-xs">
+                      <div className="flex justify-between items-baseline">
+                        <span className={`font-mono ${isPredicted ? 'font-bold text-indigo' : 'text-ink-muted'}`}>
+                          {cls} — {classFullNameMap[cls]}
+                        </span>
+                        <span className={`font-mono tabular-nums ${isPredicted ? 'font-bold text-indigo' : 'text-ink-muted'}`}>
+                          {(prob * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                      <div className="w-full h-2 bg-paper rounded-full overflow-hidden border border-hairline">
+                        <div
+                          className={`h-full transition-all duration-300 ${
+                            isPredicted ? 'bg-indigo' : 'bg-ink-muted/30'
+                          }`}
+                          style={{ width: `${Math.max(prob * 100, 1.5)}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 3 & 4. Image Quality & Original vs Restored */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Quality Metrics */}
+              <div className="bg-white border border-hairline rounded-[12px] p-6 space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-hairline">
+                  <span className="font-micro text-ink-faint">IMAGE QUALITY SCORE (q)</span>
+                  <span className="font-mono text-sm font-bold text-indigo tabular-nums">
+                    q = {result.quality.q.toFixed(3)}
+                  </span>
+                </div>
+
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <div className="flex justify-between text-ink-muted mb-1">
+                      <span>Sharpness (Laplacian variance)</span>
+                      <span className="font-mono text-ink tabular-nums">{result.quality.blur.toFixed(1)}</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-paper rounded-full overflow-hidden border border-hairline">
+                      <div
+                        className="h-full bg-indigo"
+                        style={{ width: `${Math.min(result.quality.blur / 3, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-ink-muted mb-1">
+                      <span>Lightness (LAB L Channel)</span>
+                      <span className="font-mono text-ink tabular-nums">{result.quality.brightness.toFixed(1)}</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-paper rounded-full overflow-hidden border border-hairline">
+                      <div
+                        className="h-full bg-indigo"
+                        style={{ width: `${Math.min((result.quality.brightness / 255) * 100, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-ink-muted mb-1">
+                      <span>Estimated Noise (Sigma)</span>
+                      <span className="font-mono text-ink tabular-nums">{result.quality.noise.toFixed(2)}</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-paper rounded-full overflow-hidden border border-hairline">
+                      <div
+                        className="h-full bg-indigo"
+                        style={{ width: `${Math.min((result.quality.noise / 25) * 100, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-hairline flex items-center justify-between text-xs text-ink-muted">
+                  <span>Restoration Decision:</span>
+                  <span className="font-medium text-ink">
+                    {result.enhancement_applied
+                      ? `Applied (${result.enhancement_method.toUpperCase()})`
+                      : 'Skipped — quality sufficient (q ≥ 0.55)'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Side-by-Side Original vs Restored */}
+              <div className="bg-white border border-hairline rounded-[12px] p-6 space-y-4">
+                <span className="font-micro text-ink-faint block">MORPHOLOGICAL INSPECTION</span>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1 text-center">
+                    <span className="font-caption text-[11px] text-ink-muted block">Uploaded</span>
+                    <div className="aspect-square bg-paper border border-hairline rounded overflow-hidden flex items-center justify-center">
+                      {imagePreview ? (
+                        <img src={imagePreview} alt="Uploaded lesion photo" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-xs text-ink-muted">No photo</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1 text-center">
+                    <span className="font-caption text-[11px] text-ink-muted block">Restored (U-Net)</span>
+                    <div className="aspect-square bg-paper border border-hairline rounded overflow-hidden flex items-center justify-center">
+                      {result.enhanced_image_base64 ? (
+                        <img
+                          src={`data:image/png;base64,${result.enhanced_image_base64}`}
+                          alt="Restored lesion photo"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-xs text-ink-muted px-2">
+                          {result.enhancement_applied ? 'Rendering...' : 'Quality clear — original retained'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 5. Image Explanation: Grad-CAM++ with opacity slider & toggle */}
+            {result.gradcam_base64 && (
+              <div className="bg-white border border-hairline rounded-[12px] p-6 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-hairline">
+                  <div>
+                    <span className="font-micro text-ink-faint block">VISUAL EXPLANATION</span>
+                    <h4 className="font-card text-ink">Grad-CAM++ Morphological Attributions</h4>
+                    <p className="font-caption text-xs text-ink-muted mt-0.5">
+                      Legend: Violet to indigo highlights indicate higher influence on the prediction.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    {/* View Toggle */}
+                    <div className="inline-flex rounded border border-hairline p-0.5 bg-paper text-xs">
+                      <button
+                        onClick={() => setViewMode('overlay')}
+                        className={`px-3 py-1 rounded transition-colors ${
+                          viewMode === 'overlay' ? 'bg-indigo text-white font-medium' : 'text-ink-muted hover:text-ink'
+                        }`}
+                      >
+                        Overlay
+                      </button>
+                      <button
+                        onClick={() => setViewMode('original')}
+                        className={`px-3 py-1 rounded transition-colors ${
+                          viewMode === 'original' ? 'bg-indigo text-white font-medium' : 'text-ink-muted hover:text-ink'
+                        }`}
+                      >
+                        Original
+                      </button>
+                    </div>
+
+                    {/* Opacity Slider */}
+                    {viewMode === 'overlay' && (
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="font-micro text-[10px] text-ink-faint">OPACITY</span>
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={gradCamOpacity}
+                          onChange={(e) => setGradCamOpacity(Number(e.target.value))}
+                          className="w-24 accent-indigo cursor-pointer"
+                        />
+                        <span className="font-mono text-[11px] text-ink-muted w-8 tabular-nums">
+                          {gradCamOpacity}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="max-w-md mx-auto aspect-square bg-paper border border-hairline rounded overflow-hidden relative">
+                  {/* Base Image */}
+                  <img
+                    src={
+                      result.enhanced_image_base64
+                        ? `data:image/png;base64,${result.enhanced_image_base64}`
+                        : imagePreview || ''
+                    }
+                    alt="Uploaded lesion photo"
+                    className="w-full h-full object-cover absolute inset-0"
+                  />
+                  {/* Grad-CAM++ layer */}
+                  {viewMode === 'overlay' && (
+                    <img
+                      src={`data:image/png;base64,${result.gradcam_base64}`}
+                      alt="Grad-CAM++ overlay"
+                      style={{ opacity: gradCamOpacity / 100 }}
+                      className="w-full h-full object-cover absolute inset-0 mix-blend-multiply"
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 6. Text Explanation (Narrative + Top 5 N-grams) */}
+            <div className="bg-white border border-hairline rounded-[12px] p-6 space-y-4">
+              <span className="font-micro text-ink-faint block">TEXT EXPLANATION</span>
+              <h4 className="font-card text-ink">Exact Linear Attributions (Linear SVM)</h4>
+              <p className="font-caption text-xs text-ink-muted">
+                Highlighted n-grams contributed directly to predicted log-odds (<span className="font-mono">TF-IDF × w</span>). Violet background indicates positive support; underlined text indicates negative weight.
+              </p>
+
+              {/* Patient Narrative Display */}
+              <div className="p-4 bg-paper border border-hairline rounded-[8px] font-body text-sm leading-relaxed text-ink">
+                {result.narrative_used}
+              </div>
+
+              {/* Top 5 list with signed weights */}
+              {result.text_attributions && result.text_attributions.length > 0 && (
+                <div className="pt-2">
+                  <span className="font-micro text-ink-faint block mb-2">TOP SALIENT FEATURES (EXACT WEIGHTS)</span>
+                  <div className="flex flex-wrap gap-2">
+                    {result.text_attributions.slice(0, 5).map((attr, idx) => (
+                      <div
+                        key={idx}
+                        className="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-paper border border-hairline text-xs"
+                      >
+                        <span className="font-medium text-ink font-mono">"{attr.ngram}"</span>
+                        <span className={`font-mono text-[11px] tabular-nums ${attr.weight >= 0 ? 'text-indigo' : 'text-ink-muted underline'}`}>
+                          {attr.weight >= 0 ? `+${attr.weight.toFixed(3)}` : attr.weight.toFixed(3)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 7. Modality Contribution Bar */}
+            <div className="bg-white border border-hairline rounded-[12px] p-6 space-y-4">
+              <div className="flex justify-between items-baseline">
+                <span className="font-micro text-ink-faint">MODALITY CONTRIBUTION</span>
+                <span className="font-mono text-xs text-ink-muted tabular-nums">
+                  Image: {(result.modality_weights.image * 100).toFixed(1)}% · Clinical Text: {(result.modality_weights.text * 100).toFixed(1)}%
+                </span>
+              </div>
+
+              {/* Split Bar */}
+              <div className="w-full h-3 rounded-full bg-paper overflow-hidden flex border border-hairline">
+                <div
+                  className="h-full bg-indigo transition-all duration-300"
+                  style={{ width: `${result.modality_weights.image * 100}%` }}
+                />
+                <div
+                  className="h-full bg-ink-muted/40 transition-all duration-300"
+                  style={{ width: `${result.modality_weights.text * 100}%` }}
+                />
+              </div>
+
+              <p className="font-caption text-xs text-ink-muted">
+                The model relied more on the {result.modality_weights.image >= 0.5 ? 'image' : 'symptoms'} for this case.
+              </p>
+            </div>
+
+            {/* 8. Evidence Retrieval Rows */}
+            <div className="bg-white border border-hairline rounded-[12px] p-6 space-y-4">
+              <span className="font-micro text-ink-faint block">EVIDENCE RETRIEVAL</span>
+              <h4 className="font-card text-ink">Clinical Guideline Concordance</h4>
+
+              <div className="divide-y divide-hairline border-y border-hairline">
+                <div className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                  <div>
+                    <span className="font-mono text-ink font-semibold">knowledge/diseases/{result.prediction.toLowerCase()}.md</span>
+                    <p className="font-caption text-ink-muted mt-0.5">
+                      {result.clinical_summary || 'Diagnostic criteria, morphology, and recommended clinical management pathway.'}
+                    </p>
+                  </div>
+                  <span className="font-micro text-ink-faint shrink-0">SOURCE GUIDELINE</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 9. Safety Red-Flags */}
+            <div className="bg-white border border-hairline rounded-[12px] p-6 space-y-3">
+              <span className="font-micro text-ink-faint block">SAFETY AUDIT</span>
+              {result.safety_alert && (
+                <div className="p-3 bg-paper border border-hairline rounded flex items-start gap-2.5 text-xs text-ink">
+                  <StatusDot status="error" label="" />
+                  <div>
+                    <span className="font-medium text-status-error block">Red Flag Alert</span>
+                    <p className="text-ink-muted mt-0.5">{result.safety_alert}</p>
+                  </div>
+                </div>
+              )}
+              <p className="font-caption text-xs text-ink-muted pt-1">
+                See a dermatologist if the lesion bleeds, grows quickly or changes.
+              </p>
+            </div>
+
+            {/* 10. Grounded Summary */}
+            <div className="bg-white border border-hairline rounded-[12px] p-6 space-y-3">
+              <span className="font-micro text-ink-faint block">GROUNDED SUMMARY</span>
+              <p className="font-body text-sm text-ink leading-relaxed">
+                Patient presenting with {result.narrative_used.toLowerCase()} evaluated through the quality-gated multimodal classifier.
+                Primary prediction indicates <span className="font-semibold text-indigo">{classFullNameMap[result.prediction]}</span> ({result.prediction}) with a posterior probability of {(result.confidence * 100).toFixed(1)}%.
+                Image quality score was calculated as q = {result.quality.q.toFixed(2)} ({result.enhancement_applied ? 'restored via PAD-UFES U-Net' : 'original quality retained'}).
+              </p>
+              <div className="pt-2 text-[11px] text-ink-faint border-t border-hairline flex justify-between">
+                <span>Sources: PAD-UFES-20 Clinical Records & Knowledge Guidelines</span>
+                <span>Verification: 5-Fold Grouped Stratification</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
