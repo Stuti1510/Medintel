@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Navigation } from './components/Navigation';
 import { Footer } from './components/Footer';
 
@@ -17,7 +17,7 @@ import { PresentationPage } from './pages/PresentationPage';
 
 export const App: React.FC = () => {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <div className="min-h-screen bg-white text-ink flex flex-col font-body selection:bg-violet selection:text-indigo">
         {/* Editorial Navigation */}
         <Navigation />
@@ -43,6 +43,6 @@ export const App: React.FC = () => {
         {/* Responsible AI Disclaimer & Provenance Footer */}
         <Footer />
       </div>
-    </BrowserRouter>
+    </HashRouter>
   );
 };
