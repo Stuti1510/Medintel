@@ -45,7 +45,7 @@ flowchart LR
   $$q = 0.5 \cdot \hat{s}_{\text{blur}} + 0.3 \cdot s_{\text{bright}} + 0.2 \cdot s_{\text{noise}} \in [0, 1]$$
 
 ### 2.4 Quality-Aware Gated Fusion
-The deployed fusion module combines visual features, clinical logits, and scalar image quality score $q$:
+The gated fusion module combines visual features, clinical logits, and scalar image quality score $q$:
 1. Modality projection:
    $$z_{\text{img}} = \text{LayerNorm}(\text{ReLU}(W_{\text{img}} h_{\text{img}} + b_{\text{img}})) \in \mathbb{R}^{B \times d}$$
    $$z_{\text{txt}} = \text{LayerNorm}(\text{ReLU}(W_{\text{txt}} h_{\text{txt}} + b_{\text{txt}})) \in \mathbb{R}^{B \times d}$$

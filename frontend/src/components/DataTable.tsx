@@ -26,7 +26,7 @@ export function DataTable<T extends Record<string, any>>({
   data,
   isRowHighlighted,
   isDeployed,
-  highlightLabel = 'DEPLOYED',
+  highlightLabel = 'MEDINTEL MODEL',
   keyExtractor,
   keyField,
   emptyMessage = 'No data available in this table.',

@@ -159,7 +159,7 @@ export const PresentationPage: React.FC = () => {
     {
       id: 7,
       theme: 'dark',
-      topic: '07 / DEPLOYED FUSION',
+      topic: '07 / GATED FUSION',
       title: 'Quality-Aware Gated Fusion',
       subtitle: 'Dynamic modality reweighting conditioned on image quality score q',
       points: [
@@ -176,7 +176,7 @@ export const PresentationPage: React.FC = () => {
           desc: 'Outperforms fixed-weight late averaging and naive concatenation under corrupted test distributions.'
         }
       ],
-      highlight: 'The single deployed model: gating prevents corrupted pixels from degrading clinical predictions.'
+      highlight: 'The MEDINTEL model: gating prevents corrupted pixels from degrading clinical predictions.'
     },
     {
       id: 8,
@@ -207,7 +207,7 @@ export const PresentationPage: React.FC = () => {
       subtitle: 'Superiority of quality-aware gated fusion across 5 test folds',
       points: [
         {
-          title: 'Deployed Gated Fusion Superiority',
+          title: 'Gated Fusion Superiority',
           desc: 'Statistically significantly outperforms both standalone Image EfficientNet and Text Linear SVM single-modality baselines.'
         },
         {

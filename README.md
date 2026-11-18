@@ -85,7 +85,7 @@ The text classifier algorithm is strictly fixed as **TF-IDF (word 1–2 grams, s
 | XGBoost | 0.9167 | 0.9138 | 0.8944 | Removed (Phase 0) |
 | BioBERT | 0.8278 | 0.8028 | 0.8000 | Removed (Phase 0) |
 
-**Design Rule:** No algorithm selector dropdown, radio button, or query parameter is exposed in the API, UI, or configuration. The production endpoint executes the single validated gated pipeline.
+**Design Rule:** No algorithm selector dropdown, radio button, or query parameter is exposed in the API, UI, or configuration. The inference endpoint executes the single validated gated pipeline.
 
 ---
 
@@ -99,42 +99,63 @@ Performance evaluated across 5 patient-grouped folds on PAD-UFES-20 (`reports/mu
 | Vision-Only (EfficientNet-B0) | 77.34 ± 1.49% | 72.21 ± 2.32% | 93.78 ± 0.28% | 0.0420 ± 0.0000 |
 | Late Fusion (Soft Voting) | 79.94 ± 1.63% | 74.20 ± 1.34% | 95.38 ± 0.40% | 0.0380 ± 0.0000 |
 | Concatenation Fusion | 81.02 ± 1.61% | 75.25 ± 1.05% | 96.14 ± 0.44% | 0.0350 ± 0.0000 |
-| **Quality-Aware Gated Fusion (Deployed)** | **83.41 ± 1.34%** | **77.79 ± 0.86%** | **97.32 ± 0.35%** | **0.0260 ± 0.0000** |
+| **Quality-Aware Gated Fusion (MEDINTEL Model)** | **83.41 ± 1.34%** | **77.79 ± 0.86%** | **97.32 ± 0.35%** | **0.0260 ± 0.0000** |
 
 *Gated fusion achieves statistically significant improvements over single-modality and static fusion baselines (Wilcoxon signed-rank $p < 0.05$).*
 
 ---
 
-## 5. Quickstart & Reproduction
+## 5. Run Locally
+
+MEDINTEL AI is a research decision-support prototype. It is not hosted on external cloud infrastructure and runs strictly on `localhost`.
 
 ### Prerequisites
-- Python 3.10+ (tested on Python 3.13)
-- Node.js 18+ (tested on Node v24)
-- PyTorch 2.0+
+- Python 3.10+ (tested on Python 3.11, 3.12, 3.13)
+- Node.js 18+ (tested on Node v20, v22, v24)
 
-### Setup Environment
+### One-Command Runner
+Clone the repository and launch both the backend and frontend with a single command:
+
+**Windows (PowerShell or Command Prompt):**
+```cmd
+.\run_local.bat
+```
+
+**macOS / Linux:**
 ```bash
-# 1. Clone repository and install Python dependencies
-git clone https://github.com/user/DMBI.git
-cd DMBI
+chmod +x run_local.sh
+./run_local.sh
+```
+
+The script verifies prerequisites, sets up dependencies, and launches both services:
+- **Frontend UI:** [http://localhost:5173](http://localhost:5173)
+- **Backend API:** [http://127.0.0.1:8000](http://127.0.0.1:8000)
+- **Swagger Documentation:** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+
+### Manual Two-Terminal Setup
+
+If you prefer running services in separate terminal windows:
+
+**Terminal 1 — Backend (FastAPI):**
+```bash
 pip install -r requirements.txt
-
-# 2. Run the test suite (all 23 unit and integration tests)
-python -m pytest tests/ -v
+python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-### Running Backend API
-```bash
-uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
-# API Docs available at http://localhost:8000/docs
-```
-
-### Running Frontend UI
+**Terminal 2 — Frontend (Vite + React):**
 ```bash
 cd frontend
 npm install
 npm run dev
-# Vite UI available at http://localhost:3000
+```
+
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+### Test Suite Execution
+Run the full test suite locally:
+```bash
+python -m pytest tests/ -v
+npm --prefix frontend run build
 ```
 
 ---

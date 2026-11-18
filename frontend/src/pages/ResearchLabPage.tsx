@@ -878,9 +878,9 @@ export const ResearchLabPage: React.FC = () => {
     return (
       <div className="space-y-8 animate-fadeIn">
         <div>
-          <h3 className="font-card font-medium text-ink mb-1">Ablation Study (Architecture Search)</h3>
+          <h3 className="font-card font-medium text-ink mb-1">E7: Component Ablation Study</h3>
           <p className="font-body text-xs text-ink-muted mb-4">
-            These baselines were evaluated during development to validate the gated fusion architecture. MEDINTEL AI uses only the gated fusion model.
+            Conference-style ablation table quantifying performance degradation when individual pipeline components are disabled.
           </p>
           <DataTable
             columns={abCols}

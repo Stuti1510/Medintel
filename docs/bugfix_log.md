@@ -119,3 +119,29 @@ Detailed audit of engineering issues encountered and resolved during the migrati
   - Verified regex `git grep -n -E "late.?fusion|concat(enation)?.?fusion|image.?only|text.?only" frontend/src` returns zero matches outside allowed code comments and ablation reference.
   - `python -m pytest tests -q` passed (25 tests).
   - `npm --prefix frontend run build` succeeded with zero errors (built in 16.33s).
+
+### Bug / Change 12: Remove All Deployment Artefacts and Enforce Local-Only Execution
+- **Issue:** Project contained cloud deployment configurations (`deploy.yml`, production references, and deployment wording) when MEDINTEL AI is strictly a research decision-support prototype intended to run locally on `localhost`.
+- **Cause Found:**
+  1. `.github/workflows/deploy.yml` attempted to build and publish static pages to GitHub Pages rather than running automated test suites.
+  2. UI elements and tables displayed "DEPLOYED" badges and referenced production deployments.
+  3. Lack of unified, cross-platform local execution scripts for launching both FastAPI backend (port 8000) and Vite frontend (port 5173).
+  4. Vite dev server was configured for port 3000 rather than standard 5173.
+- **Files Changed:**
+  - Deleted `.github/workflows/deploy.yml`
+  - Created `.github/workflows/ci.yml` (automated backend pytest and frontend build)
+  - `run_local.bat` (Windows one-click launcher)
+  - `run_local.sh` (macOS/Linux one-click launcher)
+  - `frontend/vite.config.ts` (configured port 5173)
+  - `frontend/.env.local` & `frontend/.env.example`
+  - `frontend/src/components/DataTable.tsx` (changed highlightLabel from 'DEPLOYED' to 'MEDINTEL MODEL')
+  - `frontend/src/pages/PresentationPage.tsx` (removed 'deployed' labels)
+  - `frontend/src/pages/HistoryPage.tsx` (updated fold label from 'Fold 0 Deployed' to 'Fold 0 (Gated Fusion)')
+  - `docs/architecture.md`
+  - `README.md` (prominent Run Locally guide with prerequisites and commands)
+- **How It Was Verified:**
+  - Created `run_local.bat` and `run_local.sh` verifying Python 3.10+, Node.js 18+, virtual environments, dependencies, and graceful exit cleanup.
+  - Verified CORS in `backend/app/main.py` explicitly whitelisting `http://localhost:5173` and `http://127.0.0.1:5173`.
+  - Verified no cloud deployment URLs or config files remain (`vercel`, `netlify`, `render`, `heroku`, `docker`).
+  - `python -m pytest tests -q` passed (25 passed in 14.31s).
+  - `npm --prefix frontend run build` succeeded with zero errors (built in 10.86s).
