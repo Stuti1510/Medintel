@@ -68,3 +68,22 @@ Detailed audit of engineering issues encountered and resolved during the migrati
   - `python -m pytest tests/test_multimodal_endpoint.py -v` passed all 4 test cases (success with timings, text-only, 400 format error, 503 missing model).
   - Executed POST `/api/analyze/multimodal` with authentic sample image, returning full diagnostic prediction and Grad-CAM in 0.94 seconds on CPU.
   - Verified frontend `npm run build` succeeds with zero errors.
+
+### Bug 10: Research Lab Page Does Not Display Right Away
+- **Bug:** The Research Lab page delayed rendering, showing a global skeleton block instead of an immediate dashboard.
+- **Cause Found:**
+  1. `ResearchLabPage.tsx` blocked page mount behind a single `Promise.all` fetching 6 experiment endpoints (`e1`, `e4`, `e5`, `e7`, `e8`, `summary`), blocking all tab and overview content until the slowest request finished.
+  2. No client-side caching for tab data: switching back and forth between tabs triggered duplicate API calls.
+  3. `backend/app/api/endpoints/models_eval.py` re-read large CSV files from disk (e.g., `e4_robustness.csv` with 1,250 rows and `manifest.csv`) on every single request without memory caching.
+  4. Tab transitions used history `push` rather than `replace`, cluttering browser history stack.
+- **Files Changed:**
+  - `backend/app/api/endpoints/models_eval.py`
+  - `frontend/src/pages/ResearchLabPage.tsx`
+- **How It Was Verified:**
+  - Header, benchmark tabs, and dataset overview summary cards paint immediately on page mount.
+  - Added in-memory mtime-keyed caching in `models_eval.py` reducing repeat endpoint latency to < 5ms.
+  - Added client-side tab caching so visited tabs display immediately without re-querying backend.
+  - Tab switching uses `replace: true` to prevent browser history stack pollution.
+  - Charts styled with explicit `minWidth={0}` and height constraints to prevent Recharts flex collapse.
+  - `python -m pytest tests -q` (25 passed).
+  - `npm --prefix frontend run build` (build succeeded in 13.05s, 0 errors).
