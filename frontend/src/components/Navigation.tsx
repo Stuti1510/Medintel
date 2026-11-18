@@ -32,7 +32,7 @@ export const Navigation: React.FC<NavigationProps> = ({ isDarkHero = false }) =>
   const navLinks = [
     { label: 'Clinical Analysis', path: '/clinical-analysis' },
     { label: 'Research Lab', path: '/research-lab' },
-    { label: 'Model Benchmark', path: '/model-comparison' },
+    { label: 'Model Performance', path: '/model-performance' },
     { label: 'Explainability', path: '/explainability' },
     { label: 'Evidence', path: '/knowledge' },
     { label: 'LLM Lab', path: '/llm-lab' },

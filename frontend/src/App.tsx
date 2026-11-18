@@ -28,7 +28,9 @@ export const App: React.FC = () => {
             <Route path="/" element={<LandingPage />} />
             <Route path="/clinical-analysis" element={<ClinicalAnalysisPage />} />
             <Route path="/research-lab" element={<ResearchLabPage />} />
-            <Route path="/model-comparison" element={<ModelComparisonPage />} />
+            <Route path="/model-performance" element={<ModelComparisonPage />} />
+            <Route path="/model-comparison" element={<Navigate to="/model-performance" replace />} />
+            <Route path="/models" element={<Navigate to="/model-performance" replace />} />
             <Route path="/explainability" element={<ExplainabilityPage />} />
             <Route path="/knowledge" element={<EvidenceRetrievalPage />} />
             <Route path="/llm-lab" element={<LLMLabPage />} />

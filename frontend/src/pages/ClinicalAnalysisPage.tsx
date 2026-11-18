@@ -381,7 +381,7 @@ export const ClinicalAnalysisPage: React.FC = () => {
 
                 {!selectedFile && hasAnyInput && (
                   <span className="font-caption text-xs text-ink-muted italic">
-                    No photo — text-only prediction
+                    No photo — clinical symptom evaluation
                   </span>
                 )}
               </div>

@@ -29,9 +29,9 @@ export const LandingPage: React.FC = () => {
     },
     {
       num: '03',
-      title: 'Model Benchmark',
-      desc: 'Examine 5-fold cross-validation performance across single-modality and fusion architectures.',
-      link: '/model-comparison',
+      title: 'Model Performance',
+      desc: 'Multimodal gated fusion architecture combining EfficientNet-B0 image embeddings with symptom-level clinical feature vectors.',
+      link: '/model-performance',
     },
     {
       num: '04',

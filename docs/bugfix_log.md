@@ -87,3 +87,35 @@ Detailed audit of engineering issues encountered and resolved during the migrati
   - Charts styled with explicit `minWidth={0}` and height constraints to prevent Recharts flex collapse.
   - `python -m pytest tests -q` (25 passed).
   - `npm --prefix frontend run build` (build succeeded in 13.05s, 0 errors).
+
+### Bug / Change 11: Streamline Website to Single Quality-Aware Gated Fusion Model
+- **Issue:** The site contained comparative UI selectors and comparison tables showcasing 5 distinct models (Text Linear SVM, Image EfficientNet-B0, Late Fusion, Concatenation Fusion, Gated Fusion) rather than focusing exclusively on the final chosen model.
+- **Verification of Superiority Claim (from `reports/multimodal/e3_main.csv` across all 5 folds):**
+  - **Quality-Aware Gated Fusion:** Accuracy = **0.8341 ± 0.0137** (83.41%), Macro F1 = **0.7779 ± 0.0087** (77.79%), Balanced Accuracy = 0.7879 ± 0.0087, Macro AUC = 0.9732 ± 0.0035, ECE = 0.0260
+  - Concatenation Fusion: Accuracy = 0.8102, Macro F1 = 0.7525, Balanced Accuracy = 0.7625, Macro AUC = 0.9612
+  - Late Fusion: Accuracy = 0.7994, Macro F1 = 0.7420, Balanced Accuracy = 0.7520, Macro AUC = 0.9536
+  - Clinical Text Linear SVM: Accuracy = 0.7841, Macro F1 = 0.7056, Balanced Accuracy = 0.6910, Macro AUC = 0.9272
+  - Image EfficientNet-B0: Accuracy = 0.7734, Macro F1 = 0.7211, Balanced Accuracy = 0.7311, Macro AUC = 0.9378
+  - *Confirmed:* Quality-Aware Gated Fusion strictly achieves the highest mean macro-F1 (+2.54% over concat, +3.59% over late, +5.68% over image, +7.23% over text) and highest accuracy across all 5 folds.
+- **Files Changed:**
+  - `frontend/src/pages/ModelComparisonPage.tsx`
+  - `frontend/src/components/Navigation.tsx`
+  - `frontend/src/pages/LandingPage.tsx`
+  - `frontend/src/pages/ClinicalAnalysisPage.tsx`
+  - `frontend/src/pages/ResearchLabPage.tsx`
+  - `frontend/src/App.tsx`
+- **How It Was Verified:**
+  - Converted `ModelComparisonPage.tsx` to a single-model performance dashboard for Quality-Aware Gated Fusion:
+    - 5-Fold summary metrics card with mean ± standard deviation.
+    - 4-class per-class diagnostic performance table (precision, recall, F1, test support).
+    - 4x4 normalized confusion matrix with cell sample counts and indigo intensity heatmap.
+    - Receiver Operating Characteristic (ROC) curves per class and macro-average.
+    - Reliability calibration diagram with ECE = 0.026 and Brier Score = 0.120.
+    - Removed violet "DEPLOYED" badge and removed all model comparison selectors.
+  - Renamed page title and navigation label to "Model Performance" (`/model-performance`).
+  - Added routing aliases `/model-comparison` and `/models` redirecting to `/model-performance`.
+  - Updated Landing Page module 03 copy to "Multimodal gated fusion architecture combining EfficientNet-B0 image embeddings with symptom-level clinical feature vectors."
+  - Labeled Research Lab Tab 1 as "Ablation Study (Architecture Search)" with development-baseline context.
+  - Verified regex `git grep -n -E "late.?fusion|concat(enation)?.?fusion|image.?only|text.?only" frontend/src` returns zero matches outside allowed code comments and ablation reference.
+  - `python -m pytest tests -q` passed (25 tests).
+  - `npm --prefix frontend run build` succeeded with zero errors (built in 16.33s).
