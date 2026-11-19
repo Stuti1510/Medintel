@@ -1,0 +1,240 @@
+{
+  "fold": 4,
+  "total_samples": 421,
+  "gate_weight_stats": {
+    "mean": 0.5337,
+    "std": 0.0362,
+    "min": 0.4512,
+    "max": 0.6256
+  },
+  "gated_fusion": {
+    "accuracy": 0.8575,
+    "balanced_accuracy": 0.8159,
+    "macro_f1": 0.8208,
+    "true_counts": {
+      "BCC": 184,
+      "ACK": 135,
+      "NEV": 51,
+      "SEK": 51
+    },
+    "pred_counts": {
+      "BCC": 176,
+      "ACK": 150,
+      "NEV": 53,
+      "SEK": 42
+    },
+    "confusion_matrix": [
+      [
+        165,
+        16,
+        3,
+        0
+      ],
+      [
+        8,
+        121,
+        0,
+        6
+      ],
+      [
+        0,
+        6,
+        42,
+        3
+      ],
+      [
+        3,
+        7,
+        8,
+        33
+      ]
+    ],
+    "per_class": {
+      "BCC": {
+        "precision": 0.9375,
+        "recall": 0.8967,
+        "f1": 0.9167,
+        "support": 184
+      },
+      "ACK": {
+        "precision": 0.8067,
+        "recall": 0.8963,
+        "f1": 0.8491,
+        "support": 135
+      },
+      "NEV": {
+        "precision": 0.7925,
+        "recall": 0.8235,
+        "f1": 0.8077,
+        "support": 51
+      },
+      "SEK": {
+        "precision": 0.7857,
+        "recall": 0.6471,
+        "f1": 0.7097,
+        "support": 51
+      }
+    },
+    "mean_probabilities": {
+      "BCC": 0.42489999532699585,
+      "ACK": 0.3506999909877777,
+      "NEV": 0.125,
+      "SEK": 0.09939999878406525
+    }
+  },
+  "image_branch": {
+    "accuracy": 0.7268,
+    "balanced_accuracy": 0.7075,
+    "macro_f1": 0.6957,
+    "true_counts": {
+      "BCC": 184,
+      "ACK": 135,
+      "NEV": 51,
+      "SEK": 51
+    },
+    "pred_counts": {
+      "BCC": 163,
+      "ACK": 150,
+      "NEV": 60,
+      "SEK": 48
+    },
+    "confusion_matrix": [
+      [
+        135,
+        33,
+        8,
+        8
+      ],
+      [
+        21,
+        103,
+        1,
+        10
+      ],
+      [
+        4,
+        1,
+        42,
+        4
+      ],
+      [
+        3,
+        13,
+        9,
+        26
+      ]
+    ],
+    "per_class": {
+      "BCC": {
+        "precision": 0.8282,
+        "recall": 0.7337,
+        "f1": 0.7781,
+        "support": 184
+      },
+      "ACK": {
+        "precision": 0.6867,
+        "recall": 0.763,
+        "f1": 0.7228,
+        "support": 135
+      },
+      "NEV": {
+        "precision": 0.7,
+        "recall": 0.8235,
+        "f1": 0.7568,
+        "support": 51
+      },
+      "SEK": {
+        "precision": 0.5417,
+        "recall": 0.5098,
+        "f1": 0.5253,
+        "support": 51
+      }
+    },
+    "mean_probabilities": {
+      "BCC": 0.3643999993801117,
+      "ACK": 0.33149999380111694,
+      "NEV": 0.15389999747276306,
+      "SEK": 0.1501999944448471
+    }
+  },
+  "text_branch": {
+    "accuracy": 0.8052,
+    "balanced_accuracy": 0.6869,
+    "macro_f1": 0.699,
+    "true_counts": {
+      "BCC": 184,
+      "ACK": 135,
+      "NEV": 51,
+      "SEK": 51
+    },
+    "pred_counts": {
+      "BCC": 212,
+      "ACK": 145,
+      "NEV": 47,
+      "SEK": 17
+    },
+    "confusion_matrix": [
+      [
+        177,
+        7,
+        0,
+        0
+      ],
+      [
+        14,
+        114,
+        3,
+        4
+      ],
+      [
+        7,
+        7,
+        36,
+        1
+      ],
+      [
+        14,
+        17,
+        8,
+        12
+      ]
+    ],
+    "per_class": {
+      "BCC": {
+        "precision": 0.8349,
+        "recall": 0.962,
+        "f1": 0.8939,
+        "support": 184
+      },
+      "ACK": {
+        "precision": 0.7862,
+        "recall": 0.8444,
+        "f1": 0.8143,
+        "support": 135
+      },
+      "NEV": {
+        "precision": 0.766,
+        "recall": 0.7059,
+        "f1": 0.7347,
+        "support": 51
+      },
+      "SEK": {
+        "precision": 0.7059,
+        "recall": 0.2353,
+        "f1": 0.3529,
+        "support": 51
+      }
+    },
+    "mean_probabilities": {
+      "BCC": 0.4335,
+      "ACK": 0.3639,
+      "NEV": 0.1136,
+      "SEK": 0.0891
+    }
+  },
+  "majority_class_baseline": {
+    "accuracy": 0.4371,
+    "balanced_accuracy": 0.25,
+    "macro_f1": 0.1521
+  }
+}

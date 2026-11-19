@@ -168,3 +168,22 @@ Detailed audit of engineering issues encountered and resolved during the migrati
   - Verified regex `git grep -n -i "viva" frontend/src` returns exactly 1 occurrence: only the `<Route path="/viva" .../>` redirect in `App.tsx`.
   - `python -m pytest tests -q` passed (25 passed in 17.95s).
   - `npm --prefix frontend run build` succeeded with zero errors (built in 15.38s).
+
+### Bug 14: Single-Disease Majority Collapse Investigation (BCC on Website vs Offline)
+- **Bug:** The website returned Basal Cell Carcinoma (BCC) for every input image and symptom combination.
+- **Evidence & Step 1 Diagnostics (`scripts/diagnose_predictions.py`):**
+  - Executed offline 5-fold cross-validation diagnosis across all 2,054 test samples in `manifest.csv`.
+  - Saved diagnostics in `reports/multimodal/diagnostics/fold{0..4}.json`.
+  - **Fold 0 Predictions:** BCC: 153, ACK: 155, NEV: 64, SEK: 49 (Acc: 81.24%, Macro F1: 79.60%, Bal Acc: 79.45% vs Majority Baseline F1: 13.33%)
+  - **Fold 1 Predictions:** BCC: 178, ACK: 125, NEV: 43, SEK: 54 (Acc: 84.75%, Macro F1: 81.48%, Bal Acc: 83.11% vs Majority Baseline F1: 14.85%)
+  - **Fold 2 Predictions:** BCC: 195, ACK: 142, NEV: 46, SEK: 29 (Acc: 83.25%, Macro F1: 79.05%, Bal Acc: 78.44% vs Majority Baseline F1: 14.67%)
+  - **Fold 3 Predictions:** BCC: 167, ACK: 156, NEV: 32, SEK: 45 (Acc: 85.75%, Macro F1: 80.65%, Bal Acc: 79.34% vs Majority Baseline F1: 14.79%)
+  - **Fold 4 Predictions:** BCC: 176, ACK: 150, NEV: 53, SEK: 42 (Acc: 85.75%, Macro F1: 82.08%, Bal Acc: 81.59% vs Majority Baseline F1: 15.21%)
+  - **Overall 5-Fold Gated Fusion Mean Macro F1:** 0.8057 ± 0.0113 (Balanced Acc: 0.8039 ± 0.0171) vs Majority Baseline Macro F1: 0.1457 ± 0.0065.
+  - **Branch-Specific Diagnostics:**
+    - Image branch alone predicts all 4 classes (F0: BCC 147, ACK 155, NEV 52, SEK 67).
+    - Text branch alone predicts all 4 classes (F0: BCC 168, ACK 155, NEV 63, SEK 35).
+    - Gate image weights are active and well-balanced: $\mu = 0.5382 \pm 0.0285$ (range $0.4718$ to $0.6270$).
+- **Cause Found:** The neural network weights and training pipeline did **not** collapse. Offline evaluation predicts all four classes with high accuracy and macro F1. The issue is strictly an inference discrepancy in the website pipeline.
+- **Decision:** Proceed to **Step 2 (Website Inference Bug Audit)**.
+- **Files Changed:** `scripts/diagnose_predictions.py`, `reports/multimodal/diagnostics/fold{0..4}.json`, `docs/bugfix_log.md`.
