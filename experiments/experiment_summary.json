@@ -1,0 +1,52 @@
+{
+  "dataset": "PAD-UFES-20",
+  "evaluation_protocol": "5-Fold Patient-Grouped Cross-Validation (Seed 42)",
+  "total_test_samples": 2054,
+  "models_evaluated": [
+    "text_svm",
+    "image_efficientnet",
+    "late_fusion",
+    "gated_fusion"
+  ],
+  "gated_fusion_summary": {
+    "accuracy_mean": 0.8415,
+    "accuracy_std": 0.0192,
+    "macro_f1_mean": 0.8057,
+    "macro_f1_std": 0.0126,
+    "balanced_accuracy_mean": 0.8039,
+    "macro_auc_mean": 0.9578,
+    "ece_mean": 0.1145
+  },
+  "confusion_matrix_counts": [
+    [
+      763,
+      63,
+      15,
+      4
+    ],
+    [
+      81,
+      615,
+      3,
+      31
+    ],
+    [
+      13,
+      11,
+      193,
+      27
+    ],
+    [
+      12,
+      39,
+      27,
+      157
+    ]
+  ],
+  "classes": [
+    "BCC",
+    "ACK",
+    "NEV",
+    "SEK"
+  ]
+}

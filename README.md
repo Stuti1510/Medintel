@@ -91,17 +91,25 @@ The text classifier algorithm is strictly fixed as **TF-IDF (word 1–2 grams, s
 
 ## 4. Main Benchmark Results (5-Fold Cross-Validation)
 
-Performance evaluated across 5 patient-grouped folds on PAD-UFES-20 (`reports/multimodal/e3_main.csv`):
+Performance evaluated across 5 patient-grouped folds on PAD-UFES-20 (`reports/multimodal/e3_main.csv`, N = 2,054, Zero Patient Leakage):
 
-| Model | Accuracy (Mean ± Std) | Macro-F1 (Mean ± Std) | Macro-AUC (Mean ± Std) | ECE (Mean ± Std) |
-| :--- | :---: | :---: | :---: | :---: |
-| Clinical Text SVM (TF-IDF) | 78.41 ± 2.68% | 70.58 ± 2.37% | 92.72 ± 1.63% | 0.0340 ± 0.0000 |
-| Vision-Only (EfficientNet-B0) | 77.34 ± 1.49% | 72.21 ± 2.32% | 93.78 ± 0.28% | 0.0420 ± 0.0000 |
-| Late Fusion (Soft Voting) | 79.94 ± 1.63% | 74.20 ± 1.34% | 95.38 ± 0.40% | 0.0380 ± 0.0000 |
-| Concatenation Fusion | 81.02 ± 1.61% | 75.25 ± 1.05% | 96.14 ± 0.44% | 0.0350 ± 0.0000 |
-| **Quality-Aware Gated Fusion (MEDINTEL Model)** | **83.41 ± 1.34%** | **77.79 ± 0.86%** | **97.32 ± 0.35%** | **0.0260 ± 0.0000** |
+| Model Architecture | Accuracy (Mean ± Std) | Macro-F1 (Mean ± Std) | Balanced Acc (Mean ± Std) | Macro-AUC (Mean ± Std) | ECE (Mean ± Std) |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| Unimodal Vision (EfficientNet-B0) | 73.39 ± 3.16% | 70.25 ± 2.08% | 70.79 ± 1.62% | 0.9119 ± 0.0071 | 0.0465 ± 0.0084 |
+| Unimodal Text (Linear SVM) | 78.41 ± 2.78% | 70.96 ± 3.09% | 69.18 ± 2.92% | 0.9272 ± 0.0163 | 0.0568 ± 0.0182 |
+| Late Fusion (Soft Voting) | 84.31 ± 3.03% | 80.08 ± 2.33% | 78.53 ± 2.01% | 0.9562 ± 0.0102 | 0.1550 ± 0.0308 |
+| **Quality-Aware Gated Fusion (MEDINTEL)** | **84.15 ± 1.92%** | **80.57 ± 1.26%** | **80.39 ± 1.48%** | **0.9578 ± 0.0135** | **0.1145 ± 0.0205** |
 
-*Gated fusion achieves statistically significant improvements over single-modality and static fusion baselines (Wilcoxon signed-rank $p < 0.05$).*
+*Quality-Aware Gated Fusion achieves the highest balanced accuracy and macro F1 by dynamically down-weighting degraded imagery ($q < 0.55$) in favor of clinical symptoms while reducing inter-fold variance to $\pm 1.26\%$.*
+
+### Conference & Research Documentation:
+- **Research Summary & Paper:** [RESEARCH_RESULTS.md](file:///c:/Users/Stuti/OneDrive/Documents/DMBI/RESEARCH_RESULTS.md)
+- **Detailed Model Evaluation:** [MODEL_EVALUATION_REPORT.md](file:///c:/Users/Stuti/OneDrive/Documents/DMBI/MODEL_EVALUATION_REPORT.md)
+- **Technical Bug Fix & Audit:** [BUG_FIX_REPORT.md](file:///c:/Users/Stuti/OneDrive/Documents/DMBI/BUG_FIX_REPORT.md)
+- **Dataset Characterization:** [DATASET_REPORT.md](file:///c:/Users/Stuti/OneDrive/Documents/DMBI/DATASET_REPORT.md)
+- **Audit Findings:** [AUDIT_REPORT.md](file:///c:/Users/Stuti/OneDrive/Documents/DMBI/AUDIT_REPORT.md)
+- **Experimental Run Log:** [EXPERIMENT_LOG.md](file:///c:/Users/Stuti/OneDrive/Documents/DMBI/EXPERIMENT_LOG.md)
+- **High-Resolution Figures (300 DPI):** `research_outputs/figures/` (PNG & PDF)
 
 ---
 

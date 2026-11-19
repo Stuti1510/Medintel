@@ -31,12 +31,12 @@ from backend.app.database.init_db import init_db
 async def lifespan(app: FastAPI):
     print("Application starting up...")
     init_db()
-    # Load and warm up models once at startup
+    # Load models once at startup
     try:
         from backend.app.services.multimodal_service import get_multimodal_service
         svc = get_multimodal_service()
         if svc.is_ready:
-            svc.warmup()
+            print("[INFO] MultimodalService initialized and ready.")
         else:
             print(f"[WARN] Startup check: model missing at {svc.missing_path}")
     except Exception as e:

@@ -14,7 +14,7 @@ from backend.app.services.multimodal_service import ModelUnavailableError
 router = APIRouter()
 
 @router.post("/analyze/multimodal", response_model=MultimodalAnalysisResponse)
-def analyze_multimodal(
+async def analyze_multimodal(
     image: Optional[UploadFile] = File(None),
     narrative: Optional[str] = Form(None),
     itch: Optional[str] = Form(None),
@@ -44,17 +44,12 @@ def analyze_multimodal(
     if image is not None:
         # Validate format
         content_type = image.content_type or ""
-        if content_type not in ["image/jpeg", "image/png", "image/webp"]:
-            # Check filename extension
-            filename = (image.filename or "").lower()
-            if not (filename.endswith(".jpg") or filename.endswith(".jpeg") or filename.endswith(".png")):
-                raise HTTPException(status_code=400, detail="Only JPEG and PNG images are supported.")
+        filename = (image.filename or "").lower()
+        if content_type not in ["image/jpeg", "image/png", "image/webp"] and not (filename.endswith(".jpg") or filename.endswith(".jpeg") or filename.endswith(".png")):
+            raise HTTPException(status_code=400, detail="Only JPEG and PNG images are supported.")
                 
         # Read and check size
-        if hasattr(image, "file"):
-            image_bytes = image.file.read()
-        elif hasattr(image, "read"):
-            image_bytes = image.read()
+        image_bytes = await image.read()
         if image_bytes and len(image_bytes) > 10 * 1024 * 1024:
             raise HTTPException(status_code=400, detail="Image file exceeds maximum allowed size of 10 MB.")
             
