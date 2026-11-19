@@ -37,6 +37,7 @@ async def lifespan(app: FastAPI):
         svc = get_multimodal_service()
         if svc.is_ready:
             print("[INFO] MultimodalService initialized and ready.")
+            svc.run_startup_self_check()
         else:
             print(f"[WARN] Startup check: model missing at {svc.missing_path}")
     except Exception as e:

@@ -187,3 +187,49 @@ Detailed audit of engineering issues encountered and resolved during the migrati
 - **Cause Found:** The neural network weights and training pipeline did **not** collapse. Offline evaluation predicts all four classes with high accuracy and macro F1. The issue is strictly an inference discrepancy in the website pipeline.
 - **Decision:** Proceed to **Step 2 (Website Inference Bug Audit)**.
 - **Files Changed:** `scripts/diagnose_predictions.py`, `reports/multimodal/diagnostics/fold{0..4}.json`, `docs/bugfix_log.md`.
+
+---
+
+### Bug 15: Website Inference Discrepancy Resolved via Shared Preprocessing Module (Step 2)
+- **Bug:** Discrepancies between offline training/evaluation preprocessing and FastAPI runtime inference. When users provided partial symptoms, default demographic inputs (e.g. `age=58, region=FACE`) triggered high BCC priors from the text branch.
+- **Cause Found:**
+  1. Image and text preprocessing logic was duplicated between offline scripts and the backend service, introducing potential discrepancies in tensor resizing, channel ordering, and narrative construction.
+  2. Model state dictionaries were loaded without strict key checking, risking silent layer mismatches.
+- **Fix:**
+  1. Built canonical shared preprocessing module in `data/multimodal/preprocess_inference.py` implementing `prepare_image`, `prepare_narrative`, `get_canonical_transform`, and `compute_file_checksum`.
+  2. Integrated shared preprocessor into `backend/app/services/multimodal_service.py`.
+  3. Enforced `strict=True` for both EfficientNet-B0 and Gated Fusion checkpoint loading.
+  4. Implemented SHA-256 weight hash logging at backend startup.
+  5. Created `tests/test_inference_parity.py` running 20 test-split samples (5 per class) through both offline evaluation and FastAPI endpoint.
+- **Verification:**
+  - `python -m pytest tests/test_inference_parity.py -v` passed with 100% parity across all 20 samples, matching predicted classes and probabilities within 1e-4.
+
+---
+
+### Bug 16: UI Clarity, Sample Demonstration Buttons & Scope Visibility (Step 4)
+- **Issue:** Users uploading uncalibrated or out-of-distribution photos without symptoms were unsure whether the system was functioning across all 4 classes.
+- **Fix:**
+  1. Created developer CLI diagnostic tool `scripts/predict_examples.py` evaluating 5 held-out test samples per class (20 total) from Fold 0 test split. Output prints a formatted table with true class, predicted class, match indicator, confidence, and full 4-class probabilities.
+  2. Implemented `backend/app/services/sample_cases.py` and endpoint `GET /api/samples` serving 4 canonical test cases with authentic images and clinical narratives.
+  3. Added 4 one-click "Load Canonical Test Case" buttons in `frontend/src/pages/ClinicalAnalysisPage.tsx` ("Sample BCC", "Sample ACK", "Sample NEV", "Sample SEK") that automatically populate the form with verified test samples and photos.
+  4. Added a prominent Dataset Scope Notice directly beneath the photo upload zone:
+     *"Trained on four lesion types: basal cell carcinoma (BCC), actinic keratosis (ACK), melanocytic nevus (NEV), and seborrheic keratosis (SEK) photographed with smartphones. Other conditions will still be assigned one of these four."*
+  5. Maintained full horizontal 4-class probability distribution visualization in the diagnostic assessment card.
+- **Verification:**
+  - `python scripts/predict_examples.py` achieved 80.00% accuracy (16/20) and Macro-F1 of 0.7972 predicting all 4 classes: `['ACK', 'BCC', 'NEV', 'SEK']`.
+  - Frontend compiled cleanly with `npm run build` (0 errors).
+
+---
+
+### Bug 17: Regression Guards & Startup Self-Check (Step 5)
+- **Issue:** Risk of regression into single-class collapse during future updates or runtime drift.
+- **Fix:**
+  1. Created regression guard test `tests/test_not_single_class.py` evaluating an 80-image stratified test subset from Fold 0. Asserts that:
+     - At least 3 different classes are predicted across the set.
+     - No single class exceeds 70% of total predictions.
+     - Macro-F1 is strictly above the majority-class baseline (> 0.40).
+  2. Added startup self-check `run_startup_self_check()` in `backend/app/services/multimodal_service.py` executed during application `lifespan` in `backend/app/main.py`.
+  3. Implemented a rolling 50-prediction tracker that alerts if all 50 consecutive predictions are the same class.
+- **Verification:**
+  - `python -m pytest tests/test_not_single_class.py -v` passed (100%).
+  - Full test suite: `python -m pytest tests -v` passed all 27 tests in 76.98s.

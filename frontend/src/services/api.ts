@@ -145,3 +145,32 @@ export async function getSystemStatus(): Promise<SystemStatusResponse> {
     throw new ApiError(err?.message || 'Network error occurred', url);
   }
 }
+
+export interface SampleCase {
+  disease: string;
+  displayName: string;
+  img_id: string;
+  narrative: string;
+  symptoms: Record<string, 'yes' | 'no' | 'not_sure'>;
+  age: string;
+  gender: string;
+  region: string;
+  diameter1: string;
+  diameter2: string;
+  image_base64: string | null;
+  has_image: boolean;
+}
+
+export async function getSampleCases(): Promise<SampleCase[]> {
+  const url = `${API_BASE_URL}/samples`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new ApiError(`Failed to fetch sample cases (${res.status})`, url, res.status);
+    }
+    return await res.json();
+  } catch (err: any) {
+    if (err instanceof ApiError) throw err;
+    throw new ApiError(err?.message || 'Network error occurred', url);
+  }
+}

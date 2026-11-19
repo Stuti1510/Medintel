@@ -97,3 +97,16 @@ async def analyze_multimodal(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Multimodal analysis failed: {str(e)}")
+
+@router.get("/samples")
+def get_canonical_samples():
+    """
+    Returns 4 verified held-out test samples (one each for BCC, ACK, NEV, SEK)
+    from PAD-UFES-20 test split with images, narratives, and clinical metadata.
+    Enables one-click sample demonstration in the user interface.
+    """
+    try:
+        from backend.app.services.sample_cases import get_sample_cases_with_images
+        return get_sample_cases_with_images()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load sample cases: {str(e)}")

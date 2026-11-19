@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { SectionHeader } from '../components/SectionHeader';
 import { LivePipelineTracker, PipelineStepState } from '../components/LivePipelineTracker';
 import { StatusDot } from '../components/StatusDot';
-import { analyzeMultimodal } from '../services/api';
+import { analyzeMultimodal, getSampleCases } from '../services/api';
 import { MultimodalAnalysisResponse } from '../types';
 import { Upload, X, Sliders, ShieldAlert, Sparkles, Check } from 'lucide-react';
 
@@ -41,6 +41,60 @@ export const ClinicalAnalysisPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'overlay' | 'original'>('overlay');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [loadingSample, setLoadingSample] = useState<string | null>(null);
+
+  const base64ToFile = (dataUrl: string, filename: string): File => {
+    const arr = dataUrl.split(',');
+    const mimeMatch = arr[0].match(/:(.*?);/);
+    const mime = mimeMatch ? mimeMatch[1] : 'image/png';
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+  };
+
+  const loadSample = async (diseaseKey: string) => {
+    try {
+      setLoadingSample(diseaseKey);
+      const samples = await getSampleCases();
+      const target = samples.find((s) => s.disease === diseaseKey);
+      if (!target) return;
+
+      if (target.image_base64) {
+        const file = base64ToFile(target.image_base64, target.img_id);
+        setSelectedFile(file);
+        setImagePreview(target.image_base64);
+        setFileDetails({
+          name: target.img_id,
+          size: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
+        });
+      }
+
+      setNarrativeText(target.narrative || '');
+      if (target.symptoms) {
+        setSymptoms({
+          itch: (target.symptoms.itch as TriState) || 'not_sure',
+          grew: (target.symptoms.grew as TriState) || 'not_sure',
+          hurt: (target.symptoms.hurt as TriState) || 'not_sure',
+          changed: (target.symptoms.changed as TriState) || 'not_sure',
+          bleed: (target.symptoms.bleed as TriState) || 'not_sure',
+          elevation: (target.symptoms.elevation as TriState) || 'not_sure',
+        });
+      }
+      if (target.age) setAge(target.age);
+      if (target.region) setRegion(target.region);
+      if (target.diameter1) setDiameter1(target.diameter1);
+      if (target.diameter2) setDiameter2(target.diameter2);
+    } catch (err: any) {
+      console.error('Failed to load sample test case:', err);
+      setError('Failed to load sample test case: ' + (err?.message || 'Network error'));
+    } finally {
+      setLoadingSample(null);
+    }
+  };
 
   const symptomLabels: Record<string, string> = {
     itch: 'Itches (itch)',
@@ -238,6 +292,48 @@ export const ClinicalAnalysisPage: React.FC = () => {
                       </p>
                     </div>
                   )}
+                </div>
+
+                {/* Dataset Scope Note */}
+                <div className="p-3 bg-paper border border-hairline rounded-[8px] flex items-start gap-2.5 text-xs text-ink-muted">
+                  <ShieldAlert className="w-4 h-4 text-indigo shrink-0 mt-0.5" />
+                  <p>
+                    <strong className="text-ink font-semibold">Trained on four lesion types:</strong> basal cell carcinoma (BCC), actinic keratosis (ACK), melanocytic nevus (NEV), and seborrheic keratosis (SEK) photographed with smartphones. Other conditions will still be assigned one of these four.
+                  </p>
+                </div>
+
+                {/* Sample Test Case Quick-Load Buttons */}
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-micro text-ink-faint">LOAD CANONICAL TEST CASE</span>
+                    <span className="text-[10px] text-ink-muted">PAD-UFES-20 Held-Out Split</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { key: 'BCC', label: 'Sample BCC', desc: 'Carcinoma' },
+                      { key: 'ACK', label: 'Sample ACK', desc: 'Precancerous' },
+                      { key: 'NEV', label: 'Sample NEV', desc: 'Benign Nevus' },
+                      { key: 'SEK', label: 'Sample SEK', desc: 'Seborrheic' },
+                    ].map((item) => (
+                      <button
+                        key={item.key}
+                        type="button"
+                        disabled={loadingSample !== null || loading}
+                        onClick={() => loadSample(item.key)}
+                        className={`p-2 rounded-[8px] border text-left transition-all ${
+                          loadingSample === item.key
+                            ? 'border-indigo bg-indigo/5 ring-1 ring-indigo'
+                            : 'border-hairline bg-paper hover:bg-slate-100 hover:border-ink-muted active:scale-[0.98]'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-0.5">
+                          <span className="font-mono text-xs font-bold text-ink">{item.label}</span>
+                          <Sparkles className="w-3 h-3 text-indigo" />
+                        </div>
+                        <span className="text-[10px] text-ink-muted block">{item.desc}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
